@@ -110,25 +110,7 @@
             66% { transform: translateX(20px) translateY(-10px); opacity: 0.6; }
         }
 
-        /* Thick 8-bit pixel grid */
-        .pixel-grid {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(0, 255, 0, 0.15) 2px, transparent 2px),
-                linear-gradient(90deg, rgba(0, 255, 0, 0.15) 2px, transparent 2px);
-            background-size: 16px 16px;
-            z-index: -1;
-            animation: pixelMove 15s linear infinite;
-        }
 
-        @keyframes pixelMove {
-            0% { transform: translate(0, 0); }
-            100% { transform: translate(16px, 16px); }
-        }
 
         /* Main container */
         .container {
@@ -142,7 +124,7 @@
             z-index: 1;
         }
 
-        /* PURE 8-BIT TITLE */
+        /* PURE 8-BIT TITLE WITH STRONG BORDER */
         .title {
             font-family: 'Press Start 2P', monospace;
             font-size: clamp(1.5rem, 5vw, 3rem);
@@ -163,6 +145,29 @@
             -moz-osx-font-smoothing: unset;
             font-smooth: never;
             image-rendering: pixelated;
+            -webkit-text-stroke: 2px #000000;
+            text-stroke: 2px #000000;
+            position: relative;
+        }
+
+        .title::before {
+            content: 'HEROIC BOOKMARKS';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            color: #000000;
+            z-index: -1;
+            text-shadow: 
+                -2px -2px 0px #000,
+                2px -2px 0px #000,
+                -2px 2px 0px #000,
+                2px 2px 0px #000,
+                -4px -4px 0px #000,
+                4px -4px 0px #000,
+                -4px 4px 0px #000,
+                4px 4px 0px #000;
         }
 
         @keyframes pixelFlash {
@@ -214,7 +219,12 @@
             -webkit-font-smoothing: none;
             -moz-osx-font-smoothing: unset;
             font-smooth: never;
-            text-shadow: 2px 2px 0px #008800;
+            text-shadow: 
+                2px 2px 0px #008800,
+                -2px -2px 0px #000,
+                2px -2px 0px #000,
+                -2px 2px 0px #000,
+                2px 2px 0px #000;
         }
 
         .input-field {
@@ -353,10 +363,6 @@
         <!-- Chunky sparkles -->
         <div class="sparkles"></div>
     </div>
-    
-    <div class="pixel-grid"></div>
-    <div class="crt-flicker"></div>
-    <div class="scanlines"></div>
     
     <div class="container">
         <h1 class="title">HEROIC<br>BOOKMARKS</h1>
