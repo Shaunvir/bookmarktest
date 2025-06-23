@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heroic Bookmarks</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background: #000;
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            font-smooth: never;
+        }
+
+        /* Pure 8-bit background */
+        .background-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: 
+                linear-gradient(to bottom, 
+                    #000011 0%, 
+                    #001122 25%, 
+                    #112244 50%, 
+                    #224488 75%, 
+                    #3366aa 100%);
+        }
+
+        .background-gif {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            object-fit: cover;
+            image-rendering: pixelated;
+            filter: brightness(1.5) contrast(2) saturate(2) hue-rotate(10deg);
+        }
+
+        /* 8-bit lake reflection */
+        .lake-reflection {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            overflow: hidden;
+            background: linear-gradient(to bottom, #001144, #000066);
+        }
+
+        .reflection-gif {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleY(-1);
+            opacity: 0.4;
+            image-rendering: pixelated;
+            filter: brightness(0.6) blur(0.5px) contrast(1.5);
+            animation: waterRipple 4s ease-in-out infinite;
+        }
+
+        @keyframes waterRipple {
+            0%, 100% { transform: scaleY(-1) scaleX(1); }
+            25% { transform: scaleY(-1) scaleX(1.01); }
+            75% { transform: scaleY(-1) scaleX(0.99); }
+        }
+
+        /* Chunky 8-bit sparkles */
+        .sparkles {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: 
+                radial-gradient(4px 4px at 30px 40px, #fff, transparent),
+                radial-gradient(3px 3px at 80px 90px, #0ff, transparent),
+                radial-gradient(2px 2px at 120px 60px, #fff, transparent),
+                radial-gradient(4px 4px at 200px 120px, #ff0, transparent),
+                radial-gradient(3px 3px at 250px 80px, #f0f, transparent),
+                radial-gradient(2px 2px at 320px 140px, #0f0, transparent);
+            background-repeat: repeat;
+            background-size: 400px 200px;
+            animation: sparkle 6s linear infinite;
+            opacity: 0.8;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: translateX(0) translateY(0); opacity: 0.8; }
+            33% { transform: translateX(-20px) translateY(10px); opacity: 1; }
+            66% { transform: translateX(20px) translateY(-10px); opacity: 0.6; }
+        }
+
+        /* Thick 8-bit pixel grid */
+        .pixel-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 255, 0, 0.15) 2px, transparent 2px),
+                linear-gradient(90deg, rgba(0, 255, 0, 0.15) 2px, transparent 2px);
+            background-size: 16px 16px;
+            z-index: -1;
+            animation: pixelMove 15s linear infinite;
+        }
+
+        @keyframes pixelMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(16px, 16px); }
+        }
+
+        /* Main container */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* PURE 8-BIT TITLE */
+        .title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(1.5rem, 5vw, 3rem);
+            font-weight: 400;
+            color: #00ff00;
+            text-align: center;
+            margin-bottom: 4rem;
+            letter-spacing: 0.1em;
+            text-shadow: 
+                4px 0px 0px #008800,
+                0px 4px 0px #008800,
+                4px 4px 0px #004400,
+                8px 8px 0px #002200;
+            animation: pixelFlash 2s ease-in-out infinite alternate;
+            text-transform: uppercase;
+            line-height: 1.4;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            font-smooth: never;
+            image-rendering: pixelated;
+        }
+
+        @keyframes pixelFlash {
+            0% { 
+                color: #00ff00;
+                text-shadow: 
+                    4px 0px 0px #008800,
+                    0px 4px 0px #008800,
+                    4px 4px 0px #004400,
+                    8px 8px 0px #002200;
+            }
+            50% { 
+                color: #00ffff;
+                text-shadow: 
+                    4px 0px 0px #008888,
+                    0px 4px 0px #008888,
+                    4px 4px 0px #004444,
+                    8px 8px 0px #002222;
+            }
+            100% { 
+                color: #ffff00;
+                text-shadow: 
+                    4px 0px 0px #888800,
+                    0px 4px 0px #888800,
+                    4px 4px 0px #444400,
+                    8px 8px 0px #222200;
+            }
+        }
+
+        /* SUPER CHUNKY INPUT SECTION */
+        .input-section {
+            background: #000;
+            border: 6px solid #00ff00;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 9px #008800;
+        }
+
+        .input-label {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: #00ff00;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 400;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            font-smooth: never;
+            text-shadow: 2px 2px 0px #008800;
+        }
+
+        .input-field {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            background: #000;
+            border: 4px solid #00ff00;
+            color: #00ff00;
+            padding: 16px 20px;
+            width: 320px;
+            max-width: 90vw;
+            text-align: center;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 400;
+            -webkit-font-smoothing: none;
+            -moz-osx-font-smoothing: unset;
+            font-smooth: never;
+            box-shadow: inset 4px 4px 0px #004400;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #ffff00;
+            color: #ffff00;
+            box-shadow: 
+                inset 4px 4px 0px #444400,
+                0 0 0 4px #ffff00;
+            animation: inputBlink 0.5s ease infinite;
+        }
+
+        @keyframes inputBlink {
+            0%, 50% { background: #000; }
+            51%, 100% { background: #001100; }
+        }
+
+        .input-field::placeholder {
+            color: #004400;
+            opacity: 1;
+        }
+
+        /* CHUNKY 8-BIT FLOATING BLOCKS */
+        .pixel-block {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            animation: floatBlock 10s ease-in-out infinite;
+            image-rendering: pixelated;
+        }
+
+        @keyframes floatBlock {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            25% { transform: translateY(-40px) rotate(90deg); opacity: 0.7; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.4; }
+            75% { transform: translateY(-60px) rotate(270deg); opacity: 0.8; }
+        }
+
+        /* HEAVY CRT SCANLINES */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 3px,
+                rgba(0, 0, 0, 0.3) 3px,
+                rgba(0, 0, 0, 0.3) 6px
+            );
+            pointer-events: none;
+            z-index: 1000;
+            animation: scanlineMove 0.1s linear infinite;
+        }
+
+        @keyframes scanlineMove {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(6px); }
+        }
+
+        /* CRT FLICKER EFFECT */
+        .crt-flicker {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,255,0,0.05) 100%);
+            pointer-events: none;
+            z-index: 999;
+            animation: crtFlicker 0.15s ease-in-out infinite alternate;
+        }
+
+        @keyframes crtFlicker {
+            0% { opacity: 0.98; }
+            100% { opacity: 1; }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .title {
+                font-size: 1.2rem;
+                margin-bottom: 3rem;
+                letter-spacing: 0.05em;
+            }
+            
+            .input-section {
+                margin: 0 10px;
+                padding: 20px;
+                border-width: 4px;
+            }
+            
+            .input-field {
+                width: 280px;
+                font-size: 12px;
+                padding: 14px 16px;
+            }
+            
+            .input-label {
+                font-size: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-container">
+        <!-- Your 8-bit futuristic city GIF -->
+        <img src="your-gif-file.gif" alt="8-bit Futuristic City" class="background-gif">
+        
+        <!-- Pixelated lake reflection -->
+        <div class="lake-reflection">
+            <img src="your-gif-file.gif" alt="City Reflection" class="reflection-gif">
+        </div>
+        
+        <!-- Chunky sparkles -->
+        <div class="sparkles"></div>
+    </div>
+    
+    <div class="pixel-grid"></div>
+    <div class="crt-flicker"></div>
+    <div class="scanlines"></div>
+    
+    <div class="container">
+        <h1 class="title">HEROIC<br>BOOKMARKS</h1>
+        
+        <div class="input-section">
+            <div class="input-label">INPUT BOOKMARK CODE</div>
+            <input 
+                type="text" 
+                class="input-field" 
+                placeholder="ENTER CODE"
+                maxlength="15"
+            >
+        </div>
+    </div>
+
+    <script>
+        // Create chunky 8-bit floating blocks
+        function createPixelBlocks() {
+            const container = document.body;
+            const blockCount = 12;
+            
+            for (let i = 0; i < blockCount; i++) {
+                const block = document.createElement('div');
+                block.className = 'pixel-block';
+                block.style.left = Math.random() * 100 + '%';
+                block.style.top = Math.random() * 100 + '%';
+                block.style.animationDelay = Math.random() * 10 + 's';
+                block.style.animationDuration = (Math.random() * 6 + 8) + 's';
+                
+                // Chunky 8-bit colors
+                const colors = ['#00ff00', '#00ffff', '#ff00ff', '#ffff00', '#ff0000', '#0000ff'];
+                block.style.background = colors[Math.floor(Math.random() * colors.length)];
+                
+                // Random block sizes for more 8-bit feel
+                const sizes = [6, 8, 10, 12];
+                const size = sizes[Math.floor(Math.random() * sizes.length)];
+                block.style.width = size + 'px';
+                block.style.height = size + 'px';
+                
+                container.appendChild(block);
+            }
+        }
+
+        // 8-bit input handling with sound effect simulation
+        const input = document.querySelector('.input-field');
+        let blinkInterval;
+        
+        input.addEventListener('focus', function() {
+            // Simulate cursor blink
+            blinkInterval = setInterval(() => {
+                this.style.borderColor = this.style.borderColor === 'rgb(255, 255, 0)' ? '#ffff00' : '#00ff00';
+            }, 500);
+        });
+        
+        input.addEventListener('blur', function() {
+            clearInterval(blinkInterval);
+            this.style.borderColor = '#00ff00';
+        });
+        
+        input.addEventListener('keypress', function(e) {
+            // Flash effect on keypress
+            this.style.background = '#002200';
+            setTimeout(() => {
+                this.style.background = '#000';
+            }, 50);
+            
+            if (e.key === 'Enter') {
+                const code = this.value.trim().toUpperCase();
+                if (code) {
+                    console.log('8-BIT BOOKMARK CODE:', code);
+                    
+                    // 8-bit style alert
+                    const message = `>>> CODE ACCEPTED <<<\n${code}\n>>> PROCESSING... <<<`;
+                    alert(message);
+                    this.value = '';
+                }
+            }
+        });
+
+        // Initialize blocks
+        window.addEventListener('load', createPixelBlocks);
+        
+        // Random screen flicker for authentic CRT feel
+        setInterval(() => {
+            if (Math.random() < 0.02) { // 2% chance every interval
+                document.body.style.filter = 'brightness(1.2) contrast(1.1)';
+                setTimeout(() => {
+                    document.body.style.filter = 'none';
+                }, 50);
+            }
+        }, 100);
+    </script>
+</body>
+</html>
