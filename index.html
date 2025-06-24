@@ -711,6 +711,59 @@
     </div>
 
     <script>
+        // CHARACTER INFO DATABASE - ADD YOUR CHARACTER DESCRIPTIONS HERE
+        const characterInfo = {
+            'KING BOB, THE DESTROYER': 'ONCE A HUMBLE FARMER, KING BOB DISCOVERED AN ANCIENT SWORD THAT TRANSFORMED HIM INTO THE MOST FEARED WARRIOR IN THE DIGITAL REALM. HIS PIXELATED CROWN GLOWS WITH THE POWER OF A THOUSAND DELETED FILES. WEAKNESS: ANTIVIRUS SOFTWARE.',
+            
+            'THE WISE AMBASSADOR OCTO': 'AMBASSADOR OCTO HAILS FROM THE DEEPEST TRENCHES OF THE CYBER OCEAN. WITH EIGHT POWERFUL TENTACLES, EACH ONE CAPABLE OF CODING IN A DIFFERENT PROGRAMMING LANGUAGE, OCTO SERVES AS THE DIGITAL DIPLOMAT BETWEEN THE SURFACE WEB AND THE DARK NET. KNOWN FOR NEGOTIATING PEACE TREATIES BETWEEN WARRING WEBSITES AND MEDIATING DISPUTES BETWEEN RIVAL SOCIAL MEDIA PLATFORMS. HAS NEVER LOST A DEBATE AND CAN TYPE 800 WORDS PER MINUTE.',
+            
+            'XC-69420, THE PERFECT ASSASSIN': 'A CYBERNETIC KILLING MACHINE FROM THE YEAR 2420. XC-69420 WAS PROGRAMMED WITH ONE MISSION: ELIMINATE BUGS IN THE MATRIX. ARMED WITH LASER PRECISION AND QUANTUM REFLEXES, THIS DIGITAL DESTROYER MOVES THROUGH CODE LIKE A PHANTOM THROUGH WALLS.',
+            
+            'COMMANDER STRONGARM, RUTHLESS WARRIOR': 'FORGED IN THE FIRES OF THE GREAT CONSOLE WARS, COMMANDER STRONGARM LEADS THE PIXEL BATTALION WITH AN IRON FIST AND A HEART OF PURE CODE. NO ENEMY HAS EVER ESCAPED HIS GRASP.',
+            
+            'THE ENIGMATIC PRINCESS WITCH': 'MISTRESS OF DARK MAGIC AND DIGITAL SPELLS, THE PRINCESS WITCH COMMANDS BOTH RESPECT AND FEAR THROUGHOUT THE PIXELATED KINGDOMS. HER ENCHANTMENTS CAN CORRUPT FILES OR RESTORE DELETED MEMORIES.',
+            
+            'TAJ, THE DEFENDER': 'GUARDIAN OF THE SACRED SERVERS, TAJ STANDS ETERNAL WATCH AGAINST THOSE WHO WOULD CORRUPT THE DIGITAL REALM. HIS SHIELD HAS NEVER BEEN BROKEN, HIS RESOLVE NEVER WAVERED.',
+            
+            'SERRA, THE SUN QUEEN': 'RULER OF THE SOLAR SECTORS, SERRA HARNESSES THE POWER OF A THOUSAND SUNS TO ILLUMINATE THE DARKEST CORNERS OF CYBERSPACE. HER LIGHT BANISHES MALWARE AND PURIFIES CORRUPTED DATA.',
+            
+            'FIRE AND LEE': 'THE DYNAMIC DUO OF DESTRUCTION! FIRE BRINGS THE HEAT WHILE LEE DELIVERS THE PRECISION. TOGETHER THEY ARE UNSTOPPABLE FORCES OF DIGITAL JUSTICE.',
+            
+            'DJ KNOWLEDGE, THE GROOVY ONE': 'SPINNING BEATS AND DROPPING KNOWLEDGE, DJ KNOWLEDGE KEEPS THE DIGITAL REALM DANCING TO THE RHYTHM OF PURE INFORMATION. HIS MIXES ARE LEGENDARY.',
+            
+            'PRESIDENT CRATT, THE STOIC': 'ELECTED LEADER OF THE CYBER REPUBLIC, PRESIDENT CRATT MAINTAINS ORDER THROUGH WISDOM, DIPLOMACY, AND THE OCCASIONAL EXECUTIVE COMMAND LINE.',
+            
+            'LORD FINNEGAN III': 'MASTER OF THE DIGITAL SEAS, LORD FINNEGAN III COMMANDS VAST FLEETS OF DATA PACKETS ACROSS THE INFORMATION SUPERHIGHWAY.',
+            
+            'JOBAN, THE PROFESSOR': 'BRILLIANT SCIENTIST AND MASTER OF ALL DIGITAL KNOWLEDGE, PROFESSOR JOBAN HAS DECODED THE SECRETS OF THE UNIVERSE AND STORED THEM IN HIS VAST DATABASE MIND.',
+            
+            'THE ENGIMATIC PRINCESS WITCH': 'MISTRESS OF DARK MAGIC AND DIGITAL SPELLS, THE PRINCESS WITCH COMMANDS BOTH RESPECT AND FEAR THROUGHOUT THE PIXELATED KINGDOMS.',
+            
+            '@MISS.VANAYA': 'SOCIAL MEDIA QUEEN AND DIGITAL INFLUENCER EXTRAORDINAIRE, MISS VANAYA COMMANDS MILLIONS OF FOLLOWERS WITH HER PIXELATED CHARM AND VIRAL CONTENT.',
+            
+            'TANK AND BOY, EPIC DUO': 'THE UNSTOPPABLE PARTNERSHIP OF BRUTE FORCE AND TACTICAL GENIUS. TANK PROVIDES THE MUSCLE WHILE BOY DELIVERS THE STRATEGY.',
+            
+            'PRISM KNIGHT FROM THE UNDERGROUND': 'EMERGING FROM THE HIDDEN TUNNELS OF THE DEEP WEB, THE PRISM KNIGHT REFRACTS LIGHT AND REALITY TO PROTECT THE INNOCENT.',
+            
+            'PRINCESS ZARA, THE FORGOTTEN': 'ONCE HEIR TO A DIGITAL THRONE, PRINCESS ZARA NOW WANDERS THE FORGOTTEN SECTORS, SEEKING TO RECLAIM HER RIGHTFUL PLACE IN THE CYBER KINGDOM.',
+            
+            'EL KEL, THE DEADLY ONE': 'MASTER ASSASSIN AND SHADOW WARRIOR, EL KEL STRIKES FROM THE DARKNESS WITH LETHAL PRECISION AND VANISHES WITHOUT A TRACE.',
+            
+            'FERDINAND THE BRAVE': 'NOBLE KNIGHT OF THE DIGITAL REALM, FERDINAND RIDES INTO BATTLE ON HIS PIXELATED STEED, DEFENDING THE WEAK AND UPHOLDING JUSTICE.',
+            
+            'GUARDIAN FROST': 'PROTECTOR OF THE ICE SECTORS, GUARDIAN FROST WIELDS THE POWER OF ETERNAL WINTER TO FREEZE ENEMIES AND PRESERVE PRECIOUS DATA.',
+            
+            'PRINCESS TOXICA': 'MISTRESS OF DIGITAL POISON AND VIRAL CORRUPTION, PRINCESS TOXICA COMMANDS ARMIES OF MALWARE AND SPREADS CHAOS THROUGHOUT CYBERSPACE.',
+            
+            'GENERAL COSMOS!!!!': 'SUPREME COMMANDER OF THE GALACTIC DIGITAL FORCES, GENERAL COSMOS COORDINATES BATTLES ACROSS MULTIPLE DIMENSIONS AND PARALLEL NETWORKS.',
+            
+            'THE LIVING DREADNAUGHT': 'A MASSIVE CYBERNETIC WARSHIP GIVEN CONSCIOUSNESS, THE LIVING DREADNAUGHT PATROLS THE OUTER REACHES OF THE DIGITAL UNIVERSE.',
+            
+            'RICK THE SUPER SPORE': 'MICROSCOPIC YET MIGHTY, RICK THE SUPER SPORE CAN REPLICATE INFINITELY AND SPREAD ACROSS NETWORKS AT THE SPEED OF LIGHT.',
+            
+            'PRINCE XALTOR, THE GILDED ONE': 'HEIR TO THE GOLDEN SECTORS, PRINCE XALTOR POSSESSES THE MIDAS TOUCH OF THE DIGITAL REALM - EVERYTHING HE TOUCHES BECOMES PREMIUM CONTENT.'
+        };
+
         // Bookmark code database - ADD YOUR 24 CODES AND IMAGES HERE
         const bookmarkDatabase = {
             '234032': { image: 'King Bob.png', title: 'KING BOB, THE DESTROYER', hasGame: true, gameFile: 'KingBobGame.html' },
@@ -738,10 +791,7 @@
             '990210': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Dreadnaught.png', title: 'THE LIVING DREADNAUGHT' },
             '349023': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Rick.png', title: 'RICK THE SUPER SPORE' },
             '000000': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Xaltor.png', title: 'PRINCE XALTOR, THE GILDED ONE' },
-            // Add your remaining 16 codes here...
-            // 'CODE09': { image: 'images/image9.jpg', title: 'Your Title' },
-            // 'CODE10': { image: 'images/image10.jpg', title: 'Your Title' },
-            // etc...
+            // Add your remaining codes here...
         };
 
         // Get input elements
@@ -752,7 +802,7 @@
         const gameButton = document.getElementById('game-button');
         const learnMoreButton = document.getElementById('learn-more-button');
         const errorMessage = document.getElementById('error-message');
-        const characterInfo = document.getElementById('character-info');
+        const characterInfoPanel = document.getElementById('character-info');
         const infoTitle = document.getElementById('info-title');
         const infoText = document.getElementById('info-text');
 
@@ -763,13 +813,15 @@
         // Function to show character info
         function showCharacterInfo() {
             infoTitle.textContent = currentCharacterTitle;
-            infoText.textContent = '...'; // You can replace this with actual character info
-            characterInfo.classList.add('show');
+            // Get the character description from the characterInfo database
+            const description = characterInfo[currentCharacterTitle] || 'NO INFORMATION AVAILABLE FOR THIS CHARACTER. THEIR STORY REMAINS A MYSTERY IN THE DIGITAL REALM.';
+            infoText.textContent = description;
+            characterInfoPanel.classList.add('show');
         }
 
         // Function to hide character info and return to character image
         function hideCharacterInfo() {
-            characterInfo.classList.remove('show');
+            characterInfoPanel.classList.remove('show');
         }
 
         // Function to launch the current game
@@ -863,7 +915,7 @@
         // Escape key to exit fullscreen or character info
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                if (characterInfo.classList.contains('show')) {
+                if (characterInfoPanel.classList.contains('show')) {
                     hideCharacterInfo();
                 } else if (fullscreenOverlay.classList.contains('show')) {
                     hideFullscreen();
