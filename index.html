@@ -408,8 +408,8 @@
         <img class="fullscreen-image" id="fullscreen-image" src="" alt="">
         <div class="fullscreen-title" id="fullscreen-title"></div>
         
-        <!-- Game button - only shown for special code 420690 -->
-        <button class="game-button" id="game-button" style="display: none;" onclick="launchGame()">
+        <!-- Game button - only shown for codes with games -->
+        <button class="game-button" id="game-button" style="display: none;" onclick="launchCurrentGame()">
             PLAY ARCADE GAME
         </button>
         
@@ -419,9 +419,9 @@
     <script>
         // Bookmark code database - ADD YOUR 24 CODES AND IMAGES HERE
         const bookmarkDatabase = {
-            '234032': { image: 'King Bob.png', title: 'KING BOB, THE DESTROYER' },
+            '234032': { image: 'King Bob.png', title: 'KING BOB, THE DESTROYER', hasGame: true, gameFile: 'KingBobGame.html' },
             '345802': { image: 'Ambassador Octo.png', title: 'THE WISE AMBASSADOR OCTO' },
-            '420690': { image: 'XC69420.png', title: 'XC-69420, THE PERFECT ASSASSIN', hasGame: true },
+            '420690': { image: 'XC69420.png', title: 'XC-69420, THE PERFECT ASSASSIN', hasGame: true, gameFile: 'XCGame.html' },
             '543792': { image: 'StrongArm.png', title: 'COMMANDER STRONGARM, RUTHLESS WARRIOR' },
             '564894': { image: 'Princess Witch.png', title: 'THE ENIGMATIC PRINCESS WITCH' },
             'SWORD1': { image: 'images/sword1.jpg', title: 'Legendary Blade' },
@@ -441,9 +441,19 @@
         const gameButton = document.getElementById('game-button');
         const errorMessage = document.getElementById('error-message');
 
+        // Store current game file for launching
+        let currentGameFile = '';
+
+        // Function to launch the current game
+        function launchCurrentGame() {
+            if (currentGameFile) {
+                launchGame(currentGameFile);
+            }
+        }
+
         // Function to launch the arcade game
-        function launchGame() {
-            window.open('XCGame.html', '_blank');
+        function launchGame(gameFile = 'XCGame.html') {
+            window.open(gameFile, '_blank');
         }
 
         // Function to show bookmark in fullscreen
@@ -459,11 +469,13 @@
                 fullscreenImage.alt = bookmark.title;
                 fullscreenTitle.textContent = bookmark.title;
                 
-                // Show game button only for special code 420690
+                // Show game button for codes with games
                 if (bookmark.hasGame) {
                     gameButton.style.display = 'block';
+                    currentGameFile = bookmark.gameFile || 'XCGame.html'; // Default to XCGame.html if no gameFile specified
                 } else {
                     gameButton.style.display = 'none';
+                    currentGameFile = '';
                 }
                 
                 // Show fullscreen overlay
@@ -498,6 +510,7 @@
         function hideFullscreen() {
             fullscreenOverlay.classList.remove('show');
             gameButton.style.display = 'none';
+            currentGameFile = '';
             // Reset input styling
             input.style.borderColor = '#00ff00';
             input.style.boxShadow = 'inset 4px 4px 0px #004400';
