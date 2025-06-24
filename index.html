@@ -227,18 +227,18 @@
             to { opacity: 1; }
         }
 
+        /* MAXIMUM SIZE IMAGES - Stretches to fill space regardless of original size */
         .fullscreen-image {
-            max-width: 95%;
-            max-height: 70%;
-            width: auto;
-            height: auto;
+            width: 98vw;
+            height: 90vh;
             border: 6px solid #00ff00;
             box-shadow: 
                 0 0 0 3px #000,
                 0 0 0 9px #008800,
                 0 0 40px rgba(0, 255, 0, 0.8);
             image-rendering: pixelated;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            object-fit: fill;
         }
 
         .fullscreen-title {
@@ -257,13 +257,13 @@
             background: rgba(0, 0, 0, 0.8);
             padding: 15px 25px;
             border: 3px solid #00ff00;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .exit-hint {
             position: absolute;
-            top: 30px;
-            right: 30px;
+            top: 20px;
+            right: 20px;
             font-family: 'Press Start 2P', monospace;
             font-size: 12px;
             color: #ffff00;
@@ -381,14 +381,18 @@
                 line-height: 1.4;
             }
 
+            /* Mobile images fill screen - stretches to max size */
             .fullscreen-image {
-                max-height: 60%;
+                width: 96vw;
+                height: 85vh;
                 border-width: 4px;
+                margin-bottom: 10px;
+                object-fit: fill;
             }
 
             .exit-hint {
-                top: 15px;
-                right: 15px;
+                top: 10px;
+                right: 10px;
                 font-size: 10px;
                 padding: 8px 12px;
                 letter-spacing: 0.5px;
@@ -442,9 +446,16 @@
             .error-message {
                 font-size: 10px;
             }
+
+            /* Maximum size on extra small screens too */
+            .fullscreen-image {
+                width: 94vw;
+                height: 80vh;
+                object-fit: fill;
+            }
         }
 
-        /* Very wide screens */
+        /* Very wide screens - MASSIVE IMAGES */
         @media (min-width: 1200px) {
             .title {
                 font-size: 3.5rem;
@@ -464,6 +475,13 @@
             .input-label {
                 font-size: 14px;
                 margin-bottom: 25px;
+            }
+
+            /* On large screens, images fill almost entire screen */
+            .fullscreen-image {
+                width: 99vw;
+                height: 95vh;
+                object-fit: fill;
             }
         }
     </style>
@@ -685,7 +703,7 @@
         input.addEventListener('blur', function() {
             this.style.borderColor = '#00ff00';
             this.style.boxShadow = 'inset 4px 4px 0px #004400';
-        });
+        }); 
         
         input.addEventListener('input', function() {
             // Hide error when typing
