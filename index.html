@@ -341,33 +341,13 @@
         @media (max-width: 768px) {
             .container {
                 padding: 15px;
-                justify-content: flex-start;
-                padding-top: 10vh;
+                justify-content: center;
+                padding-top: 5vh;
             }
 
-            /* Make title MUCH bigger on mobile - same size as input */
+            /* Hide title completely on mobile */
             .title {
-                font-size: 14px;
-                margin-bottom: 3rem;
-                letter-spacing: 1px;
-                line-height: 1.6;
-                text-shadow: 
-                    3px 0px 0px #008800,
-                    0px 3px 0px #008800,
-                    3px 3px 0px #004400,
-                    6px 6px 0px #002200;
-            }
-
-            .title::before {
-                text-shadow: 
-                    -2px -2px 0px #000,
-                    2px -2px 0px #000,
-                    -2px 2px 0px #000,
-                    2px 2px 0px #000,
-                    -3px -3px 0px #000,
-                    3px -3px 0px #000,
-                    -3px 3px 0px #000,
-                    3px 3px 0px #000;
+                display: none;
             }
             
             .input-section {
@@ -425,13 +405,12 @@
         @media (max-width: 480px) {
             .container {
                 padding: 10px;
-                padding-top: 8vh;
+                padding-top: 5vh;
             }
 
+            /* Keep title hidden on extra small screens too */
             .title {
-                font-size: 12px;
-                margin-bottom: 2.5rem;
-                letter-spacing: 0.5px;
+                display: none;
             }
 
             .input-section {
