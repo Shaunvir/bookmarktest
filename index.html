@@ -281,7 +281,7 @@
         }
 
         /* Game button styling */
-        .game-button {
+        .game-button, .learn-more-button {
             font-family: 'Press Start 2P', monospace;
             font-size: 14px;
             background: linear-gradient(135deg, #ff0080, #ff00ff);
@@ -302,9 +302,25 @@
                 1px -1px 0px #000,
                 -1px 1px 0px #000,
                 1px 1px 0px #000;
+            margin: 5px;
         }
 
-        .game-button:hover {
+        .learn-more-button {
+            background: linear-gradient(135deg, #00ff80, #00ffff);
+            border: 4px solid #00ffff;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #008040,
+                0 0 20px rgba(0, 255, 255, 0.8);
+            text-shadow: 
+                2px 2px 0px #008040,
+                -1px -1px 0px #000,
+                1px -1px 0px #000,
+                -1px 1px 0px #000,
+                1px 1px 0px #000;
+        }
+
+        .game-button:hover, .learn-more-button:hover {
             background: linear-gradient(135deg, #ff00aa, #ff44ff);
             box-shadow: 
                 0 0 0 3px #000,
@@ -313,14 +329,120 @@
             transform: scale(1.05);
         }
 
-        .game-button:active {
+        .learn-more-button:hover {
+            background: linear-gradient(135deg, #00ffaa, #44ffff);
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #00aa55,
+                0 0 30px rgba(0, 255, 255, 1);
+        }
+
+        .game-button:active, .learn-more-button:active {
             transform: scale(0.95);
             background: linear-gradient(135deg, #cc0066, #cc00cc);
         }
 
-        /* Hide the small image display */
-        .image-display {
+        .learn-more-button:active {
+            background: linear-gradient(135deg, #00cc66, #00cccc);
+        }
+
+        /* Character info panel */
+        .character-info {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 3000;
             display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .character-info.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .info-panel {
+            background: #000;
+            border: 6px solid #00ffff;
+            padding: 30px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 80vh;
+            overflow-y: auto;
+            text-align: center;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 9px #008888,
+                0 0 40px rgba(0, 255, 255, 0.8);
+        }
+
+        .info-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 18px;
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 
+                3px 3px 0px #008888,
+                -2px -2px 0px #000,
+                2px -2px 0px #000,
+                -2px 2px 0px #000,
+                2px 2px 0px #000;
+            margin-bottom: 25px;
+            line-height: 1.4;
+        }
+
+        .info-text {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: #ffffff;
+            line-height: 2;
+            letter-spacing: 1px;
+            text-shadow: 
+                1px 1px 0px #000,
+                -1px -1px 0px #000,
+                1px -1px 0px #000,
+                -1px 1px 0px #000;
+            margin-bottom: 25px;
+        }
+
+        .back-button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            background: linear-gradient(135deg, #ffff00, #ff8800);
+            border: 4px solid #ffff00;
+            color: #000000;
+            padding: 14px 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #888800,
+                0 0 20px rgba(255, 255, 0, 0.8);
+            transition: all 0.2s ease;
+            text-shadow: none;
+            font-weight: bold;
+        }
+
+        .back-button:hover {
+            background: linear-gradient(135deg, #ffff44, #ffaa44);
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #aaaa00,
+                0 0 30px rgba(255, 255, 0, 1);
+            transform: scale(1.05);
+        }
+
+        .back-button:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #cccc00, #cc6600);
         }
 
         .error-message {
@@ -368,10 +490,32 @@
                 letter-spacing: 1px;
             }
 
-            .game-button {
+            .game-button, .learn-more-button {
                 font-size: 12px;
                 padding: 14px 20px;
                 letter-spacing: 1px;
+            }
+
+            .back-button {
+                font-size: 10px;
+                padding: 12px 16px;
+                letter-spacing: 1px;
+            }
+
+            .info-title {
+                font-size: 14px;
+                letter-spacing: 1px;
+                line-height: 1.3;
+            }
+
+            .info-text {
+                font-size: 10px;
+                line-height: 1.8;
+            }
+
+            .info-panel {
+                padding: 20px;
+                border-width: 4px;
             }
 
             .fullscreen-title {
@@ -433,9 +577,23 @@
                 margin-bottom: 15px;
             }
 
-            .game-button {
+            .game-button, .learn-more-button {
                 font-size: 10px;
                 padding: 12px 16px;
+            }
+
+            .back-button {
+                font-size: 9px;
+                padding: 10px 14px;
+            }
+
+            .info-title {
+                font-size: 12px;
+            }
+
+            .info-text {
+                font-size: 9px;
+                line-height: 1.6;
             }
 
             .fullscreen-title {
@@ -523,12 +681,31 @@
         <img class="fullscreen-image" id="fullscreen-image" src="" alt="">
         <div class="fullscreen-title" id="fullscreen-title"></div>
         
-        <!-- Game button - only shown for codes with games -->
-        <button class="game-button" id="game-button" style="display: none;" onclick="launchCurrentGame()">
-            PLAY ARCADE GAME
-        </button>
+        <!-- Button container for proper layout -->
+        <div class="button-container">
+            <!-- Game button - only shown for codes with games -->
+            <button class="game-button" id="game-button" style="display: none;" onclick="launchCurrentGame()">
+                PLAY ARCADE GAME
+            </button>
+            
+            <!-- Learn More button - shown for all characters -->
+            <button class="learn-more-button" id="learn-more-button" onclick="showCharacterInfo()">
+                LEARN MORE
+            </button>
+        </div>
         
         <div class="exit-hint">CLICK TO EXIT</div>
+    </div>
+
+    <!-- Character info panel -->
+    <div class="character-info" id="character-info">
+        <div class="info-panel">
+            <div class="info-title" id="info-title"></div>
+            <div class="info-text" id="info-text">...</div>
+            <button class="back-button" onclick="hideCharacterInfo()">
+                BACK TO CHARACTER
+            </button>
+        </div>
     </div>
 
     <script>
@@ -571,10 +748,27 @@
         const fullscreenImage = document.getElementById('fullscreen-image');
         const fullscreenTitle = document.getElementById('fullscreen-title');
         const gameButton = document.getElementById('game-button');
+        const learnMoreButton = document.getElementById('learn-more-button');
         const errorMessage = document.getElementById('error-message');
+        const characterInfo = document.getElementById('character-info');
+        const infoTitle = document.getElementById('info-title');
+        const infoText = document.getElementById('info-text');
 
-        // Store current game file for launching
+        // Store current game file and character info
         let currentGameFile = '';
+        let currentCharacterTitle = '';
+
+        // Function to show character info
+        function showCharacterInfo() {
+            infoTitle.textContent = currentCharacterTitle;
+            infoText.textContent = '...'; // You can replace this with actual character info
+            characterInfo.classList.add('show');
+        }
+
+        // Function to hide character info and return to character image
+        function hideCharacterInfo() {
+            characterInfo.classList.remove('show');
+        }
 
         // Function to launch the current game
         function launchCurrentGame() {
@@ -600,6 +794,7 @@
                 fullscreenImage.src = bookmark.image;
                 fullscreenImage.alt = bookmark.title;
                 fullscreenTitle.textContent = bookmark.title;
+                currentCharacterTitle = bookmark.title;
                 
                 // Show game button for codes with games
                 if (bookmark.hasGame) {
@@ -609,6 +804,9 @@
                     gameButton.style.display = 'none';
                     currentGameFile = '';
                 }
+                
+                // Always show learn more button
+                learnMoreButton.style.display = 'block';
                 
                 // Show fullscreen overlay
                 fullscreenOverlay.classList.add('show');
@@ -642,7 +840,9 @@
         function hideFullscreen() {
             fullscreenOverlay.classList.remove('show');
             gameButton.style.display = 'none';
+            learnMoreButton.style.display = 'none';
             currentGameFile = '';
+            currentCharacterTitle = '';
             // Reset input styling
             input.style.borderColor = '#00ff00';
             input.style.boxShadow = 'inset 4px 4px 0px #004400';
@@ -658,10 +858,14 @@
         // Click on exit hint to close
         document.querySelector('.exit-hint').addEventListener('click', hideFullscreen);
 
-        // Escape key to exit fullscreen
+        // Escape key to exit fullscreen or character info
         document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && fullscreenOverlay.classList.contains('show')) {
-                hideFullscreen();
+            if (e.key === 'Escape') {
+                if (characterInfo.classList.contains('show')) {
+                    hideCharacterInfo();
+                } else if (fullscreenOverlay.classList.contains('show')) {
+                    hideFullscreen();
+                }
             }
         });
 
