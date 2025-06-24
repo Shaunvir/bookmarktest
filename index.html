@@ -215,6 +215,7 @@
 
         .fullscreen-overlay.show {
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
             animation: fadeIn 0.3s ease;
@@ -227,7 +228,7 @@
 
         .fullscreen-image {
             max-width: 95%;
-            max-height: 95%;
+            max-height: 70%;
             width: auto;
             height: auto;
             border: 6px solid #00ff00;
@@ -236,13 +237,10 @@
                 0 0 0 9px #008800,
                 0 0 40px rgba(0, 255, 0, 0.8);
             image-rendering: pixelated;
+            margin-bottom: 20px;
         }
 
         .fullscreen-title {
-            position: absolute;
-            bottom: 50px;
-            left: 50%;
-            transform: translateX(-50%);
             font-family: 'Press Start 2P', monospace;
             font-size: 16px;
             color: #00ff00;
@@ -258,6 +256,7 @@
             background: rgba(0, 0, 0, 0.8);
             padding: 15px 25px;
             border: 3px solid #00ff00;
+            margin-bottom: 20px;
         }
 
         .exit-hint {
@@ -278,6 +277,44 @@
             background: rgba(0, 0, 0, 0.7);
             padding: 10px 15px;
             border: 2px solid #ffff00;
+        }
+
+        /* Game button styling */
+        .game-button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ff0080, #ff00ff);
+            border: 4px solid #ff00ff;
+            color: #ffffff;
+            padding: 16px 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #800040,
+                0 0 20px rgba(255, 0, 255, 0.8);
+            transition: all 0.2s ease;
+            text-shadow: 
+                2px 2px 0px #800040,
+                -1px -1px 0px #000,
+                1px -1px 0px #000,
+                -1px 1px 0px #000,
+                1px 1px 0px #000;
+        }
+
+        .game-button:hover {
+            background: linear-gradient(135deg, #ff00aa, #ff44ff);
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #aa0055,
+                0 0 30px rgba(255, 0, 255, 1);
+            transform: scale(1.05);
+        }
+
+        .game-button:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #cc0066, #cc00cc);
         }
 
         /* Hide the small image display */
@@ -321,6 +358,16 @@
             .input-label {
                 font-size: 10px;
             }
+
+            .game-button {
+                font-size: 12px;
+                padding: 14px 20px;
+            }
+
+            .fullscreen-title {
+                font-size: 14px;
+                padding: 12px 20px;
+            }
         }
     </style>
 </head>
@@ -360,6 +407,12 @@
     <div class="fullscreen-overlay" id="fullscreen-overlay">
         <img class="fullscreen-image" id="fullscreen-image" src="" alt="">
         <div class="fullscreen-title" id="fullscreen-title"></div>
+        
+        <!-- Game button - only shown for special code 420690 -->
+        <button class="game-button" id="game-button" style="display: none;" onclick="launchGame()">
+            PLAY ARCADE GAME
+        </button>
+        
         <div class="exit-hint">CLICK TO EXIT</div>
     </div>
 
@@ -368,7 +421,7 @@
         const bookmarkDatabase = {
             '234032': { image: 'King Bob.png', title: 'KING BOB, THE DESTROYER' },
             '345802': { image: 'Ambassador Octo.png', title: 'THE WISE AMBASSADOR OCTO' },
-            '420690': { image: 'XC69420.png', title: 'XC-69420, THE PERFECT ASSASSIN' },
+            '420690': { image: 'XC69420.png', title: 'XC-69420, THE PERFECT ASSASSIN', hasGame: true },
             '543792': { image: 'StrongArm.png', title: 'COMMANDER STRONGARM, RUTHLESS WARRIOR' },
             '564894': { image: 'Princess Witch.png', title: 'THE ENIGMATIC PRINCESS WITCH' },
             'SWORD1': { image: 'images/sword1.jpg', title: 'Legendary Blade' },
@@ -385,7 +438,13 @@
         const fullscreenOverlay = document.getElementById('fullscreen-overlay');
         const fullscreenImage = document.getElementById('fullscreen-image');
         const fullscreenTitle = document.getElementById('fullscreen-title');
+        const gameButton = document.getElementById('game-button');
         const errorMessage = document.getElementById('error-message');
+
+        // Function to launch the arcade game
+        function launchGame() {
+            window.open('XCGame.html', '_blank');
+        }
 
         // Function to show bookmark in fullscreen
         function showBookmark(code) {
@@ -399,6 +458,13 @@
                 fullscreenImage.src = bookmark.image;
                 fullscreenImage.alt = bookmark.title;
                 fullscreenTitle.textContent = bookmark.title;
+                
+                // Show game button only for special code 420690
+                if (bookmark.hasGame) {
+                    gameButton.style.display = 'block';
+                } else {
+                    gameButton.style.display = 'none';
+                }
                 
                 // Show fullscreen overlay
                 fullscreenOverlay.classList.add('show');
@@ -431,13 +497,21 @@
         // Function to hide fullscreen image
         function hideFullscreen() {
             fullscreenOverlay.classList.remove('show');
+            gameButton.style.display = 'none';
             // Reset input styling
             input.style.borderColor = '#00ff00';
             input.style.boxShadow = 'inset 4px 4px 0px #004400';
         }
 
-        // Click anywhere to exit fullscreen
-        fullscreenOverlay.addEventListener('click', hideFullscreen);
+        // Click on overlay background to exit (but not on the button or image)
+        fullscreenOverlay.addEventListener('click', function(e) {
+            if (e.target === fullscreenOverlay) {
+                hideFullscreen();
+            }
+        });
+
+        // Click on exit hint to close
+        document.querySelector('.exit-hint').addEventListener('click', hideFullscreen);
 
         // Escape key to exit fullscreen
         document.addEventListener('keydown', function(e) {
