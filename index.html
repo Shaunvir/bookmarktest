@@ -201,7 +201,7 @@
             z-index: 1000;
         }
 
-        /* Fullscreen image overlay */
+        /* Fullscreen image overlay - MUCH LARGER IMAGES */
         .fullscreen-overlay {
             position: fixed;
             top: 0;
@@ -227,9 +227,10 @@
             to { opacity: 1; }
         }
 
+        /* MUCH LARGER IMAGES - Takes up most of the screen */
         .fullscreen-image {
-            max-width: 95%;
-            max-height: 70%;
+            max-width: 90%;
+            max-height: 85%;
             width: auto;
             height: auto;
             border: 6px solid #00ff00;
@@ -238,12 +239,13 @@
                 0 0 0 9px #008800,
                 0 0 40px rgba(0, 255, 0, 0.8);
             image-rendering: pixelated;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            object-fit: contain;
         }
 
         .fullscreen-title {
             font-family: 'Press Start 2P', monospace;
-            font-size: 16px;
+            font-size: 14px;
             color: #00ff00;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -255,17 +257,18 @@
                 2px 2px 0px #000;
             text-align: center;
             background: rgba(0, 0, 0, 0.8);
-            padding: 15px 25px;
+            padding: 12px 20px;
             border: 3px solid #00ff00;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
+            line-height: 1.3;
         }
 
         .exit-hint {
             position: absolute;
-            top: 30px;
-            right: 30px;
+            top: 20px;
+            right: 20px;
             font-family: 'Press Start 2P', monospace;
-            font-size: 12px;
+            font-size: 10px;
             color: #ffff00;
             text-transform: uppercase;
             letter-spacing: 1px;
@@ -276,20 +279,30 @@
                 -1px 1px 0px #000,
                 1px 1px 0px #000;
             background: rgba(0, 0, 0, 0.7);
-            padding: 10px 15px;
+            padding: 8px 12px;
             border: 2px solid #ffff00;
+            z-index: 3000;
+        }
+
+        /* Button container for spacing */
+        .button-container {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         /* Game button styling */
         .game-button {
             font-family: 'Press Start 2P', monospace;
-            font-size: 14px;
+            font-size: 12px;
             background: linear-gradient(135deg, #ff0080, #ff00ff);
             border: 4px solid #ff00ff;
             color: #ffffff;
-            padding: 16px 24px;
+            padding: 14px 20px;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             cursor: pointer;
             box-shadow: 
                 0 0 0 3px #000,
@@ -316,6 +329,131 @@
         .game-button:active {
             transform: scale(0.95);
             background: linear-gradient(135deg, #cc0066, #cc00cc);
+        }
+
+        /* Learn More button styling */
+        .learn-button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            background: linear-gradient(135deg, #0080ff, #00ffff);
+            border: 4px solid #00ffff;
+            color: #ffffff;
+            padding: 14px 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #004080,
+                0 0 20px rgba(0, 255, 255, 0.8);
+            transition: all 0.2s ease;
+            text-shadow: 
+                2px 2px 0px #004080,
+                -1px -1px 0px #000,
+                1px -1px 0px #000,
+                -1px 1px 0px #000,
+                1px 1px 0px #000;
+        }
+
+        .learn-button:hover {
+            background: linear-gradient(135deg, #00aaff, #44ffff);
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #0055aa,
+                0 0 30px rgba(0, 255, 255, 1);
+            transform: scale(1.05);
+        }
+
+        .learn-button:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #0066cc, #00cccc);
+        }
+
+        /* Character Facts Modal */
+        .facts-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 3500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .facts-modal.show {
+            display: flex;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .facts-content {
+            background: #000;
+            border: 6px solid #00ffff;
+            padding: 25px;
+            max-width: 600px;
+            max-height: 80%;
+            overflow-y: auto;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 9px #008888,
+                0 0 50px rgba(0, 255, 255, 0.8);
+        }
+
+        .facts-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: #00ffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-align: center;
+            margin-bottom: 20px;
+            text-shadow: 
+                2px 2px 0px #008888,
+                -1px -1px 0px #000,
+                1px -1px 0px #000,
+                -1px 1px 0px #000,
+                1px 1px 0px #000;
+            line-height: 1.4;
+        }
+
+        .facts-text {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            color: #ffffff;
+            line-height: 1.6;
+            text-align: left;
+            margin-bottom: 20px;
+            text-shadow: 
+                1px 1px 0px #000;
+        }
+
+        .facts-close {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 10px;
+            background: linear-gradient(135deg, #ff4400, #ff8800);
+            border: 3px solid #ff8800;
+            color: #ffffff;
+            padding: 10px 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 
+                0 0 0 2px #000,
+                0 0 0 5px #884400;
+            transition: all 0.2s ease;
+            text-shadow: 
+                1px 1px 0px #884400,
+                -1px -1px 0px #000;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .facts-close:hover {
+            background: linear-gradient(135deg, #ff6600, #ffaa00);
+            transform: scale(1.05);
         }
 
         /* Hide the small image display */
@@ -368,30 +506,59 @@
                 letter-spacing: 1px;
             }
 
-            .game-button {
-                font-size: 12px;
-                padding: 14px 20px;
-                letter-spacing: 1px;
+            /* Mobile image takes up even more space */
+            .fullscreen-image {
+                max-width: 95%;
+                max-height: 75%;
+                border-width: 4px;
             }
 
             .fullscreen-title {
-                font-size: 12px;
-                padding: 12px 20px;
+                font-size: 10px;
+                padding: 10px 15px;
                 letter-spacing: 1px;
                 line-height: 1.4;
             }
 
-            .fullscreen-image {
-                max-height: 60%;
-                border-width: 4px;
+            .button-container {
+                gap: 10px;
+            }
+
+            .game-button, .learn-button {
+                font-size: 9px;
+                padding: 10px 14px;
+                letter-spacing: 0.5px;
             }
 
             .exit-hint {
-                top: 15px;
-                right: 15px;
-                font-size: 10px;
-                padding: 8px 12px;
+                top: 10px;
+                right: 10px;
+                font-size: 8px;
+                padding: 6px 10px;
                 letter-spacing: 0.5px;
+            }
+
+            .facts-content {
+                padding: 20px;
+                margin: 10px;
+                border-width: 4px;
+                max-width: 95%;
+            }
+
+            .facts-title {
+                font-size: 10px;
+                margin-bottom: 15px;
+            }
+
+            .facts-text {
+                font-size: 8px;
+                line-height: 1.5;
+                margin-bottom: 15px;
+            }
+
+            .facts-close {
+                font-size: 8px;
+                padding: 8px 12px;
             }
 
             /* Reduce pixel block count on mobile for performance */
@@ -429,14 +596,14 @@
                 margin-bottom: 15px;
             }
 
-            .game-button {
-                font-size: 10px;
-                padding: 12px 16px;
+            .game-button, .learn-button {
+                font-size: 8px;
+                padding: 8px 12px;
             }
 
             .fullscreen-title {
-                font-size: 10px;
-                padding: 10px 16px;
+                font-size: 9px;
+                padding: 8px 12px;
             }
 
             .error-message {
@@ -464,6 +631,16 @@
             .input-label {
                 font-size: 14px;
                 margin-bottom: 25px;
+            }
+
+            .fullscreen-image {
+                max-width: 85%;
+                max-height: 80%;
+            }
+
+            .game-button, .learn-button {
+                font-size: 14px;
+                padding: 16px 24px;
             }
         }
     </style>
@@ -505,217 +682,159 @@
         <img class="fullscreen-image" id="fullscreen-image" src="" alt="">
         <div class="fullscreen-title" id="fullscreen-title"></div>
         
-        <!-- Game button - only shown for codes with games -->
-        <button class="game-button" id="game-button" style="display: none;" onclick="launchCurrentGame()">
-            PLAY ARCADE GAME
-        </button>
+        <!-- Button container -->
+        <div class="button-container">
+            <!-- Learn More button - always shown -->
+            <button class="learn-button" id="learn-button" onclick="showCharacterFacts()">
+                LEARN MORE
+            </button>
+            
+            <!-- Game button - only shown for codes with games -->
+            <button class="game-button" id="game-button" style="display: none;" onclick="launchCurrentGame()">
+                PLAY ARCADE GAME
+            </button>
+        </div>
         
         <div class="exit-hint">CLICK TO EXIT</div>
     </div>
 
+    <!-- Character Facts Modal -->
+    <div class="facts-modal" id="facts-modal">
+        <div class="facts-content">
+            <div class="facts-title" id="facts-title"></div>
+            <div class="facts-text" id="facts-text"></div>
+            <button class="facts-close" onclick="hideCharacterFacts()">CLOSE</button>
+        </div>
+    </div>
+
     <script>
-        // Bookmark code database - ADD YOUR 24 CODES AND IMAGES HERE
+        // Bookmark code database with character facts - ADD YOUR CHARACTER FACTS HERE
         const bookmarkDatabase = {
-            '234032': { image: 'King Bob.png', title: 'KING BOB, THE DESTROYER', hasGame: true, gameFile: 'KingBobGame.html' },
-            '345802': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Ambassador Octo.png', title: 'THE WISE AMBASSADOR OCTO', hasGame: true, gameFile: 'OctoGame.html' },
-            '420690': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/XC69420.gif.gif', title: 'XC-69420, THE PERFECT ASSASSIN', hasGame: true, gameFile: 'XCGame.html' },
-            '543792': { image: 'StrongArm.png', title: 'COMMANDER STRONGARM, RUTHLESS WARRIOR' },
-            '564894': { image: 'Princess Witch.png', title: 'THE ENIGMATIC PRINCESS WITCH' },
-            '234042': { image: 'Rex.png', title: 'TAJ, THE DEFENDER', hasGame: true, gameFile: 'RexGame.html' },
-            '582700': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Serra.png', title: 'SERRA, THE SUN QUEEN' },
-            '192750': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Fire and Lee.png', title: 'FIRE AND LEE' },
-            '485729': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/DJ Knowledge.png', title: 'DJ KNOWLEDGE, THE GROOVY ONE' },
-            '867239': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/President Cratt.png', title: 'PRESIDENT CRATT, THE STOIC' },
-            '435230': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Piscatorius.png', title: 'LORD FINNEGAN III' },
-            '435232': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Joban.png', title: 'JOBAN, THE PROFESSOR' },
-            '564894': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Princess Witch.png', title: 'THE ENGIMATIC PRINCESS WITCH' },
-            '765829': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Vanaya.png', title: '@MISS.VANAYA' },
-            '672890': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/TankAndBoy.png', title: 'TANK AND BOY, EPIC DUO' },
-            '204920': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Prism.png', title: 'PRISM KNIGHT FROM THE UNDERGROUND' },
-            '984322': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/KelEl.png', title: 'PRINCESS ZARA, THE FORGOTTEN' },
-            '192750': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/El Kel.png', title: 'EL KEL, THE DEADLY ONE' },
-            '827401': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Ferdinand (2).png', title: 'FERDINAND THE BRAVE' },
-            '120394': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Guardian Frost.png', title: 'GUARDIAN FROST' },
-            '932381': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Toxica.png', title: 'PRINCESS TOXICA' },
-            '439200': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/General Cosmos.png', title: 'GENERAL COSMOS!!!!' },
-            '990210': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Dreadnaught.png', title: 'THE LIVING DREADNAUGHT' },
-            '349023': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Rick.png', title: 'RICK THE SUPER SPORE' },
-            '000000': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Xaltor.png', title: 'PRINCE XALTOR, THE GILDED ONE' },
-            // Add your remaining 16 codes here...
-            // 'CODE09': { image: 'images/image9.jpg', title: 'Your Title' },
-            // 'CODE10': { image: 'images/image10.jpg', title: 'Your Title' },
-            // etc...
-        };
-
-        // Get input elements
-        const input = document.getElementById('code-input');
-        const fullscreenOverlay = document.getElementById('fullscreen-overlay');
-        const fullscreenImage = document.getElementById('fullscreen-image');
-        const fullscreenTitle = document.getElementById('fullscreen-title');
-        const gameButton = document.getElementById('game-button');
-        const errorMessage = document.getElementById('error-message');
-
-        // Store current game file for launching
-        let currentGameFile = '';
-
-        // Function to launch the current game
-        function launchCurrentGame() {
-            if (currentGameFile) {
-                launchGame(currentGameFile);
+            '234032': { 
+                image: 'King Bob.png', 
+                title: 'KING BOB, THE DESTROYER', 
+                hasGame: true, 
+                gameFile: 'KingBobGame.html',
+                facts: 'King Bob earned his fearsome title after single-handedly conquering the Crystal Kingdoms in just three days. Born with the rare ability to command shadows, he can summon an army of darkness at will. Despite his destructive reputation, Bob has a secret weakness for strawberry ice cream and feeds stray cats in his fortress. His legendary weapon, the Void Hammer, can shatter entire mountains. Few know that his crown was forged from the tears of a dying star, granting him immortality and incredible power.'
+            },
+            '345802': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Ambassador Octo.png', 
+                title: 'THE WISE AMBASSADOR OCTO', 
+                hasGame: true, 
+                gameFile: 'OctoGame.html',
+                facts: 'Ambassador Octo is the eldest diplomat in the Galactic Council, having negotiated peace treaties for over 500 years. Each of his eight arms possesses a different magical ability: healing, time manipulation, teleportation, mind reading, elemental control, invisibility, super strength, and prophecy. Born in the deepest ocean trenches of Aquarius Prime, he can survive in any environment. His wisdom comes from absorbing the memories of ancient sea creatures, making him a living library of forgotten knowledge and secrets.'
+            },
+            '420690': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/XC69420.gif.gif', 
+                title: 'XC-69420, THE PERFECT ASSASSIN', 
+                hasGame: true, 
+                gameFile: 'XCGame.html',
+                facts: 'XC-69420 is a cybernetic assassin created by the Shadow Corporation, designed to be the ultimate weapon. His body is 90% mechanical, granting him superhuman speed, strength, and precision. The red glow in his visor can see through any disguise and detect lies instantly. Despite being programmed for destruction, he developed emotions after saving a child during a mission. Now he hunts down his former creators, using his deadly skills to protect the innocent. His energy blade can cut through any known material in the universe.'
+            },
+            '543792': { 
+                image: 'StrongArm.png', 
+                title: 'COMMANDER STRONGARM, RUTHLESS WARRIOR',
+                facts: 'Commander Strongarm leads the elite Iron Battalion, an unstoppable force of mechanical warriors. His massive metallic arms can crush steel and his tactical genius has never lost a battle. Originally human, he volunteered for experimental cybernetic enhancement after losing his family to alien invaders. His armor is powered by a miniature nuclear reactor in his chest. Despite his ruthless reputation on the battlefield, he personally writes letters to the families of fallen soldiers. His greatest fear is becoming too machine-like and losing his humanity completely.'
+            },
+            '564894': { 
+                image: 'Princess Witch.png', 
+                title: 'THE ENIGMATIC PRINCESS WITCH',
+                facts: 'Princess Witch rules the Mystical Realm of Shadows, where magic and technology blend seamlessly. Born with the rare gift of techno-magic, she can cast spells through digital interfaces and hack reality itself. Her crystal staff contains the souls of a thousand defeated enemies, granting her immense power. She appears young but is actually centuries old, having discovered the secret of eternal youth through forbidden magic. Her greatest achievement was creating a spell that protects Earth from interdimensional invaders, though few know of her sacrifice.'
+            },
+            '234042': { 
+                image: 'Rex.png', 
+                title: 'TAJ, THE DEFENDER', 
+                hasGame: true, 
+                gameFile: 'RexGame.html',
+                facts: 'Taj earned his title as The Defender after single-handedly protecting the Last City during the Great Siege. His impenetrable armor is forged from meteorite metal and blessed by ancient spirits. Each scar on his armor tells the story of a battle won and lives saved. He has sworn an oath never to retreat from protecting the innocent, even if it costs him his life. His massive shield can deflect energy blasts from starships. Despite his intimidating appearance, he speaks in gentle whispers and rescues wounded animals in his spare time.'
+            },
+            '582700': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Serra.png', 
+                title: 'SERRA, THE SUN QUEEN',
+                facts: 'Serra commands the power of a thousand suns, bringing light to the darkest corners of the galaxy. Her golden armor absorbs solar energy, making her stronger during the day and allowing her to store power for night battles. She was born during a rare solar eclipse on the planet Solaria, inheriting divine fire powers from her celestial lineage. Her greatest feat was reigniting a dying star to save an entire solar system. Despite her godlike powers, she struggles with loneliness, as few can withstand her intense solar radiation for extended periods.'
+            },
+            '192750': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Fire and Lee.png', 
+                title: 'FIRE AND LEE',
+                facts: 'Fire and Lee are legendary twin warriors who share a psychic connection that makes them unbeatable in combat. Fire controls flames and lava, while Lee manipulates ice and snow, creating devastating combination attacks. They were separated at birth and raised by opposing clans, only discovering their brotherhood during an epic duel that lasted three days. Their opposite powers perfectly complement each other, allowing them to create steam clouds for stealth or rapidly change battlefield temperatures. Together, they guard the Elemental Bridge between the Fire and Ice Realms.'
+            },
+            '485729': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/DJ Knowledge.png', 
+                title: 'DJ KNOWLEDGE, THE GROOVY ONE',
+                facts: 'DJ Knowledge discovered that music contains the fundamental frequency of the universe, allowing him to manipulate reality through beats and rhythms. His mystical turntables can open portals to other dimensions and his bass drops can level entire buildings. He learned his cosmic DJ skills from alien mentors in the Groove Nebula, where sound travels faster than light. His music has the power to heal broken hearts, inspire courage in cowards, and bring peace to warring factions. He travels the galaxy spreading joy through his interdimensional concerts and dance battles.'
+            },
+            '867239': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/President Cratt.png', 
+                title: 'PRESIDENT CRATT, THE STOIC',
+                facts: 'President Cratt leads the United Galactic Republic with unwavering determination and logic. His cybernetic brain processes millions of data points per second, allowing him to make perfect decisions for the greater good. He sacrificed his emotions during the Neural Enhancement Procedure to become the ideal leader his people needed. His greatest challenge is connecting with citizens who fear his emotionless efficiency. Despite his stoic nature, he secretly maintains a garden of Earth flowers, the only thing that reminds him of his lost humanity and the peaceful world he fights to create.'
+            },
+            '435230': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Piscatorius.png', 
+                title: 'LORD FINNEGAN III',
+                facts: 'Lord Finnegan III is the sophisticated ruler of the Aquatic Empire, commanding respect through intelligence rather than force. His underwater palace contains the largest library in the known universe, filled with texts from civilizations across the galaxy. He can communicate with all sea life and has formed alliances with ocean creatures on thousands of worlds. His mastery of water magic allows him to create tidal waves or peaceful rain showers at will. Despite his noble status, he personally teaches young merfolk to read and has never missed a bedtime story session.'
+            },
+            '435232': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Joban.png', 
+                title: 'JOBAN, THE PROFESSOR',
+                facts: 'Professor Joban is the galaxy\'s leading expert on interdimensional physics and temporal mechanics. His wild experiments have accidentally created seventeen pocket universes and two time loops. He wears special goggles that let him see through different dimensions simultaneously, though this makes normal conversation quite difficult. His laboratory exists in a space between realities, making it accessible from any point in the universe. Despite causing occasional chaos with his inventions, he has also cured three incurable diseases and invented a device that translates any language instantly.'
+            },
+            '765829': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Vanaya.png', 
+                title: '@MISS.VANAYA',
+                facts: 'Miss Vanaya is the most followed influencer in the digital multiverse, with billions of fans across thousands of worlds. Her social media posts can literally break the internet, causing system-wide crashes that affect entire star systems. She discovered that viral content contains actual magical energy, allowing her to manifest real-world changes through likes and shares. Her selfies can stop wars, and her dance videos have inspired peace treaties. Behind her glamorous online persona, she secretly uses her influence to expose corruption and help endangered species across the galaxy.'
+            },
+            '672890': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/TankAndBoy.png', 
+                title: 'TANK AND BOY, EPIC DUO',
+                facts: 'Tank and Boy are an unlikely partnership between a massive war machine and a scrappy young pilot. Tank is an ancient AI that gained consciousness during the Robot Wars, while Boy is a street-smart orphan who speaks the machine language. Together, they protect frontier worlds from space pirates and alien invasions. Tank\'s armor can withstand direct hits from starship cannons, while Boy\'s quick thinking and hacking skills get them out of impossible situations. Their bond proves that friendship can bridge the gap between organic and artificial life.'
+            },
+            '204920': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Prism.png', 
+                title: 'PRISM KNIGHT FROM THE UNDERGROUND',
+                facts: 'The Prism Knight emerged from the Crystal Caverns beneath New Tokyo, wielding light-based weapons forged from pure rainbow energy. His armor refracts light into devastating laser attacks and defensive barriers. He was once a humble geologist who discovered an ancient crystal that bonded with his soul, transforming him into a guardian of both the surface and underground worlds. His greatest power is the ability to split himself into seven colored versions, each with different abilities. He protects the delicate balance between the light and dark realms.'
+            },
+            '984322': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/KelEl.png', 
+                title: 'PRINCESS ZARA, THE FORGOTTEN',
+                facts: 'Princess Zara was erased from history during a time war, existing only in the memories of those who truly loved her. She wanders through different timelines trying to restore her place in reality while fighting temporal anomalies. Her crown allows her to see all possible futures simultaneously, making her an invaluable ally but also driving her slowly mad. She can phase in and out of existence at will, making her nearly impossible to capture or kill. Her greatest wish is to find the Timeline Key that will restore her kingdom and reunite her with her lost family.'
+            },
+            '192751': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/El Kel.png', 
+                title: 'EL KEL, THE DEADLY ONE',
+                facts: 'El Kel is the most feared assassin in the Crimson Sector, known for never missing a target and never showing mercy. His red cloak is woven from the fibers of a carnivorous plant that feeds on his enemies\' fear. He was trained by the Shadow Monks of Terminus Prime, learning to move like smoke and strike like lightning. His signature weapon is a blade that phases between dimensions, making it impossible to block or parry. Despite his deadly reputation, he follows a strict code of honor and has never harmed an innocent person.'
+            },
+            '827401': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Ferdinand (2).png', 
+                title: 'FERDINAND THE BRAVE',
+                facts: 'Ferdinand the Brave earned his title by charging alone into the Demon Lord\'s fortress to rescue a village of kidnapped children. His enchanted armor grows stronger with each act of courage, and his sword can cut through magical barriers. He was born a simple farm boy but destiny called when he pulled the legendary blade from the Starfall Crater. His horse, Thunder, is actually a shapeshifted dragon who chose to serve Ferdinand after witnessing his pure heart. Together, they travel the realms righting wrongs and protecting the helpless from supernatural threats.'
+            },
+            '120394': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Guardian Frost.png', 
+                title: 'GUARDIAN FROST',
+                facts: 'Guardian Frost protects the Eternal Winter realm where the season spirits rest between cycles. His ice armor never melts and his breath can freeze entire armies in seconds. He was once human but chose to become an eternal guardian to save his homeland from endless volcanic eruptions. His frozen heart beats only once per year, during the winter solstice when his power reaches its peak. Despite his icy exterior, he feels deep compassion for all living things and secretly tends to hibernating animals, ensuring they survive the harsh winters he creates.'
+            },
+            '932381': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Toxica.png', 
+                title: 'PRINCESS TOXICA',
+                facts: 'Princess Toxica rules the Poison Swamps with an iron fist, but her toxic powers are actually a curse she\'s trying to break. Everything she touches wilts and dies, making her desperately lonely despite her royal status. She discovered that her curse weakens when she helps others, so she secretly creates antidotes for rare diseases and neutralizes environmental toxins. Her crown is made from thorns that constantly pierce her skin, reminding her of the pain her powers cause. Her ultimate goal is to find true love\'s kiss, the only thing that can break her curse.'
+            },
+            '439200': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/General Cosmos.png', 
+                title: 'GENERAL COSMOS!!!!',
+                facts: 'General Cosmos commands the Star Fleet, the most powerful military force in the known universe. His battle strategies are studied in military academies across hundreds of worlds, and his tactical genius has never lost a war. He was born on a dying planet and escaped in a makeshift rocket as a child, dedicating his life to preventing other worlds from suffering the same fate. His armor contains fragments of his home planet, giving him incredible strength and the ability to survive in space. He fights not for conquest, but to maintain peace throughout the galaxy.'
+            },
+            '990210': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Dreadnaught.png', 
+                title: 'THE LIVING DREADNAUGHT',
+                facts: 'The Living Dreadnaught is a fusion of organic tissue and mechanical warfare, created during the Bio-Wars as the ultimate weapon. His consciousness spans multiple bodies across different battlefields, making him nearly impossible to destroy completely. Despite being designed for destruction, he developed a protective instinct toward smaller life forms after merging with a dying soldier\'s memories. His hull can regenerate from almost any damage, and his weapons systems are powered by his own life force. He now serves as a guardian of neutral space, preventing conflicts from escalating into galactic wars.'
+            },
+            '349023': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Rick.png', 
+                title: 'RICK THE SUPER SPORE',
+                facts: 'Rick the Super Spore gained consciousness after being exposed to cosmic radiation during a deep space exploration mission. His fungal body can adapt to any environment and reproduce rapidly to overwhelm enemies or solve complex problems. He communicates through spore releases that create telepathic connections with other life forms. His greatest power is the ability to break down toxins and pollutants, making him invaluable for environmental cleanup missions. Despite his alien appearance, he has retained his human memories and sense of humor, often making mushroom puns during serious situations.'
+            },
+            '000000': { 
+                image: 'https://storage.googleapis.com/heroicbookmarkspixel/Xaltor.png', 
+                title: 'PRINCE XALTOR, THE GILDED ONE',
+                facts: 'Prince Xaltor was born with the Midas Curse, turning everything he touches into pure gold. His golden palace is actually his childhood home and family, transformed by his uncontrolled powers during a moment of rage. He wears special gloves that suppress his curse, allowing him to interact with the world without destroying it. His wealth is infinite but meaningless, as he would trade it all to touch another living being without causing harm. He uses his golden abilities to create beautiful artworks and fund charitable causes, hoping to bring joy to others even though he can never experience physical affection himself.'
             }
-        }
-
-        // Function to launch the arcade game
-        function launchGame(gameFile = 'XCGame.html') {
-            window.open(gameFile, '_blank');
-        }
-
-        // Function to show bookmark in fullscreen
-        function showBookmark(code) {
-            const bookmark = bookmarkDatabase[code];
-            
-            if (bookmark) {
-                // Hide error message
-                errorMessage.style.display = 'none';
-                
-                // Set up fullscreen image
-                fullscreenImage.src = bookmark.image;
-                fullscreenImage.alt = bookmark.title;
-                fullscreenTitle.textContent = bookmark.title;
-                
-                // Show game button for codes with games
-                if (bookmark.hasGame) {
-                    gameButton.style.display = 'block';
-                    currentGameFile = bookmark.gameFile || 'XCGame.html'; // Default to XCGame.html if no gameFile specified
-                } else {
-                    gameButton.style.display = 'none';
-                    currentGameFile = '';
-                }
-                
-                // Show fullscreen overlay
-                fullscreenOverlay.classList.add('show');
-                
-                // Success styling - no blinking
-                input.style.borderColor = '#00ff00';
-                input.style.boxShadow = '0 0 0 4px #00ff00, inset 4px 4px 0px #004400';
-                
-                // Clear the input
-                input.value = '';
-                
-            } else {
-                // Show error message
-                errorMessage.textContent = 'CODE NOT FOUND!';
-                errorMessage.style.display = 'block';
-                
-                // Error styling - no blinking
-                input.style.borderColor = '#ff0000';
-                input.style.boxShadow = '0 0 0 4px #ff0000, inset 4px 4px 0px #440000';
-                
-                // Hide error after 3 seconds
-                setTimeout(() => {
-                    errorMessage.style.display = 'none';
-                    input.style.borderColor = '#00ff00';
-                    input.style.boxShadow = 'inset 4px 4px 0px #004400';
-                }, 3000);
-            }
-        }
-
-        // Function to hide fullscreen image
-        function hideFullscreen() {
-            fullscreenOverlay.classList.remove('show');
-            gameButton.style.display = 'none';
-            currentGameFile = '';
-            // Reset input styling
-            input.style.borderColor = '#00ff00';
-            input.style.boxShadow = 'inset 4px 4px 0px #004400';
-        }
-
-        // Click on overlay background to exit (but not on the button or image)
-        fullscreenOverlay.addEventListener('click', function(e) {
-            if (e.target === fullscreenOverlay) {
-                hideFullscreen();
-            }
-        });
-
-        // Click on exit hint to close
-        document.querySelector('.exit-hint').addEventListener('click', hideFullscreen);
-
-        // Escape key to exit fullscreen
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && fullscreenOverlay.classList.contains('show')) {
-                hideFullscreen();
-            }
-        });
-
-        // Create chunky 8-bit floating blocks - fewer on mobile
-        function createPixelBlocks() {
-            const container = document.body;
-            const isMobile = window.innerWidth <= 768;
-            const blockCount = isMobile ? 6 : 12; // Reduced for mobile performance
-            
-            for (let i = 0; i < blockCount; i++) {
-                const block = document.createElement('div');
-                block.className = 'pixel-block';
-                block.style.left = Math.random() * 100 + '%';
-                block.style.top = Math.random() * 100 + '%';
-                block.style.animationDelay = Math.random() * 10 + 's';
-                block.style.animationDuration = (Math.random() * 6 + 8) + 's';
-                
-                // Chunky 8-bit colors
-                const colors = ['#00ff00', '#00ffff', '#ff00ff', '#ffff00', '#ff0000', '#0000ff'];
-                block.style.background = colors[Math.floor(Math.random() * colors.length)];
-                
-                // Random block sizes for more 8-bit feel
-                const sizes = isMobile ? [4, 6, 8] : [6, 8, 10, 12];
-                const size = sizes[Math.floor(Math.random() * sizes.length)];
-                block.style.width = size + 'px';
-                block.style.height = size + 'px';
-                
-                container.appendChild(block);
-            }
-        }
-
-        // Input handling - NO BLINKING EFFECTS
-        input.addEventListener('focus', function() {
-            // Reset border color
-            this.style.borderColor = '#ffff00';
-            this.style.boxShadow = 'inset 4px 4px 0px #444400, 0 0 0 4px #ffff00';
-        });
-        
-        input.addEventListener('blur', function() {
-            this.style.borderColor = '#00ff00';
-            this.style.boxShadow = 'inset 4px 4px 0px #004400';
-        });
-        
-        input.addEventListener('input', function() {
-            // Hide error when typing
-            if (errorMessage.style.display === 'block') {
-                errorMessage.style.display = 'none';
-                this.style.borderColor = '#00ff00';
-                this.style.boxShadow = 'inset 4px 4px 0px #004400';
-            }
-            
-            // Subtle flash effect on keypress - NO blinking
-            this.style.background = '#002200';
-            setTimeout(() => {
-                this.style.background = '#000';
-            }, 50);
-        });
-        
-        input.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                const code = this.value.trim().toUpperCase();
-                if (code) {
-                    console.log('8-BIT BOOKMARK CODE:', code);
-                    showBookmark(code);
-                }
-            }
-        });
-
-        // Initialize blocks
-        window.addEventListener('load', createPixelBlocks);
-        
-        // REMOVED: Random screen flicker effect
-    </script>
-</body>
-</html>
