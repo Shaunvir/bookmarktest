@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>King Bob's Exploding Arcade</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P:wght@400&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background: linear-gradient(180deg, #2C1810 0%, #4A2C17 30%, #1A3A2E 70%, #0F2027 100%);
+            min-height: 100vh;
+            overflow: hidden;
+            user-select: none;
+            touch-action: manipulation;
+            position: relative;
+        }
+        
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255,100,0,0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(255,200,0,0.05) 0%, transparent 40%);
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            z-index: 2;
+        }
+        
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            backdrop-filter: blur(5px);
+        }
+        
+        .start-screen.hidden {
+            display: none;
+        }
+        
+        .start-screen-title {
+            font-size: clamp(24px, 8vw, 48px);
+            color: #FFD700;
+            text-shadow: 4px 4px 0px #8B0000, 8px 8px 15px rgba(255,100,0,0.8);
+            animation: nuclearGlow 3s ease-in-out infinite alternate;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .start-screen-subtitle {
+            font-size: clamp(10px, 3vw, 18px);
+            color: #FF6B35;
+            text-shadow: 2px 2px 0px #8B0000;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #FF4500 0%, #FF6B35 50%, #FFD700 100%);
+            border: 4px solid #8B0000;
+            color: #FFFFFF;
+            font-family: 'Press Start 2P', monospace;
+            font-size: clamp(12px, 3vw, 20px);
+            padding: 15px 30px;
+            border-radius: 10px;
+            cursor: pointer;
+            text-shadow: 2px 2px 0px #8B0000;
+            box-shadow: 
+                0 8px 16px rgba(0,0,0,0.6),
+                inset 0 2px 4px rgba(255,255,255,0.3),
+                0 0 20px rgba(255,69,0,0.5);
+            transition: all 0.3s ease;
+            animation: buttonGlow 2s ease-in-out infinite alternate;
+            margin-top: 20px;
+            user-select: none;
+        }
+        
+        .start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 
+                0 12px 24px rgba(0,0,0,0.8),
+                inset 0 2px 4px rgba(255,255,255,0.4),
+                0 0 30px rgba(255,69,0,0.8);
+        }
+        
+        .start-button:active {
+            transform: scale(0.95);
+        }
+        
+        @keyframes buttonGlow {
+            0% { 
+                box-shadow: 
+                    0 8px 16px rgba(0,0,0,0.6),
+                    inset 0 2px 4px rgba(255,255,255,0.3),
+                    0 0 20px rgba(255,69,0,0.5);
+            }
+            100% { 
+                box-shadow: 
+                    0 8px 16px rgba(0,0,0,0.6),
+                    inset 0 2px 4px rgba(255,255,255,0.3),
+                    0 0 40px rgba(255,200,0,0.8);
+            }
+        }
+        
+        .header {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            color: #FFD700;
+            text-shadow: 3px 3px 0px #8B0000, 6px 6px 10px rgba(255,100,0,0.5);
+        }
+        
+        .title {
+            font-size: clamp(16px, 6vw, 36px);
+            margin-bottom: 10px;
+            animation: nuclearGlow 3s ease-in-out infinite alternate;
+            letter-spacing: 1px;
+        }
+        
+        .subtitle {
+            font-size: clamp(8px, 2.5vw, 16px);
+            color: #FF6B35;
+            text-shadow: 2px 2px 0px #8B0000, 4px 4px 8px rgba(255,100,0,0.8);
+        }
+        
+        @keyframes nuclearGlow {
+            0% { 
+                text-shadow: 3px 3px 0px #8B0000, 6px 6px 10px rgba(255,100,0,0.5);
+            }
+            100% { 
+                text-shadow: 3px 3px 0px #8B0000, 6px 6px 20px rgba(255,200,0,0.8), 0 0 30px rgba(255,100,0,0.6);
+            }
+        }
+        
+        .score {
+            position: absolute;
+            top: 120px;
+            right: 30px;
+            color: #FFD700;
+            font-size: clamp(12px, 3vw, 20px);
+            text-shadow: 2px 2px 0px #8B0000, 4px 4px 8px rgba(255,100,0,0.8);
+            z-index: 100;
+        }
+        
+        .field {
+            position: absolute;
+            bottom: 0;
+            width: 100%;
+            height: 65%;
+            background: linear-gradient(180deg, #2F4F2F 0%, #1C3A1C 50%, #0D2818 100%);
+            border-top: 6px solid #8B4513;
+            box-shadow: inset 0 10px 20px rgba(0,0,0,0.5);
+        }
+        
+        .field::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image: 
+                radial-gradient(circle at 15% 85%, rgba(139,69,19,0.3) 3px, transparent 3px),
+                radial-gradient(circle at 45% 75%, rgba(139,69,19,0.2) 2px, transparent 2px),
+                radial-gradient(circle at 75% 90%, rgba(139,69,19,0.3) 2.5px, transparent 2.5px);
+            background-size: 80px 80px, 50px 50px, 90px 90px;
+        }
+        
+        .monster {
+            position: absolute;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            z-index: 10;
+        }
+        
+        .monster:hover {
+            transform: scale(1.1);
+            filter: brightness(1.2);
+        }
+        
+        .monster:active {
+            transform: scale(0.95);
+        }
+        
+        .monster-body {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            position: relative;
+            animation: emerge 1.5s ease-out, bob 3s ease-in-out infinite;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+        
+        .monster-eyes {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 8px;
+        }
+        
+        .eye {
+            width: 12px;
+            height: 12px;
+            background: #FF4500;
+            border-radius: 50%;
+            position: relative;
+            box-shadow: 0 0 8px rgba(255,69,0,0.8);
+        }
+        
+        .eye::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: #8B0000;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            animation: evilBlink 3s ease-in-out infinite;
+        }
+        
+        .monster-mouth {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 10px;
+            background: #000;
+            border-radius: 0 0 20px 20px;
+            box-shadow: inset 0 2px 4px rgba(255,0,0,0.5);
+        }
+        
+        @keyframes emerge {
+            0% { 
+                transform: translateY(120px) scale(0) rotate(-180deg); 
+                opacity: 0;
+            }
+            100% { 
+                transform: translateY(0) scale(1) rotate(0deg); 
+                opacity: 1;
+            }
+        }
+        
+        @keyframes bob {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes evilBlink {
+            0%, 85%, 100% { opacity: 1; }
+            90% { opacity: 0; }
+        }
+        
+        .nuclear-explosion {
+            position: absolute;
+            pointer-events: none;
+            z-index: 50;
+        }
+        
+        .explosion-burst {
+            position: absolute;
+            left: -50px;
+            top: -50px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #FFFFFF 0%, #FFD700 20%, #FF4500 40%, #FF0000 70%, transparent 100%);
+            animation: explosionBurst 0.8s ease-out forwards;
+            box-shadow: 
+                0 0 50px rgba(255, 255, 255, 0.8),
+                0 0 100px rgba(255, 215, 0, 0.6),
+                0 0 150px rgba(255, 69, 0, 0.4);
+        }
+        
+        .explosion-ring {
+            position: absolute;
+            left: -25px;
+            top: -25px;
+            width: 50px;
+            height: 50px;
+            border: 4px solid rgba(255, 255, 255, 0.9);
+            border-radius: 50%;
+            animation: explosionRing 1s ease-out forwards;
+        }
+        
+        .explosion-spark {
+            position: absolute;
+            width: 3px;
+            height: 20px;
+            background: linear-gradient(to bottom, #FFFFFF, #FFD700, #FF4500);
+            border-radius: 2px;
+            animation: explosionSpark 1.2s ease-out forwards;
+        }
+        
+        @keyframes explosionBurst {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.9;
+            }
+            100% {
+                transform: scale(3);
+                opacity: 0;
+            }
+        }
+        
+        @keyframes explosionRing {
+            0% {
+                transform: scale(0);
+                opacity: 1;
+                border-width: 8px;
+            }
+            100% {
+                transform: scale(6);
+                opacity: 0;
+                border-width: 1px;
+            }
+        }
+        
+        @keyframes explosionSpark {
+            0% {
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.5) rotate(180deg);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0.5) rotate(360deg);
+                opacity: 0;
+            }
+        }
+        
+        .explosion-particle {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: nuclearParticle 1.5s ease-out forwards;
+        }
+        
+        @keyframes nuclearParticle {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0);
+                opacity: 0;
+            }
+        }
+        
+        .score-popup {
+            position: absolute;
+            color: #FFD700;
+            font-size: clamp(14px, 4vw, 24px);
+            font-weight: bold;
+            text-shadow: 3px 3px 0px #8B0000, 6px 6px 12px rgba(255,100,0,0.8);
+            pointer-events: none;
+            z-index: 60;
+            animation: nuclearScoreUp 1.5s ease-out forwards;
+        }
+        
+        @keyframes nuclearScoreUp {
+            0% {
+                transform: translateY(0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-60px) scale(1.5);
+                opacity: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .monster-body {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .monster-eyes {
+                top: 18px;
+                gap: 6px;
+            }
+            
+            .eye {
+                width: 10px;
+                height: 10px;
+            }
+            
+            .eye::after {
+                width: 5px;
+                height: 5px;
+                top: 2px;
+                left: 2px;
+            }
+            
+            .monster-mouth {
+                bottom: 15px;
+                width: 16px;
+                height: 8px;
+            }
+            
+            .mushroom-cloud {
+                width: 180px;
+                height: 250px;
+                left: -90px;
+                top: -220px;
+            }
+            
+            .mushroom-head {
+                width: 120px;
+                height: 60px;
+            }
+            
+            .mushroom-stem {
+                width: 25px;
+                height: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="start-screen" id="startScreen">
+            <div class="start-screen-title">KING BOB'S EXPLODING ARCADE</div>
+            <div class="start-screen-subtitle">KING BOB NEEDS YOUR HELP EXPLODING THE BAD GUYS</div>
+            <div class="start-screen-subtitle">CLICK THE MONSTERS TO EXPLODE THEM!</div>
+            <button class="start-button" id="startButton">START GAME</button>
+        </div>
+        
+        <div class="header">
+            <div class="title">KING BOB'S EXPLODING ARCADE</div>
+            <div class="subtitle">CLICK THE MONSTERS TO EXPLODE THEM!</div>
+        </div>
+        
+        <div class="score">SCORE: <span id="scoreValue">0</span></div>
+        
+        <div class="field" id="field"></div>
+    </div>
+
+    <script>
+        class Game {
+            constructor() {
+                this.score = 0;
+                this.field = document.getElementById('field');
+                this.scoreElement = document.getElementById('scoreValue');
+                this.startScreen = document.getElementById('startScreen');
+                this.startButton = document.getElementById('startButton');
+                this.monsters = [];
+                this.gameActive = false;
+                this.spawnInterval = null;
+                
+                this.monsterColors = [
+                    '#8B0000', '#654321', '#2F4F2F', '#483D8B', 
+                    '#8B4513', '#556B2F', '#800080', '#B22222'
+                ];
+                
+                this.setupStartButton();
+            }
+            
+            setupStartButton() {
+                this.startButton.addEventListener('click', () => this.startGame());
+                this.startButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.startGame();
+                }, { passive: false });
+            }
+            
+            startGame() {
+                if (this.gameActive) return;
+                
+                this.gameActive = true;
+                this.startScreen.classList.add('hidden');
+                
+                // Start spawning monsters immediately
+                this.spawnMonster();
+                
+                // Set up regular spawning
+                this.spawnInterval = setInterval(() => {
+                    if (this.gameActive) {
+                        this.spawnMonster();
+                    }
+                }, 2000 + Math.random() * 1500); // Spawn every 2-3.5 seconds
+            }
+            
+            spawnMonster() {
+                const monster = document.createElement('div');
+                monster.className = 'monster';
+                
+                const gameRect = this.field.parentElement.getBoundingClientRect();
+                const monsterSize = window.innerWidth <= 768 ? 60 : 80;
+                
+                // Spawn anywhere on screen except the header area
+                const minY = 200; // Below the header
+                const maxY = gameRect.height - monsterSize - 50;
+                const x = Math.random() * (gameRect.width - monsterSize);
+                const y = minY + Math.random() * (maxY - minY);
+                
+                monster.style.left = x + 'px';
+                monster.style.top = y + 'px';
+                
+                const color = this.monsterColors[Math.floor(Math.random() * this.monsterColors.length)];
+                
+                monster.innerHTML = `
+                    <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 20)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
+                        <div class="monster-eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="monster-mouth"></div>
+                    </div>
+                `;
+                
+                // Add click/touch handlers
+                monster.addEventListener('click', (e) => this.explodeMonster(e, monster));
+                monster.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.explodeMonster(e, monster);
+                }, { passive: false });
+                
+                this.field.parentElement.appendChild(monster); // Append to game container instead of field
+                this.monsters.push(monster);
+                
+                // Remove monster after 6 seconds if not clicked
+                setTimeout(() => {
+                    if (monster.parentNode) {
+                        monster.remove();
+                        this.monsters = this.monsters.filter(m => m !== monster);
+                    }
+                }, 6000);
+            }
+            
+            lightenColor(color, percent) {
+                const num = parseInt(color.replace("#",""), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = (num >> 16) + amt;
+                const G = (num >> 8 & 0x00FF) + amt;
+                const B = (num & 0x0000FF) + amt;
+                return "#" + (0x1000000 + (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 + (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 + (B < 255 ? (B < 1 ? 0 : B) : 255)).toString(16).slice(1);
+            }
+            
+            darkenColor(color, percent) {
+                const num = parseInt(color.replace("#",""), 16);
+                const amt = Math.round(2.55 * percent);
+                const R = (num >> 16) - amt;
+                const G = (num >> 8 & 0x00FF) - amt;
+                const B = (num & 0x0000FF) - amt;
+                return "#" + (0x1000000 + (R > 255 ? 255 : (R < 0 ? 0 : R)) * 0x10000 + (G > 255 ? 255 : (G < 0 ? 0 : G)) * 0x100 + (B > 255 ? 255 : (B < 0 ? 0 : B))).toString(16).slice(1);
+            }
+            
+            explodeMonster(event, monster) {
+                event.stopPropagation();
+                
+                if (!monster.parentNode) return;
+                
+                const rect = monster.getBoundingClientRect();
+                const centerX = rect.left + rect.width / 2;
+                const centerY = rect.top + rect.height / 2;
+                
+                // Create nuclear explosion
+                this.createNuclearExplosion(centerX, centerY);
+                
+                // Update score
+                this.score += 100;
+                this.scoreElement.textContent = this.score;
+                
+                // Show score popup
+                this.showScorePopup(centerX, centerY, '+100');
+                
+                // Remove monster
+                monster.remove();
+                this.monsters = this.monsters.filter(m => m !== monster);
+                
+                // Screen shake effect
+                this.nuclearShake();
+            }
+            
+            createNuclearExplosion(x, y) {
+                const explosion = document.createElement('div');
+                explosion.className = 'nuclear-explosion';
+                explosion.style.left = x + 'px';
+                explosion.style.top = y + 'px';
+                
+                // Create main explosion burst
+                const burst = document.createElement('div');
+                burst.className = 'explosion-burst';
+                explosion.appendChild(burst);
+                
+                // Create expanding ring
+                const ring = document.createElement('div');
+                ring.className = 'explosion-ring';
+                explosion.appendChild(ring);
+                
+                // Create sparks shooting out
+                const sparkCount = 12;
+                for (let i = 0; i < sparkCount; i++) {
+                    const spark = document.createElement('div');
+                    spark.className = 'explosion-spark';
+                    
+                    const angle = (i / sparkCount) * Math.PI * 2;
+                    const distance = 60 + Math.random() * 40;
+                    const endX = Math.cos(angle) * distance;
+                    const endY = Math.sin(angle) * distance;
+                    
+                    spark.style.left = '0px';
+                    spark.style.top = '0px';
+                    spark.style.transform = `translate(${endX}px, ${endY}px) rotate(${angle + Math.PI/2}rad)`;
+                    spark.style.animationDelay = Math.random() * 0.2 + 's';
+                    
+                    explosion.appendChild(spark);
+                }
+                
+                // Create colorful particles
+                const colors = ['#FFFFFF', '#FFD700', '#FF6B35', '#FF4500', '#FF0000'];
+                for (let i = 0; i < 20; i++) {
+                    const particle = document.createElement('div');
+                    particle.className = 'explosion-particle';
+                    particle.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    particle.style.boxShadow = `0 0 15px ${colors[Math.floor(Math.random() * colors.length)]}`;
+                    
+                    const angle = Math.random() * Math.PI * 2;
+                    const distance = Math.random() * 120 + 60;
+                    const endX = Math.cos(angle) * distance;
+                    const endY = Math.sin(angle) * distance;
+                    
+                    particle.style.left = '0px';
+                    particle.style.top = '0px';
+                    particle.style.transform = `translate(${endX}px, ${endY}px) scale(0)`;
+                    particle.style.animationDelay = Math.random() * 0.3 + 's';
+                    
+                    explosion.appendChild(particle);
+                }
+                
+                document.body.appendChild(explosion);
+                
+                // Screen flash - brighter and shorter
+                document.body.style.background = '#FFFFFF';
+                setTimeout(() => {
+                    document.body.style.background = 'linear-gradient(180deg, #2C1810 0%, #4A2C17 30%, #1A3A2E 70%, #0F2027 100%)';
+                }, 60);
+                
+                // Remove explosion after animation
+                setTimeout(() => {
+                    explosion.remove();
+                }, 1500);
+            }
+            
+            showScorePopup(x, y, text) {
+                const popup = document.createElement('div');
+                popup.className = 'score-popup';
+                popup.textContent = text;
+                popup.style.left = (x - 25) + 'px';
+                popup.style.top = (y - 15) + 'px';
+                
+                document.body.appendChild(popup);
+                
+                setTimeout(() => {
+                    popup.remove();
+                }, 1500);
+            }
+            
+            nuclearShake() {
+                const shakeFrames = [
+                    'translateX(-6px) translateY(-3px)',
+                    'translateX(6px) translateY(3px)',
+                    'translateX(-4px) translateY(-2px)',
+                    'translateX(4px) translateY(2px)',
+                    'translateX(-2px)',
+                    'translateX(2px)',
+                    'translateX(0)'
+                ];
+                
+                let frame = 0;
+                const shakeInterval = setInterval(() => {
+                    if (frame < shakeFrames.length) {
+                        document.body.style.transform = shakeFrames[frame];
+                        frame++;
+                    } else {
+                        clearInterval(shakeInterval);
+                        document.body.style.transform = 'translateX(0)';
+                    }
+                }, 60);
+            }
+        }
+        
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            new Game();
+        });
+        
+        // Prevent context menu and double-tap zoom
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+    </script>
+</body>
+</html>
