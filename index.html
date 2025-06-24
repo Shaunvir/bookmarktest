@@ -264,46 +264,95 @@
             100% { opacity: 1; }
         }
 
-        /* Image display container */
-        .image-display {
-            margin-top: 2rem;
-            text-align: center;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: all 0.5s ease;
+        /* Fullscreen image overlay */
+        .fullscreen-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 2000;
+            display: none;
+            cursor: pointer;
         }
 
-        .image-display.show {
-            opacity: 1;
-            transform: translateY(0);
+        .fullscreen-overlay.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
         }
 
-        .bookmark-image {
-            max-width: 400px;
-            max-height: 300px;
-            width: 90%;
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fullscreen-image {
+            max-width: 95%;
+            max-height: 95%;
+            width: auto;
             height: auto;
-            border: 4px solid #00ff00;
+            border: 6px solid #00ff00;
             box-shadow: 
-                0 0 0 2px #000,
-                0 0 0 6px #008800,
-                0 0 20px rgba(0, 255, 0, 0.5);
+                0 0 0 3px #000,
+                0 0 0 9px #008800,
+                0 0 40px rgba(0, 255, 0, 0.8);
             image-rendering: pixelated;
-            background: #000;
         }
 
-        .image-title {
+        .fullscreen-title {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%);
             font-family: 'Press Start 2P', monospace;
-            font-size: 14px;
+            font-size: 16px;
             color: #00ff00;
-            margin-top: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 
+                3px 3px 0px #008800,
+                -2px -2px 0px #000,
+                2px -2px 0px #000,
+                -2px 2px 0px #000,
+                2px 2px 0px #000;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px 25px;
+            border: 3px solid #00ff00;
+        }
+
+        .exit-hint {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: #ffff00;
             text-transform: uppercase;
             letter-spacing: 1px;
             text-shadow: 
-                2px 2px 0px #008800,
-                -2px -2px 0px #000,
-                2px -2px 0px #000,
-                -2px 2px 0px #000;
+                2px 2px 0px #888800,
+                -1px -1px 0px #000,
+                1px -1px 0px #000,
+                -1px 1px 0px #000,
+                1px 1px 0px #000;
+            animation: hintBlink 2s ease-in-out infinite;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px 15px;
+            border: 2px solid #ffff00;
+        }
+
+        @keyframes hintBlink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.6; }
+        }
+
+        /* Hide the small image display */
+        .image-display {
+            display: none;
         }
 
         .error-message {
@@ -377,13 +426,16 @@
                 id="code-input"
             >
             
-            <!-- Image display area -->
-            <div class="image-display" id="image-display">
-                <img class="bookmark-image" id="bookmark-image" src="" alt="" style="display: none;">
-                <div class="image-title" id="image-title"></div>
-                <div class="error-message" id="error-message" style="display: none;"></div>
-            </div>
+            <!-- Error message area -->
+            <div class="error-message" id="error-message" style="display: none; margin-top: 1rem;"></div>
         </div>
+    </div>
+
+    <!-- Fullscreen image overlay -->
+    <div class="fullscreen-overlay" id="fullscreen-overlay">
+        <img class="fullscreen-image" id="fullscreen-image" src="" alt="">
+        <div class="fullscreen-title" id="fullscreen-title"></div>
+        <div class="exit-hint">CLICK TO EXIT</div>
     </div>
 
     <script>
@@ -405,12 +457,12 @@
 
         // Get input elements
         const input = document.getElementById('code-input');
-        const imageDisplay = document.getElementById('image-display');
-        const bookmarkImage = document.getElementById('bookmark-image');
-        const imageTitle = document.getElementById('image-title');
+        const fullscreenOverlay = document.getElementById('fullscreen-overlay');
+        const fullscreenImage = document.getElementById('fullscreen-image');
+        const fullscreenTitle = document.getElementById('fullscreen-title');
         const errorMessage = document.getElementById('error-message');
 
-        // Function to show bookmark
+        // Function to show bookmark in fullscreen
         function showBookmark(code) {
             const bookmark = bookmarkDatabase[code];
             
@@ -418,44 +470,56 @@
                 // Hide error message
                 errorMessage.style.display = 'none';
                 
-                // Show the image and title
-                bookmarkImage.src = bookmark.image;
-                bookmarkImage.alt = bookmark.title;
-                bookmarkImage.style.display = 'block';
-                imageTitle.textContent = bookmark.title;
+                // Set up fullscreen image
+                fullscreenImage.src = bookmark.image;
+                fullscreenImage.alt = bookmark.title;
+                fullscreenTitle.textContent = bookmark.title;
                 
-                // Animate the display
-                imageDisplay.classList.add('show');
+                // Show fullscreen overlay
+                fullscreenOverlay.classList.add('show');
                 
                 // 8-bit success sound effect simulation
                 input.style.borderColor = '#00ff00';
                 input.style.boxShadow = '0 0 0 4px #00ff00, inset 4px 4px 0px #004400';
                 
-            } else {
-                // Hide image
-                bookmarkImage.style.display = 'none';
-                imageTitle.textContent = '';
+                // Clear the input
+                input.value = '';
                 
+            } else {
                 // Show error message
                 errorMessage.textContent = 'CODE NOT FOUND!';
                 errorMessage.style.display = 'block';
-                imageDisplay.classList.add('show');
                 
                 // 8-bit error effect
                 input.style.borderColor = '#ff0000';
                 input.style.boxShadow = '0 0 0 4px #ff0000, inset 4px 4px 0px #440000';
+                
+                // Hide error after 3 seconds
+                setTimeout(() => {
+                    errorMessage.style.display = 'none';
+                    input.style.borderColor = '#00ff00';
+                    input.style.boxShadow = 'inset 4px 4px 0px #004400';
+                }, 3000);
             }
         }
 
-        // Function to hide display
-        function hideDisplay() {
-            imageDisplay.classList.remove('show');
-            setTimeout(() => {
-                bookmarkImage.style.display = 'none';
-                imageTitle.textContent = '';
-                errorMessage.style.display = 'none';
-            }, 500);
+        // Function to hide fullscreen image
+        function hideFullscreen() {
+            fullscreenOverlay.classList.remove('show');
+            // Reset input styling
+            input.style.borderColor = '#00ff00';
+            input.style.boxShadow = 'inset 4px 4px 0px #004400';
         }
+
+        // Click anywhere to exit fullscreen
+        fullscreenOverlay.addEventListener('click', hideFullscreen);
+
+        // Escape key to exit fullscreen
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && fullscreenOverlay.classList.contains('show')) {
+                hideFullscreen();
+            }
+        });
 
         // Create chunky 8-bit floating blocks
         function createPixelBlocks() {
@@ -500,9 +564,11 @@
         });
         
         input.addEventListener('input', function() {
-            // Hide display when typing
-            if (this.value.length === 0) {
-                hideDisplay();
+            // Hide error when typing
+            if (errorMessage.style.display === 'block') {
+                errorMessage.style.display = 'none';
+                this.style.borderColor = '#00ff00';
+                this.style.boxShadow = 'inset 4px 4px 0px #004400';
             }
             
             // Flash effect on keypress
@@ -518,8 +584,6 @@
                 if (code) {
                     console.log('8-BIT BOOKMARK CODE:', code);
                     showBookmark(code);
-                } else {
-                    hideDisplay();
                 }
             }
         });
