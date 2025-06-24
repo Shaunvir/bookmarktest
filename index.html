@@ -227,10 +227,12 @@
             to { opacity: 1; }
         }
 
-        /* MAXIMUM SIZE IMAGES - Stretches to fill space regardless of original size */
+        /* Better balanced images - Large but maintains aspect ratio */
         .fullscreen-image {
-            width: 98vw;
-            height: 90vh;
+            max-width: 85vw;
+            max-height: 75vh;
+            width: auto;
+            height: auto;
             border: 6px solid #00ff00;
             box-shadow: 
                 0 0 0 3px #000,
@@ -238,7 +240,7 @@
                 0 0 40px rgba(0, 255, 0, 0.8);
             image-rendering: pixelated;
             margin-bottom: 15px;
-            object-fit: fill;
+            object-fit: contain;
         }
 
         .fullscreen-title {
@@ -525,13 +527,13 @@
                 line-height: 1.4;
             }
 
-            /* Mobile images fill screen - stretches to max size */
+            /* Mobile images - nicely sized and properly proportioned */
             .fullscreen-image {
-                width: 96vw;
-                height: 85vh;
+                max-width: 80vw;
+                max-height: 65vh;
                 border-width: 4px;
                 margin-bottom: 10px;
-                object-fit: fill;
+                object-fit: contain;
             }
 
             .exit-hint {
@@ -605,11 +607,11 @@
                 font-size: 10px;
             }
 
-            /* Maximum size on extra small screens too */
+            /* Reasonable size on extra small screens */
             .fullscreen-image {
-                width: 94vw;
-                height: 80vh;
-                object-fit: fill;
+                max-width: 75vw;
+                max-height: 60vh;
+                object-fit: contain;
             }
         }
 
@@ -635,11 +637,11 @@
                 margin-bottom: 25px;
             }
 
-            /* On large screens, images fill almost entire screen */
+            /* On large screens, images are big but not overwhelming */
             .fullscreen-image {
-                width: 99vw;
-                height: 95vh;
-                object-fit: fill;
+                max-width: 90vw;
+                max-height: 80vh;
+                object-fit: contain;
             }
         }
     </style>
