@@ -48,10 +48,6 @@
             image-rendering: pixelated;
         }
 
-
-
-
-
         /* Main container */
         .container {
             display: flex;
@@ -64,7 +60,7 @@
             z-index: 1;
         }
 
-        /* PURE 8-BIT TITLE WITH STRONG BORDER */
+        /* PURE 8-BIT TITLE WITH STRONG BORDER - NO BLINKING */
         .title {
             font-family: 'Press Start 2P', monospace;
             font-size: clamp(1.5rem, 5vw, 3rem);
@@ -78,7 +74,6 @@
                 0px 4px 0px #008800,
                 4px 4px 0px #004400,
                 8px 8px 0px #002200;
-            animation: pixelFlash 2s ease-in-out infinite alternate;
             text-transform: uppercase;
             line-height: 1.4;
             -webkit-font-smoothing: none;
@@ -110,7 +105,6 @@
                 4px 4px 0px #000;
         }
 
-     
         /* SUPER CHUNKY INPUT SECTION */
         .input-section {
             background: #000;
@@ -167,17 +161,14 @@
             box-shadow: 
                 inset 4px 4px 0px #444400,
                 0 0 0 4px #ffff00;
-            animation: inputBlink 0.5s ease infinite;
         }
-
-     
 
         .input-field::placeholder {
             color: #004400;
             opacity: 1;
         }
 
-        /* CHUNKY 8-BIT FLOATING BLOCKS */
+        /* CHUNKY 8-BIT FLOATING BLOCKS - SMOOTH FLOATING ONLY */
         .pixel-block {
             position: absolute;
             width: 8px;
@@ -186,9 +177,12 @@
             image-rendering: pixelated;
         }
 
-       
+        @keyframes floatBlock {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
 
-        /* HEAVY CRT SCANLINES */
+        /* STATIC SCANLINES - NO MOVEMENT */
         .scanlines {
             position: fixed;
             top: 0;
@@ -204,15 +198,7 @@
             );
             pointer-events: none;
             z-index: 1000;
-            animation: scanlineMove 0.1s linear infinite;
         }
-
-        @keyframes scanlineMove {
-            0% { transform: translateY(0px); }
-            100% { transform: translateY(6px); }
-        }
-
-
 
         /* Fullscreen image overlay */
         .fullscreen-overlay {
@@ -234,6 +220,10 @@
             animation: fadeIn 0.3s ease;
         }
 
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
 
         .fullscreen-image {
             max-width: 95%;
@@ -285,13 +275,10 @@
                 1px -1px 0px #000,
                 -1px 1px 0px #000,
                 1px 1px 0px #000;
-            animation: hintBlink 2s ease-in-out infinite;
             background: rgba(0, 0, 0, 0.7);
             padding: 10px 15px;
             border: 2px solid #ffff00;
         }
-
-      
 
         /* Hide the small image display */
         .image-display {
@@ -310,10 +297,8 @@
                 -2px -2px 0px #000,
                 2px -2px 0px #000,
                 -2px 2px 0px #000;
-            animation: errorBlink 1s ease-in-out infinite alternate;
         }
 
-     
         @media (max-width: 768px) {
             .title {
                 font-size: 1.2rem;
@@ -418,7 +403,7 @@
                 // Show fullscreen overlay
                 fullscreenOverlay.classList.add('show');
                 
-                // 8-bit success sound effect simulation
+                // Success styling - no blinking
                 input.style.borderColor = '#00ff00';
                 input.style.boxShadow = '0 0 0 4px #00ff00, inset 4px 4px 0px #004400';
                 
@@ -430,7 +415,7 @@
                 errorMessage.textContent = 'CODE NOT FOUND!';
                 errorMessage.style.display = 'block';
                 
-                // 8-bit error effect
+                // Error styling - no blinking
                 input.style.borderColor = '#ff0000';
                 input.style.boxShadow = '0 0 0 4px #ff0000, inset 4px 4px 0px #440000';
                 
@@ -488,9 +473,7 @@
             }
         }
 
-        // 8-bit input handling
-        let blinkInterval;
-        
+        // Input handling - NO BLINKING EFFECTS
         input.addEventListener('focus', function() {
             // Reset border color
             this.style.borderColor = '#ffff00';
@@ -498,7 +481,6 @@
         });
         
         input.addEventListener('blur', function() {
-            clearInterval(blinkInterval);
             this.style.borderColor = '#00ff00';
             this.style.boxShadow = 'inset 4px 4px 0px #004400';
         });
@@ -511,7 +493,7 @@
                 this.style.boxShadow = 'inset 4px 4px 0px #004400';
             }
             
-            // Flash effect on keypress
+            // Subtle flash effect on keypress - NO blinking
             this.style.background = '#002200';
             setTimeout(() => {
                 this.style.background = '#000';
@@ -531,15 +513,7 @@
         // Initialize blocks
         window.addEventListener('load', createPixelBlocks);
         
-        // Random screen flicker for authentic CRT feel
-        setInterval(() => {
-            if (Math.random() < 0.02) { // 2% chance every interval
-                document.body.style.filter = 'brightness(1.2) contrast(1.1)';
-                setTimeout(() => {
-                    document.body.style.filter = 'none';
-                }, 50);
-            }
-        }, 100);
+        // REMOVED: Random screen flicker effect
     </script>
 </body>
 </html>
