@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Taj's Boulder Smash</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #2c5f7a, #4a8ba8);
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98D8E8 50%, #90EE90 100%);
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 10;
+        }
+
+        #startScreen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+
+        #gameTitle {
+            font-size: 48px;
+            color: #ff69b4;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        #startButton {
+            padding: 15px 30px;
+            font-size: 24px;
+            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            transition: transform 0.1s;
+        }
+
+        #startButton:hover {
+            transform: scale(1.05);
+        }
+
+        #startButton:active {
+            transform: scale(0.95);
+        }
+
+        #instructions {
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            margin-top: 20px;
+            max-width: 600px;
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+        }
+
+        #finalScore {
+            font-size: 36px;
+            color: #ff69b4;
+            margin: 20px 0;
+        }
+
+        #restartButton {
+            padding: 10px 20px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #ff69b4, #ff1493);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas"></canvas>
+        
+        <div id="ui">
+            <div>Score: <span id="score">0</span></div>
+            <div>Best Distance: <span id="bestDistance">0</span>m</div>
+            <div>Boulders Left: <span id="bouldersLeft">10</span></div>
+        </div>
+
+        <div id="startScreen">
+            <div id="gameTitle">TAJ'S BOULDER SMASH</div>
+            <button id="startButton">START GAME</button>
+            <div id="instructions">
+                Click or press SPACE to swing Taj's neon sword!<br>
+                Time your swings to smash boulders as far as possible!<br>
+                You have 10 boulders to get the highest score!
+            </div>
+        </div>
+
+        <div id="gameOver">
+            <h2>Game Over!</h2>
+            <div id="finalScore">Final Score: 0</div>
+            <button id="restartButton">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const gameOverScreen = document.getElementById('gameOver');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let bestDistance = 0;
+        let bouldersLeft = 10;
+        let currentBoulder = null;
+        let boulders = [];
+        let particles = [];
+        let tajSwinging = false;
+        let swingTimer = 0;
+        let nextBoulderTimer = 0;
+
+        // Taj the gorilla
+        const taj = {
+            x: canvas.width * 0.2,
+            y: canvas.height * 0.7,
+            width: 80,
+            height: 100,
+            swingAngle: 0,
+            swordLength: 120
+        };
+
+        // Boulder class
+        class Boulder {
+            constructor() {
+                this.x = canvas.width + 50;
+                this.y = canvas.height * 0.7 + 30;
+                this.vx = -8 - Math.random() * 4;
+                this.vy = 0;
+                this.size = 30 + Math.random() * 20;
+                this.hit = false;
+                this.gravity = 0.5;
+                this.bounced = false;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                
+                if (!this.hit) {
+                    // Boulder moving towards Taj
+                    if (this.x < -100) {
+                        // Missed boulder
+                        return 'missed';
+                    }
+                } else {
+                    // Hit boulder physics
+                    this.vy += this.gravity;
+                    
+                    // Ground bounce
+                    if (this.y > canvas.height * 0.85 && !this.bounced) {
+                        this.vy = -this.vy * 0.3;
+                        this.vx *= 0.8;
+                        this.bounced = true;
+                    }
+                    
+                    // Calculate distance when boulder stops or goes off screen
+                    if (this.x > canvas.width + 100 || (this.bounced && Math.abs(this.vy) < 1)) {
+                        const distance = Math.max(0, Math.floor((this.x - taj.x) / 10));
+                        return distance;
+                    }
+                }
+                return null;
+            }
+
+            draw() {
+                ctx.fillStyle = '#8B4513';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Boulder texture
+                ctx.fillStyle = '#A0522D';
+                ctx.beginPath();
+                ctx.arc(this.x - 8, this.y - 8, this.size * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(this.x + 6, this.y + 4, this.size * 0.2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            checkHit() {
+                if (this.hit) return false;
+                
+                // Check if boulder is in swing range
+                const dx = this.x - taj.x;
+                const dy = this.y - taj.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < 120 && tajSwinging && swingTimer > 10 && swingTimer < 25) {
+                    this.hit = true;
+                    // Launch boulder based on swing timing
+                    const power = 15 + (25 - Math.abs(swingTimer - 17)) * 2;
+                    this.vx = power;
+                    this.vy = -8 - Math.random() * 5;
+                    
+                    // Create hit particles
+                    for (let i = 0; i < 15; i++) {
+                        particles.push({
+                            x: this.x,
+                            y: this.y,
+                            vx: (Math.random() - 0.5) * 20,
+                            vy: (Math.random() - 0.5) * 20,
+                            life: 30,
+                            color: '#FFD700'
+                        });
+                    }
+                    
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        // Particle system
+        function updateParticles() {
+            particles = particles.filter(particle => {
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.vx *= 0.98;
+                particle.vy *= 0.98;
+                particle.life--;
+                return particle.life > 0;
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(particle => {
+                ctx.fillStyle = particle.color;
+                ctx.globalAlpha = particle.life / 30;
+                ctx.fillRect(particle.x, particle.y, 4, 4);
+                ctx.globalAlpha = 1;
+            });
+        }
+
+        // Draw Taj the armored gorilla
+        function drawTaj() {
+            const x = taj.x;
+            const y = taj.y;
+            
+            // Body (armor-like)
+            ctx.fillStyle = '#4A4A4A';
+            ctx.fillRect(x - 25, y - 40, 50, 60);
+            
+            // Armor details
+            ctx.fillStyle = '#6A6A6A';
+            ctx.fillRect(x - 20, y - 35, 40, 10);
+            ctx.fillRect(x - 15, y - 20, 30, 8);
+            
+            // Head
+            ctx.fillStyle = '#2F2F2F';
+            ctx.beginPath();
+            ctx.arc(x, y - 60, 25, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Eyes
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.arc(x - 8, y - 65, 4, 0, Math.PI * 2);
+            ctx.arc(x + 8, y - 65, 4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Arms
+            ctx.fillStyle = '#2F2F2F';
+            ctx.fillRect(x - 40, y - 30, 15, 40);
+            ctx.fillRect(x + 25, y - 30, 15, 40);
+            
+            // Legs
+            ctx.fillRect(x - 15, y + 20, 12, 30);
+            ctx.fillRect(x + 3, y + 20, 12, 30);
+            
+            // Neon pink sword - much bigger and more pronounced
+            if (tajSwinging) {
+                const angle = taj.swingAngle + Math.sin(swingTimer * 0.5) * 0.3;
+                const swordEndX = x + Math.cos(angle) * taj.swordLength;
+                const swordEndY = y - 20 + Math.sin(angle) * taj.swordLength;
+                
+                // Outer glow effect (largest)
+                ctx.strokeStyle = '#FF1493';
+                ctx.lineWidth = 20;
+                ctx.lineCap = 'round';
+                ctx.shadowColor = '#FF69B4';
+                ctx.shadowBlur = 25;
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y - 20);
+                ctx.lineTo(swordEndX, swordEndY);
+                ctx.stroke();
+                
+                // Middle glow
+                ctx.strokeStyle = '#FF69B4';
+                ctx.lineWidth = 14;
+                ctx.shadowBlur = 18;
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y - 20);
+                ctx.lineTo(swordEndX, swordEndY);
+                ctx.stroke();
+                
+                // Inner sword blade
+                ctx.strokeStyle = '#FFB6C1';
+                ctx.lineWidth = 8;
+                ctx.shadowBlur = 10;
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y - 20);
+                ctx.lineTo(swordEndX, swordEndY);
+                ctx.stroke();
+                
+                // Core bright line
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 3;
+                ctx.shadowBlur = 5;
+                ctx.beginPath();
+                ctx.moveTo(x + 20, y - 20);
+                ctx.lineTo(swordEndX, swordEndY);
+                ctx.stroke();
+                
+                // Sword guard/hilt
+                const guardAngle = angle + Math.PI/2;
+                const guardLength = 25;
+                const guardX1 = x + 20 + Math.cos(guardAngle) * guardLength;
+                const guardY1 = y - 20 + Math.sin(guardAngle) * guardLength;
+                const guardX2 = x + 20 - Math.cos(guardAngle) * guardLength;
+                const guardY2 = y - 20 - Math.sin(guardAngle) * guardLength;
+                
+                ctx.strokeStyle = '#FF69B4';
+                ctx.lineWidth = 8;
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                ctx.moveTo(guardX1, guardY1);
+                ctx.lineTo(guardX2, guardY2);
+                ctx.stroke();
+                
+                // Sword tip glow
+                ctx.fillStyle = '#FFFFFF';
+                ctx.shadowColor = '#FF69B4';
+                ctx.shadowBlur = 20;
+                ctx.beginPath();
+                ctx.arc(swordEndX, swordEndY, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Game loop
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (!gameRunning) return;
+            
+            // Update swing
+            if (tajSwinging) {
+                swingTimer++;
+                taj.swingAngle = -Math.PI/4 + (swingTimer / 30) * Math.PI/2;
+                if (swingTimer > 30) {
+                    tajSwinging = false;
+                    swingTimer = 0;
+                    taj.swingAngle = 0;
+                }
+            }
+            
+            // Spawn new boulder
+            if (!currentBoulder && bouldersLeft > 0) {
+                nextBoulderTimer++;
+                if (nextBoulderTimer > 120) {
+                    currentBoulder = new Boulder();
+                    nextBoulderTimer = 0;
+                }
+            }
+            
+            // Update current boulder
+            if (currentBoulder) {
+                currentBoulder.checkHit();
+                const result = currentBoulder.update();
+                
+                if (result === 'missed') {
+                    // Boulder missed
+                    currentBoulder = null;
+                    bouldersLeft--;
+                } else if (typeof result === 'number') {
+                    // Boulder hit and scored
+                    score += result;
+                    if (result > bestDistance) {
+                        bestDistance = result;
+                    }
+                    currentBoulder = null;
+                    bouldersLeft--;
+                }
+            }
+            
+            // Update particles
+            updateParticles();
+            
+            // Draw everything
+            drawTaj();
+            if (currentBoulder) {
+                currentBoulder.draw();
+            }
+            drawParticles();
+            
+            // Update UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('bestDistance').textContent = bestDistance;
+            document.getElementById('bouldersLeft').textContent = bouldersLeft;
+            
+            // Check game over
+            if (bouldersLeft <= 0 && !currentBoulder) {
+                endGame();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Input handling
+        function swing() {
+            if (gameRunning && !tajSwinging) {
+                tajSwinging = true;
+                swingTimer = 0;
+            }
+        }
+
+        // Event listeners
+        canvas.addEventListener('click', swing);
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                swing();
+            }
+        });
+
+        document.getElementById('startButton').addEventListener('click', startGame);
+        document.getElementById('restartButton').addEventListener('click', startGame);
+
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            bestDistance = 0;
+            bouldersLeft = 10;
+            currentBoulder = null;
+            particles = [];
+            tajSwinging = false;
+            swingTimer = 0;
+            nextBoulderTimer = 0;
+            
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            
+            gameLoop();
+        }
+
+        function endGame() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = `Final Score: ${score}`;
+            gameOverScreen.style.display = 'block';
+        }
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            taj.x = canvas.width * 0.2;
+            taj.y = canvas.height * 0.7;
+        });
+    </script>
+</body>
+</html>
