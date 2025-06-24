@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambassador Octo's Commute</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #2c1810, #4a2c1a);
+            font-family: 'Orbitron', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        
+        .game-container {
+            background: #1a1a1a;
+            border: 4px solid #333;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            width: 90vw;
+            max-width: 420px;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .title {
+            text-align: center;
+            color: #00ffff;
+            font-size: 24px;
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px #0066cc;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #ffaa00;
+            font-size: 12px;
+            margin-bottom: 20px;
+        }
+        
+        canvas {
+            border: 2px solid #444;
+            background: linear-gradient(to bottom, #ffd700, #ff8c00, #d2691e);
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            width: 100%;
+            height: auto;
+            max-height: 60vh;
+            touch-action: none;
+        }
+        
+        .controls {
+            text-align: center;
+            margin-top: 15px;
+            color: #ccc;
+            font-size: 10px;
+        }
+        
+        .mobile-controls {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+            gap: 20px;
+        }
+        
+        .control-button {
+            background: linear-gradient(45deg, #333, #555);
+            border: 2px solid #666;
+            color: #00ffff;
+            font-family: 'Orbitron', monospace;
+            font-size: 24px;
+            font-weight: bold;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .control-button:active {
+            background: linear-gradient(45deg, #555, #777);
+            transform: scale(0.95);
+        }
+        
+        @media (max-width: 600px) {
+            .title {
+                font-size: 18px;
+            }
+            
+            .subtitle {
+                font-size: 10px;
+            }
+            
+            .controls {
+                font-size: 9px;
+            }
+            
+            .start-screen {
+                padding: 20px;
+                font-size: 14px;
+            }
+            
+            .start-screen h2 {
+                font-size: 18px;
+                margin: 0 0 15px 0;
+            }
+            
+            .start-screen p {
+                font-size: 12px;
+                margin: 10px 0;
+            }
+        }
+        
+        .start-screen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #00ffff;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            border: 2px solid #00ffff;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #00ffff, #0099cc);
+            border: none;
+            padding: 15px 30px;
+            font-family: 'Orbitron', monospace;
+            font-size: 16px;
+            font-weight: 700;
+            color: #000;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .start-button:hover {
+            background: linear-gradient(45deg, #00ccff, #00aadd);
+            transform: scale(1.05);
+        }
+        
+        .score {
+            color: #00ffff;
+            font-size: 14px;
+            margin: 10px 0;
+            text-align: center;
+        }
+        
+        .speed-indicator {
+            color: #ffaa00;
+            font-size: 12px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title">AMBASSADOR OCTO'S COMMUTE</div>
+        <div class="subtitle">Navigate the desert waters</div>
+        
+        <canvas id="gameCanvas" width="400" height="300"></canvas>
+        
+        <div class="score">
+            <div>SCORE: <span id="score">0</span></div>
+            <div class="speed-indicator">SPEED: <span id="speed">1</span></div>
+        </div>
+        
+        <div class="controls">
+            Use ← → arrow keys or touch buttons to steer
+        </div>
+        
+        <div class="mobile-controls">
+            <button class="control-button" id="leftBtn">←</button>
+            <button class="control-button" id="rightBtn">→</button>
+        </div>
+        
+        <div id="startScreen" class="start-screen">
+            <h2>MISSION BRIEFING</h2>
+            <p>Ambassador Octo must navigate through<br>the treacherous desert in his water jar!</p>
+            <p>Avoid the obstacles and survive<br>as long as possible.</p>
+            <button class="start-button" onclick="startGame()">START MISSION</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const startScreen = document.getElementById('startScreen');
+        const scoreElement = document.getElementById('score');
+        const speedElement = document.getElementById('speed');
+        
+        let gameRunning = false;
+        let gameStartTime = 0;
+        let score = 0;
+        let speed = 1;
+        let maxSpeed = 6;
+        
+        // Mobile touch controls
+        let leftPressed = false;
+        let rightPressed = false;
+        
+        // Player (water jar with octopus)
+        const player = {
+            x: canvas.width / 2 - 15,
+            y: canvas.height - 60,
+            width: 30,
+            height: 40,
+            speed: 4
+        };
+        
+        // Game objects
+        let obstacles = [];
+        let background = [];
+        let particles = [];
+        
+        // Initialize background elements
+        function initBackground() {
+            background = [];
+            for (let i = 0; i < 20; i++) {
+                background.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    type: Math.random() < 0.5 ? 'dune' : 'rock',
+                    size: Math.random() * 15 + 5
+                });
+            }
+        }
+        
+        // Create obstacle
+        function createObstacle() {
+            obstacles.push({
+                x: Math.random() * (canvas.width - 40) + 20,
+                y: -30,
+                width: 25,
+                height: 25,
+                type: Math.random() < 0.6 ? 'cactus' : 'crystal'
+            });
+        }
+        
+        // Create particle effect
+        function createParticles(x, y) {
+            for (let i = 0; i < 5; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    life: 30,
+                    maxLife: 30
+                });
+            }
+        }
+        
+        // Draw functions
+        function drawBackground() {
+            // Desert gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#ffd700');
+            gradient.addColorStop(0.6, '#ff8c00');
+            gradient.addColorStop(1, '#d2691e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw background elements
+            background.forEach(function(element) {
+                ctx.save();
+                if (element.type === 'dune') {
+                    ctx.fillStyle = '#cd853f';
+                    ctx.beginPath();
+                    ctx.arc(element.x, element.y, element.size, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(element.x - element.size/2, element.y - element.size/2, element.size, element.size);
+                }
+                ctx.restore();
+                
+                // Move background elements
+                element.y += speed * 0.5;
+                if (element.y > canvas.height + 20) {
+                    element.y = -20;
+                    element.x = Math.random() * canvas.width;
+                }
+            });
+        }
+        
+        function drawPlayer() {
+            const x = player.x;
+            const y = player.y;
+            
+            // Water jar (glass effect)
+            ctx.save();
+            ctx.fillStyle = 'rgba(173, 216, 230, 0.7)';
+            ctx.strokeStyle = '#4682b4';
+            ctx.lineWidth = 2;
+            ctx.fillRect(x, y, player.width, player.height);
+            ctx.strokeRect(x, y, player.width, player.height);
+            
+            // Water inside
+            ctx.fillStyle = 'rgba(0, 191, 255, 0.6)';
+            ctx.fillRect(x + 3, y + 5, player.width - 6, player.height - 8);
+            
+            // Ambassador Octo (simple octopus)
+            ctx.fillStyle = '#ff6347';
+            // Body
+            ctx.beginPath();
+            ctx.arc(x + player.width/2, y + player.height/2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Tentacles (simple lines)
+            ctx.strokeStyle = '#ff6347';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const angle = (i * Math.PI / 2) + Math.sin(Date.now() * 0.01) * 0.3;
+                const startX = x + player.width/2 + Math.cos(angle) * 4;
+                const startY = y + player.height/2 + Math.sin(angle) * 4;
+                const endX = startX + Math.cos(angle) * 8;
+                const endY = startY + Math.sin(angle) * 8;
+                
+                ctx.beginPath();
+                ctx.moveTo(startX, startY);
+                ctx.lineTo(endX, endY);
+                ctx.stroke();
+            }
+            
+            // Eyes
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(x + player.width/2 - 3, y + player.height/2 - 2, 2, 2);
+            ctx.fillRect(x + player.width/2 + 1, y + player.height/2 - 2, 2, 2);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(x + player.width/2 - 2, y + player.height/2 - 1, 1, 1);
+            ctx.fillRect(x + player.width/2 + 2, y + player.height/2 - 1, 1, 1);
+            
+            ctx.restore();
+        }
+        
+        function drawObstacles() {
+            obstacles.forEach(function(obstacle) {
+                ctx.save();
+                if (obstacle.type === 'cactus') {
+                    // Pixelated cactus
+                    ctx.fillStyle = '#228b22';
+                    ctx.fillRect(obstacle.x + 10, obstacle.y, 5, obstacle.height);
+                    ctx.fillRect(obstacle.x + 5, obstacle.y + 8, 5, 10);
+                    ctx.fillRect(obstacle.x + 15, obstacle.y + 5, 5, 12);
+                    ctx.fillStyle = '#ff69b4';
+                    ctx.fillRect(obstacle.x + 10, obstacle.y, 5, 3);
+                } else {
+                    // Energy crystal
+                    ctx.fillStyle = '#9370db';
+                    ctx.strokeStyle = '#dda0dd';
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.moveTo(obstacle.x + obstacle.width/2, obstacle.y);
+                    ctx.lineTo(obstacle.x + obstacle.width, obstacle.y + obstacle.height/2);
+                    ctx.lineTo(obstacle.x + obstacle.width/2, obstacle.y + obstacle.height);
+                    ctx.lineTo(obstacle.x, obstacle.y + obstacle.height/2);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.stroke();
+                }
+                ctx.restore();
+            });
+        }
+        
+        function drawParticles() {
+            particles.forEach(function(particle) {
+                const alpha = particle.life / particle.maxLife;
+                ctx.save();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#00ffff';
+                ctx.fillRect(particle.x, particle.y, 2, 2);
+                ctx.restore();
+            });
+        }
+        
+        // Game logic
+        function updateGame() {
+            if (!gameRunning) return;
+            
+            const currentTime = Date.now();
+            const elapsedTime = (currentTime - gameStartTime) / 1000;
+            
+            // Increase speed over time (max speed at 8-10 minutes, slower progression)
+            const speedProgress = Math.min(elapsedTime / 480, 1);
+            speed = 1 + (maxSpeed - 1) * speedProgress;
+            speedElement.textContent = Math.floor(speed);
+            
+            // Update score
+            score += Math.floor(speed);
+            scoreElement.textContent = score;
+            
+            // Create obstacles (reduced frequency for easier gameplay)
+            if (Math.random() < 0.015 + speed * 0.002) {
+                createObstacle();
+            }
+            
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obstacle = obstacles[i];
+                obstacle.y += speed * 2;
+                
+                // Remove obstacles that are off screen
+                if (obstacle.y > canvas.height) {
+                    obstacles.splice(i, 1);
+                    continue;
+                }
+                
+                // Collision detection (more forgiving hitbox)
+                if (obstacle.x < player.x + player.width - 5 &&
+                    obstacle.x + obstacle.width > player.x + 5 &&
+                    obstacle.y < player.y + player.height - 5 &&
+                    obstacle.y + obstacle.height > player.y + 5) {
+                    
+                    // Game over
+                    gameOver();
+                }
+            }
+            
+            // Update particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life--;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // Create ambient particles
+            if (Math.random() < 0.1) {
+                createParticles(Math.random() * canvas.width, canvas.height);
+            }
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            
+            // Show game over screen
+            ctx.save();
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            ctx.fillStyle = '#ff0000';
+            ctx.font = '24px Orbitron';
+            ctx.textAlign = 'center';
+            ctx.fillText('MISSION FAILED', canvas.width/2, canvas.height/2 - 40);
+            
+            ctx.fillStyle = '#00ffff';
+            ctx.font = '16px Orbitron';
+            ctx.fillText('Final Score: ' + score, canvas.width/2, canvas.height/2 - 10);
+            ctx.fillText('Press SPACE to restart', canvas.width/2, canvas.height/2 + 20);
+            ctx.restore();
+        }
+        
+        function resetGame() {
+            gameRunning = false;
+            score = 0;
+            speed = 1;
+            obstacles = [];
+            particles = [];
+            player.x = canvas.width / 2 - 15;
+            scoreElement.textContent = '0';
+            speedElement.textContent = '1';
+            initBackground();
+        }
+        
+        function startGame() {
+            startScreen.style.display = 'none';
+            resetGame();
+            gameRunning = true;
+            gameStartTime = Date.now();
+            gameLoop();
+        }
+        
+        function gameLoop() {
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw everything
+            drawBackground();
+            drawObstacles();
+            drawPlayer();
+            drawParticles();
+            
+            // Update game state
+            updateGame();
+            
+            // Continue loop
+            if (gameRunning) {
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // Controls
+        const keys = {};
+        
+        document.addEventListener('keydown', function(e) {
+            keys[e.key] = true;
+            
+            if (e.key === ' ' && !gameRunning && startScreen.style.display === 'none') {
+                startGame();
+            }
+        });
+        
+        document.addEventListener('keyup', function(e) {
+            keys[e.key] = false;
+        });
+        
+        // Player movement
+        function handleInput() {
+            if (!gameRunning) return;
+            
+            if ((keys['ArrowLeft'] || leftPressed) && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if ((keys['ArrowRight'] || rightPressed) && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+        }
+        
+        // Touch controls for mobile
+        const leftBtn = document.getElementById('leftBtn');
+        const rightBtn = document.getElementById('rightBtn');
+        
+        // Touch events
+        leftBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            leftPressed = true;
+        });
+        
+        leftBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            leftPressed = false;
+        });
+        
+        rightBtn.addEventListener('touchstart', function(e) {
+            e.preventDefault();
+            rightPressed = true;
+        });
+        
+        rightBtn.addEventListener('touchend', function(e) {
+            e.preventDefault();
+            rightPressed = false;
+        });
+        
+        // Mouse events as fallback
+        leftBtn.addEventListener('mousedown', function() { leftPressed = true; });
+        leftBtn.addEventListener('mouseup', function() { leftPressed = false; });
+        leftBtn.addEventListener('mouseleave', function() { leftPressed = false; });
+        
+        rightBtn.addEventListener('mousedown', function() { rightPressed = true; });
+        rightBtn.addEventListener('mouseup', function() { rightPressed = false; });
+        rightBtn.addEventListener('mouseleave', function() { rightPressed = false; });
+        
+        // Game update loop for input
+        setInterval(handleInput, 16);
+        
+        // Initialize
+        initBackground();
+        
+        // Draw initial background
+        drawBackground();
+        drawPlayer();
+    </script>
+</body>
+</html>
