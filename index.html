@@ -264,7 +264,67 @@
             100% { opacity: 1; }
         }
 
-        /* Responsive */
+        /* Image display container */
+        .image-display {
+            margin-top: 2rem;
+            text-align: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .image-display.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .bookmark-image {
+            max-width: 400px;
+            max-height: 300px;
+            width: 90%;
+            height: auto;
+            border: 4px solid #00ff00;
+            box-shadow: 
+                0 0 0 2px #000,
+                0 0 0 6px #008800,
+                0 0 20px rgba(0, 255, 0, 0.5);
+            image-rendering: pixelated;
+            background: #000;
+        }
+
+        .image-title {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            color: #00ff00;
+            margin-top: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 
+                2px 2px 0px #008800,
+                -2px -2px 0px #000,
+                2px -2px 0px #000,
+                -2px 2px 0px #000;
+        }
+
+        .error-message {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            color: #ff0000;
+            margin-top: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 
+                2px 2px 0px #880000,
+                -2px -2px 0px #000,
+                2px -2px 0px #000,
+                -2px 2px 0px #000;
+            animation: errorBlink 1s ease-in-out infinite alternate;
+        }
+
+        @keyframes errorBlink {
+            0% { opacity: 1; }
+            100% { opacity: 0.5; }
+        }
         @media (max-width: 768px) {
             .title {
                 font-size: 1.2rem;
@@ -293,11 +353,11 @@
 <body>
     <div class="background-container">
         <!-- Your 8-bit futuristic city GIF -->
-        <img src="homeBackground.gif" alt="8-bit Futuristic City" class="background-gif">
+        <img src="your-gif-file.gif" alt="8-bit Futuristic City" class="background-gif">
         
         <!-- Pixelated lake reflection -->
         <div class="lake-reflection">
-            <img src="homeBackground.gif" alt="City Reflection" class="reflection-gif">
+            <img src="your-gif-file.gif" alt="City Reflection" class="reflection-gif">
         </div>
         
         <!-- Chunky sparkles -->
@@ -314,11 +374,89 @@
                 class="input-field" 
                 placeholder="ENTER CODE"
                 maxlength="15"
+                id="code-input"
             >
+            
+            <!-- Image display area -->
+            <div class="image-display" id="image-display">
+                <img class="bookmark-image" id="bookmark-image" src="" alt="" style="display: none;">
+                <div class="image-title" id="image-title"></div>
+                <div class="error-message" id="error-message" style="display: none;"></div>
+            </div>
         </div>
     </div>
 
     <script>
+        // Bookmark code database - ADD YOUR 24 CODES AND IMAGES HERE
+        const bookmarkDatabase = {
+            'HERO01': { image: 'images/hero1.jpg', title: 'The First Hero' },
+            'HERO02': { image: 'images/hero2.jpg', title: 'Lightning Warrior' },
+            'HERO03': { image: 'images/hero3.jpg', title: 'Fire Guardian' },
+            'MYSTIC': { image: 'images/mystic.jpg', title: 'Ancient Mystic' },
+            'DRAGON': { image: 'images/dragon.jpg', title: 'Dragon Lord' },
+            'SWORD1': { image: 'images/sword1.jpg', title: 'Legendary Blade' },
+            'MAGIC1': { image: 'images/magic1.jpg', title: 'Spell Caster' },
+            'QUEST1': { image: 'images/quest1.jpg', title: 'Epic Quest' },
+            // Add your remaining 16 codes here...
+            // 'CODE09': { image: 'images/image9.jpg', title: 'Your Title' },
+            // 'CODE10': { image: 'images/image10.jpg', title: 'Your Title' },
+            // etc...
+        };
+
+        // Get input elements
+        const input = document.getElementById('code-input');
+        const imageDisplay = document.getElementById('image-display');
+        const bookmarkImage = document.getElementById('bookmark-image');
+        const imageTitle = document.getElementById('image-title');
+        const errorMessage = document.getElementById('error-message');
+
+        // Function to show bookmark
+        function showBookmark(code) {
+            const bookmark = bookmarkDatabase[code];
+            
+            if (bookmark) {
+                // Hide error message
+                errorMessage.style.display = 'none';
+                
+                // Show the image and title
+                bookmarkImage.src = bookmark.image;
+                bookmarkImage.alt = bookmark.title;
+                bookmarkImage.style.display = 'block';
+                imageTitle.textContent = bookmark.title;
+                
+                // Animate the display
+                imageDisplay.classList.add('show');
+                
+                // 8-bit success sound effect simulation
+                input.style.borderColor = '#00ff00';
+                input.style.boxShadow = '0 0 0 4px #00ff00, inset 4px 4px 0px #004400';
+                
+            } else {
+                // Hide image
+                bookmarkImage.style.display = 'none';
+                imageTitle.textContent = '';
+                
+                // Show error message
+                errorMessage.textContent = 'CODE NOT FOUND!';
+                errorMessage.style.display = 'block';
+                imageDisplay.classList.add('show');
+                
+                // 8-bit error effect
+                input.style.borderColor = '#ff0000';
+                input.style.boxShadow = '0 0 0 4px #ff0000, inset 4px 4px 0px #440000';
+            }
+        }
+
+        // Function to hide display
+        function hideDisplay() {
+            imageDisplay.classList.remove('show');
+            setTimeout(() => {
+                bookmarkImage.style.display = 'none';
+                imageTitle.textContent = '';
+                errorMessage.style.display = 'none';
+            }, 500);
+        }
+
         // Create chunky 8-bit floating blocks
         function createPixelBlocks() {
             const container = document.body;
@@ -346,38 +484,42 @@
             }
         }
 
-        // 8-bit input handling with sound effect simulation
-        const input = document.querySelector('.input-field');
+        // 8-bit input handling
         let blinkInterval;
         
         input.addEventListener('focus', function() {
-            // Simulate cursor blink
-            blinkInterval = setInterval(() => {
-                this.style.borderColor = this.style.borderColor === 'rgb(255, 255, 0)' ? '#ffff00' : '#00ff00';
-            }, 500);
+            // Reset border color
+            this.style.borderColor = '#ffff00';
+            this.style.boxShadow = 'inset 4px 4px 0px #444400, 0 0 0 4px #ffff00';
         });
         
         input.addEventListener('blur', function() {
             clearInterval(blinkInterval);
             this.style.borderColor = '#00ff00';
+            this.style.boxShadow = 'inset 4px 4px 0px #004400';
         });
         
-        input.addEventListener('keypress', function(e) {
+        input.addEventListener('input', function() {
+            // Hide display when typing
+            if (this.value.length === 0) {
+                hideDisplay();
+            }
+            
             // Flash effect on keypress
             this.style.background = '#002200';
             setTimeout(() => {
                 this.style.background = '#000';
             }, 50);
-            
+        });
+        
+        input.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 const code = this.value.trim().toUpperCase();
                 if (code) {
                     console.log('8-BIT BOOKMARK CODE:', code);
-                    
-                    // 8-bit style alert
-                    const message = `>>> ANALYZING CODE... STAY TUNED... <<<`;
-                    alert(message);
-                    this.value = '';
+                    showBookmark(code);
+                } else {
+                    hideDisplay();
                 }
             }
         });
