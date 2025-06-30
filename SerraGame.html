@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>White Tiger Forest Runner</title>
+    <title>Serra's Jungle Dash</title>
     <style>
         body {
             margin: 0;
@@ -54,6 +54,39 @@
             z-index: 20;
         }
         
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 30;
+            border: 3px solid #FFD700;
+        }
+        
+        #gameTitle {
+            font-size: 36px;
+            font-weight: bold;
+            color: #FFD700;
+            text-shadow: 3px 3px 0px #FF6347;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+        
+        #startText {
+            font-size: 20px;
+            animation: blink 1.5s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
         #instructions {
             position: absolute;
             bottom: 20px;
@@ -63,12 +96,18 @@
             text-shadow: 2px 2px 0px #000;
             text-align: center;
             font-size: 16px;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div id="gameContainer">
         <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div id="startScreen">
+            <div id="gameTitle">SERRA'S JUNGLE DASH</div>
+            <div id="startText">PRESS START TO PLAY</div>
+            <div style="font-size: 14px; margin-top: 15px; color: #CCC;">Use SPACE or click to jump</div>
+        </div>
         <div id="ui">
             <div>Score: <span id="score">0</span></div>
             <div>High Score: <span id="highScore">0</span></div>
@@ -88,6 +127,7 @@
         const ctx = canvas.getContext('2d');
         
         // Game variables
+        let gameStarted = false;
         let gameRunning = false;
         let score = 0;
         let gameSpeed = 3;
@@ -337,6 +377,7 @@
         
         // Reset game
         function resetGame() {
+            gameStarted = true;
             gameRunning = true;
             score = 0;
             gameSpeed = 3;
@@ -346,6 +387,13 @@
             obstacles = [];
             document.getElementById('score').textContent = '0';
             document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('instructions').style.display = 'block';
+        }
+        
+        // Start game for the first time
+        function startGame() {
+            resetGame();
         }
         
         // Game loop
@@ -375,7 +423,9 @@
         document.addEventListener('keydown', (e) => {
             if (e.code === 'Space') {
                 e.preventDefault();
-                if (!gameRunning) {
+                if (!gameStarted) {
+                    startGame();
+                } else if (!gameRunning) {
                     resetGame();
                 } else if (!tiger.jumping) {
                     tiger.jumping = true;
@@ -386,7 +436,9 @@
         
         // Touch/click support for mobile
         canvas.addEventListener('click', () => {
-            if (!gameRunning) {
+            if (!gameStarted) {
+                startGame();
+            } else if (!gameRunning) {
                 resetGame();
             } else if (!tiger.jumping) {
                 tiger.jumping = true;
