@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professor Joban's Boulder Catch</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(180deg, #87CEEB 0%, #F4A460 100%);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            touch-action: manipulation;
+        }
+        
+        #gameContainer {
+            background: #2C1810;
+            border: 4px solid #8B4513;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(180deg, #87CEEB 0%, #F4A460 80%, #8B4513 100%);
+        }
+        
+        #gameUI {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+        
+        #gameUI div {
+            margin-bottom: 5px;
+        }
+        
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+        }
+        
+        #startScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            z-index: 20;
+        }
+        
+        button {
+            background: #8B4513;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            margin-top: 15px;
+        }
+        
+        button:hover {
+            background: #A0522D;
+        }
+        
+        .controls {
+            margin-top: 20px;
+            font-size: 14px;
+            color: #ccc;
+        }
+        
+        @media (max-width: 600px) {
+            #gameContainer {
+                border: none;
+                border-radius: 0;
+            }
+            
+            #gameUI {
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div id="gameUI">
+            <div>Score: <span id="score">0</span></div>
+            <div>Lives: <span id="lives">5</span></div>
+            <div>Level: <span id="level">1</span></div>
+        </div>
+        
+        <div id="startScreen">
+            <h1>🏔️ Professor Joban's Boulder Catch 🏔️</h1>
+            <p>Help Professor Joban catch the golden boulders!</p>
+            <p>⭐ Catch gold boulders for points</p>
+            <p>⚫ Avoid black boulders or lose a life</p>
+            <div class="controls">
+                <p><strong>Controls:</strong></p>
+                <p>PC: Arrow keys or A/D</p>
+                <p>Mobile: Touch left/right side of screen</p>
+            </div>
+            <button onclick="startGame()">Start Game</button>
+        </div>
+        
+        <div id="gameOver">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Level Reached: <span id="finalLevel">1</span></p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameRunning = false;
+        let score = 0;
+        let lives = 5;
+        let level = 1;
+        let gameSpeed = 1;
+        
+        // Player (Professor Joban)
+        let player = {
+            x: canvas.width / 2 - 30,
+            y: canvas.height - 80,
+            width: 60,
+            height: 60,
+            speed: 5
+        };
+        
+        // Boulders array
+        let boulders = [];
+        
+        // Spawn timing
+        let lastSpawn = 0;
+        let spawnRate = 1000; // milliseconds
+        
+        // Input handling
+        let keys = {};
+        let touchStartX = 0;
+        
+        // Resize canvas for mobile
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const maxWidth = Math.min(window.innerWidth - 20, 800);
+            const maxHeight = Math.min(window.innerHeight - 20, 600);
+            
+            canvas.width = maxWidth;
+            canvas.height = maxHeight;
+            
+            // Adjust player position
+            player.x = canvas.width / 2 - 30;
+            player.y = canvas.height - 80;
+        }
+        
+        // Initialize
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        // Touch controls
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touchStartX = e.touches[0].clientX;
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const touchX = e.touches[0].clientX - rect.left;
+            
+            if (touchX < canvas.width / 2) {
+                player.x -= player.speed;
+            } else {
+                player.x += player.speed;
+            }
+            
+            // Keep player in bounds
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            
+            if (clickX < canvas.width / 2) {
+                player.x -= player.speed * 2;
+            } else {
+                player.x += player.speed * 2;
+            }
+            
+            // Keep player in bounds
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+        });
+        
+        // Draw Professor Joban
+        function drawPlayer() {
+            ctx.save();
+            
+            // Turban
+            ctx.fillStyle = '#FF6B35';
+            ctx.fillRect(player.x + 10, player.y + 5, 40, 25);
+            
+            // Face
+            ctx.fillStyle = '#D2691E';
+            ctx.fillRect(player.x + 15, player.y + 25, 30, 20);
+            
+            // Sunglasses
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 18, player.y + 28, 8, 6);
+            ctx.fillRect(player.x + 34, player.y + 28, 8, 6);
+            ctx.fillRect(player.x + 26, player.y + 30, 8, 2);
+            
+            // Beard
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(player.x + 20, player.y + 40, 20, 10);
+            
+            // Body
+            ctx.fillStyle = '#4169E1';
+            ctx.fillRect(player.x + 10, player.y + 45, 40, 15);
+            
+            ctx.restore();
+        }
+        
+        // Draw boulder
+        function drawBoulder(boulder) {
+            ctx.save();
+            ctx.translate(boulder.x + boulder.size/2, boulder.y + boulder.size/2);
+            ctx.rotate(boulder.rotation);
+            
+            if (boulder.type === 'gold') {
+                // Gold boulder with shine effect
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, boulder.size/2);
+                gradient.addColorStop(0, '#FFD700');
+                gradient.addColorStop(0.7, '#FFA500');
+                gradient.addColorStop(1, '#FF8C00');
+                ctx.fillStyle = gradient;
+            } else {
+                // Black boulder
+                ctx.fillStyle = '#2F2F2F';
+            }
+            
+            ctx.beginPath();
+            ctx.arc(0, 0, boulder.size/2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Add some texture
+            ctx.fillStyle = boulder.type === 'gold' ? '#FFFF00' : '#1F1F1F';
+            ctx.beginPath();
+            ctx.arc(-boulder.size/6, -boulder.size/6, boulder.size/8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // Spawn boulder
+        function spawnBoulder() {
+            const now = Date.now();
+            if (now - lastSpawn > spawnRate / gameSpeed) {
+                const type = Math.random() < 0.7 ? 'gold' : 'black'; // 70% gold, 30% black
+                const size = 25 + Math.random() * 15;
+                
+                boulders.push({
+                    x: Math.random() * (canvas.width - size),
+                    y: -size,
+                    size: size,
+                    speed: 1.5 + Math.random() * 2,
+                    type: type,
+                    rotation: 0,
+                    rotationSpeed: (Math.random() - 0.5) * 0.2
+                });
+                
+                lastSpawn = now;
+            }
+        }
+        
+        // Update game state
+        function update() {
+            if (!gameRunning) return;
+            
+            // Move player
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                player.x -= player.speed;
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                player.x += player.speed;
+            }
+            
+            // Keep player in bounds
+            player.x = Math.max(0, Math.min(canvas.width - player.width, player.x));
+            
+            // Spawn boulders
+            spawnBoulder();
+            
+            // Update boulders
+            for (let i = boulders.length - 1; i >= 0; i--) {
+                const boulder = boulders[i];
+                boulder.y += boulder.speed * gameSpeed;
+                boulder.rotation += boulder.rotationSpeed;
+                
+                // Check collision with player
+                if (boulder.x < player.x + player.width &&
+                    boulder.x + boulder.size > player.x &&
+                    boulder.y < player.y + player.height &&
+                    boulder.y + boulder.size > player.y) {
+                    
+                    if (boulder.type === 'gold') {
+                        score += 10;
+                        // Bonus points for level
+                        score += level * 5;
+                    } else {
+                        lives--;
+                        // Flash effect for damage
+                        canvas.style.filter = 'brightness(1.5)';
+                        setTimeout(() => canvas.style.filter = 'brightness(1)', 100);
+                    }
+                    
+                    boulders.splice(i, 1);
+                    continue;
+                }
+                
+                // Remove boulders that are off screen
+                if (boulder.y > canvas.height) {
+                    boulders.splice(i, 1);
+                }
+            }
+            
+            // Level progression
+            const newLevel = Math.floor(score / 100) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                gameSpeed = 1 + (level - 1) * 0.3;
+                spawnRate = Math.max(300, 1000 - (level - 1) * 50);
+            }
+            
+            // Check game over
+            if (lives <= 0) {
+                endGame();
+            }
+            
+            // Update UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('lives').textContent = lives;
+            document.getElementById('level').textContent = level;
+        }
+        
+        // Draw everything
+        function draw() {
+            // Clear canvas with solid background
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw boulders
+            boulders.forEach(drawBoulder);
+            
+            // Draw player
+            drawPlayer();
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start game
+        function startGame() {
+            gameRunning = true;
+            score = 0;
+            lives = 5;
+            level = 1;
+            gameSpeed = 1;
+            spawnRate = 1000;
+            boulders = [];
+            lastSpawn = 0;
+            
+            player.x = canvas.width / 2 - 30;
+            player.y = canvas.height - 80;
+            
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOver').style.display = 'none';
+            
+            gameLoop();
+        }
+        
+        // End game
+        function endGame() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalLevel').textContent = level;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        // Restart game
+        function restartGame() {
+            startGame();
+        }
+        
+        // Start the game loop (but don't start the game yet)
+        gameLoop();
+    </script>
+</body>
+</html>
