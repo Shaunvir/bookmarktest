@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>General Cosmos Boulder Smash</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #1a1a2e, #16213e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        #gameContainer {
+            position: relative;
+            border: 3px solid #ff6b9d;
+            border-radius: 10px;
+            background: #0f0f23;
+            box-shadow: 0 0 30px rgba(255, 107, 157, 0.5);
+        }
+        
+        canvas {
+            display: block;
+            background: linear-gradient(180deg, #0f0f23 0%, #1a1a2e 100%);
+        }
+        
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: #ff6b9d;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 107, 157, 0.8);
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff6b9d;
+            font-size: 14px;
+            text-align: center;
+            opacity: 0.8;
+        }
+        
+        #gameOver, #titleScreen {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #ff6b9d;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 2px solid #ff6b9d;
+            box-shadow: 0 0 30px rgba(255, 107, 157, 0.5);
+        }
+        
+        #gameOver {
+            display: none;
+        }
+        
+        #titleScreen h1 {
+            font-size: 36px;
+            margin: 0 0 10px 0;
+            text-shadow: 0 0 20px rgba(255, 107, 157, 1);
+            background: linear-gradient(45deg, #ff6b9d, #ffaacc, #ff6b9d);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px rgba(255, 107, 157, 0.8); }
+            to { text-shadow: 0 0 30px rgba(255, 107, 157, 1), 0 0 40px rgba(255, 107, 157, 0.8); }
+        }
+        
+        #titleScreen p {
+            font-size: 16px;
+            margin: 15px 0;
+            opacity: 0.9;
+        }
+        
+        button {
+            background: #ff6b9d;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #ff5588;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="400"></canvas>
+        <div id="ui">
+            <div>Score: <span id="score">0</span></div>
+            <div>Level: <span id="level">1</span></div>
+        </div>
+        <div id="instructions">
+            Touch and drag to move your luchador • Keep the boulder in play!
+        </div>
+        <div id="titleScreen">
+            <h1>GENERAL COSMOS<br>BOULDER SMASH</h1>
+            <p>🔨 Mexican Luchadors vs Cosmic Boulder! 🔨</p>
+            <p>Touch and drag to move your luchador<br>Keep the boulder in play to score points!</p>
+            <button onclick="startGame()">START GAME</button>
+        </div>
+        <div id="gameOver">
+            <h2>¡Game Over!</h2>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Level Reached: <span id="finalLevel">1</span></p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameStarted = false;
+        let gameRunning = false;
+        let score = 0;
+        let level = 1;
+        let ballSpeed = 3;
+        let aiSpeed = 2;
+        
+        // Game objects
+        const player = {
+            x: 50,
+            y: canvas.height / 2 - 40,
+            width: 15,
+            height: 80,
+            speed: 6,
+            color: '#ff6b9d',
+            swinging: false,
+            swingTime: 0
+        };
+        
+        const ai = {
+            x: canvas.width - 65,
+            y: canvas.height / 2 - 40,
+            width: 15,
+            height: 80,
+            speed: aiSpeed,
+            color: '#ff6b9d',
+            swinging: false,
+            swingTime: 0
+        };
+        
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            dx: ballSpeed,
+            dy: ballSpeed,
+            color: '#ffff00',
+            trail: []
+        };
+        
+        // Hammer particles
+        const particles = [];
+        
+        // Touch/Mouse controls
+        let touching = false;
+        let touchY = 0;
+        
+        // Add event listeners for mobile and desktop
+        canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
+        canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
+        canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+        canvas.addEventListener('mousedown', handleMouseDown);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseup', handleMouseUp);
+        
+        function handleTouchStart(e) {
+            e.preventDefault();
+            touching = true;
+            const rect = canvas.getBoundingClientRect();
+            touchY = e.touches[0].clientY - rect.top;
+        }
+        
+        function handleTouchMove(e) {
+            e.preventDefault();
+            if (touching) {
+                const rect = canvas.getBoundingClientRect();
+                touchY = e.touches[0].clientY - rect.top;
+            }
+        }
+        
+        function handleTouchEnd(e) {
+            e.preventDefault();
+            touching = false;
+        }
+        
+        function handleMouseDown(e) {
+            touching = true;
+            const rect = canvas.getBoundingClientRect();
+            touchY = e.clientY - rect.top;
+        }
+        
+        function handleMouseMove(e) {
+            if (touching) {
+                const rect = canvas.getBoundingClientRect();
+                touchY = e.clientY - rect.top;
+            }
+        }
+        
+        function handleMouseUp(e) {
+            touching = false;
+        }
+        
+        // Create particle effect
+        function createParticles(x, y) {
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    dx: (Math.random() - 0.5) * 10,
+                    dy: (Math.random() - 0.5) * 10,
+                    life: 30,
+                    maxLife: 30,
+                    color: `hsl(${320 + Math.random() * 40}, 100%, 70%)`
+                });
+            }
+        }
+        
+        // Draw luchador with glowing hammer
+        function drawLuchador(luchador, isPlayer) {
+            const { x, y, width, height, color, swinging, swingTime } = luchador;
+            
+            // Body (more visible with outline)
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(x - 5, y + 10, width + 10, height - 20);
+            
+            // Body outline for better visibility
+            ctx.strokeStyle = '#5D2E0A';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 5, y + 10, width + 10, height - 20);
+            
+            // Mask (larger and more visible)
+            ctx.fillStyle = color;
+            ctx.fillRect(x - 8, y - 5, width + 16, 35);
+            
+            // Mask outline
+            ctx.strokeStyle = '#cc1166';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x - 8, y - 5, width + 16, 35);
+            
+            // Eyes on mask
+            ctx.fillStyle = 'white';
+            ctx.fillRect(x - 2, y + 8, 4, 6);
+            ctx.fillRect(x + 6, y + 8, 4, 6);
+            ctx.fillStyle = 'black';
+            ctx.fillRect(x, y + 10, 2, 2);
+            ctx.fillRect(x + 8, y + 10, 2, 2);
+            
+            // Calculate hammer position based on swing animation
+            let hammerAngle = 0;
+            let hammerOffsetX = 0;
+            let hammerOffsetY = 0;
+            
+            if (swinging) {
+                // Create swing arc animation
+                const swingProgress = swingTime / 15; // 15 frame swing duration
+                hammerAngle = Math.sin(swingProgress * Math.PI) * (Math.PI / 3); // 60 degree arc
+                hammerOffsetX = Math.sin(hammerAngle) * 10;
+                hammerOffsetY = -Math.cos(hammerAngle) * 5;
+            }
+            
+            // Hammer glow
+            ctx.shadowBlur = swinging ? 30 : 20;
+            ctx.shadowColor = color;
+            
+            // Save context for rotation
+            ctx.save();
+            
+            // Move to hammer pivot point
+            const hammerPivotX = isPlayer ? x - 15 : x + width + 15;
+            const hammerPivotY = y + height/2;
+            ctx.translate(hammerPivotX, hammerPivotY);
+            ctx.rotate(hammerAngle * (isPlayer ? 1 : -1));
+            
+            // Hammer handle (more visible)
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(-15 + hammerOffsetX, -3 + hammerOffsetY, 30, 6);
+            
+            // Hammer head with extra glow when swinging
+            if (swinging) {
+                ctx.shadowBlur = 40;
+                ctx.fillStyle = '#ffaacc';
+            } else {
+                ctx.fillStyle = color;
+            }
+            
+            const hammerHeadX = isPlayer ? -25 : -10;
+            ctx.fillRect(hammerHeadX + hammerOffsetX, -10 + hammerOffsetY, 18, 20);
+            
+            // Hammer outline for better visibility
+            ctx.shadowBlur = 0;
+            ctx.strokeStyle = '#cc1166';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(hammerHeadX + hammerOffsetX, -10 + hammerOffsetY, 18, 20);
+            
+            ctx.restore();
+            ctx.shadowBlur = 0;
+        }
+        
+        // Draw ball with trail
+        function drawBall() {
+            // Add current position to trail
+            ball.trail.push({ x: ball.x, y: ball.y });
+            if (ball.trail.length > 10) {
+                ball.trail.shift();
+            }
+            
+            // Draw trail
+            for (let i = 0; i < ball.trail.length; i++) {
+                const alpha = i / ball.trail.length;
+                ctx.globalAlpha = alpha * 0.5;
+                ctx.fillStyle = ball.color;
+                ctx.beginPath();
+                ctx.arc(ball.trail[i].x, ball.trail[i].y, ball.radius * alpha, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Draw main ball with glow
+            ctx.globalAlpha = 1;
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = ball.color;
+            ctx.fillStyle = ball.color;
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+        
+        // Draw particles
+        function drawParticles() {
+            particles.forEach((particle, index) => {
+                ctx.globalAlpha = particle.life / particle.maxLife;
+                ctx.fillStyle = particle.color;
+                ctx.fillRect(particle.x, particle.y, 3, 3);
+                
+                particle.x += particle.dx;
+                particle.y += particle.dy;
+                particle.life--;
+                
+                if (particle.life <= 0) {
+                    particles.splice(index, 1);
+                }
+            });
+            ctx.globalAlpha = 1;
+        }
+        
+        function updatePlayer() {
+            if (!gameStarted || !gameRunning) return;
+            
+            if (touching) {
+                const targetY = touchY - player.height / 2;
+                const diff = targetY - player.y;
+                player.y += diff * 0.1;
+            }
+            
+            // Update swing animation
+            if (player.swinging) {
+                player.swingTime++;
+                if (player.swingTime >= 15) {
+                    player.swinging = false;
+                    player.swingTime = 0;
+                }
+            }
+            
+            // Keep player in bounds
+            player.y = Math.max(0, Math.min(canvas.height - player.height, player.y));
+        }
+        
+        function updateAI() {
+            if (!gameStarted || !gameRunning) return;
+            
+            const ballCenterY = ball.y;
+            const aiCenterY = ai.y + ai.height / 2;
+            
+            if (ballCenterY < aiCenterY - 10) {
+                ai.y -= ai.speed;
+            } else if (ballCenterY > aiCenterY + 10) {
+                ai.y += ai.speed;
+            }
+            
+            // Update swing animation
+            if (ai.swinging) {
+                ai.swingTime++;
+                if (ai.swingTime >= 15) {
+                    ai.swinging = false;
+                    ai.swingTime = 0;
+                }
+            }
+            
+            // Keep AI in bounds
+            ai.y = Math.max(0, Math.min(canvas.height - ai.height, ai.y));
+        }
+        
+        function updateBall() {
+            if (!gameStarted || !gameRunning) return;
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            // Bounce off top and bottom
+            if (ball.y <= ball.radius || ball.y >= canvas.height - ball.radius) {
+                ball.dy = -ball.dy;
+                createParticles(ball.x, ball.y);
+            }
+            
+            // Check collision with player
+            if (ball.x - ball.radius <= player.x + player.width &&
+                ball.x + ball.radius >= player.x &&
+                ball.y >= player.y &&
+                ball.y <= player.y + player.height) {
+                
+                ball.dx = Math.abs(ball.dx);
+                const hitPos = (ball.y - player.y) / player.height;
+                ball.dy = (hitPos - 0.5) * 8;
+                createParticles(ball.x, ball.y);
+                
+                // Trigger hammer swing animation
+                player.swinging = true;
+                player.swingTime = 0;
+                
+                score += 10;
+                updateScore();
+            }
+            
+            // Check collision with AI
+            if (ball.x + ball.radius >= ai.x &&
+                ball.x - ball.radius <= ai.x + ai.width &&
+                ball.y >= ai.y &&
+                ball.y <= ai.y + ai.height) {
+                
+                ball.dx = -Math.abs(ball.dx);
+                const hitPos = (ball.y - ai.y) / ai.height;
+                ball.dy = (hitPos - 0.5) * 8;
+                createParticles(ball.x, ball.y);
+                
+                // Trigger hammer swing animation
+                ai.swinging = true;
+                ai.swingTime = 0;
+            }
+            
+            // Check if ball goes off screen (player loses)
+            if (ball.x < -ball.radius) {
+                gameOver();
+            }
+            
+            // Reset ball if it goes off the right side
+            if (ball.x > canvas.width + ball.radius) {
+                resetBall();
+                score += 50;
+                updateScore();
+            }
+        }
+        
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.dx = -ballSpeed;
+            ball.dy = (Math.random() - 0.5) * 6;
+            ball.trail = [];
+        }
+        
+        function updateScore() {
+            document.getElementById('score').textContent = score;
+            
+            // Increase difficulty every 100 points
+            const newLevel = Math.floor(score / 100) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                ballSpeed += 0.5;
+                aiSpeed += 0.3;
+                ai.speed = aiSpeed;
+                document.getElementById('level').textContent = level;
+            }
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalLevel').textContent = level;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        function startGame() {
+            gameStarted = true;
+            gameRunning = true;
+            document.getElementById('titleScreen').style.display = 'none';
+            gameLoop();
+        }
+        
+        function restartGame() {
+            gameStarted = true;
+            gameRunning = true;
+            score = 0;
+            level = 1;
+            ballSpeed = 3;
+            aiSpeed = 2;
+            ai.speed = aiSpeed;
+            
+            player.y = canvas.height / 2 - 40;
+            player.swinging = false;
+            player.swingTime = 0;
+            
+            ai.y = canvas.height / 2 - 40;
+            ai.swinging = false;
+            ai.swingTime = 0;
+            
+            resetBall();
+            
+            document.getElementById('score').textContent = score;
+            document.getElementById('level').textContent = level;
+            document.getElementById('gameOver').style.display = 'none';
+            
+            gameLoop();
+        }
+        
+        function draw() {
+            // Clear canvas with gradient background
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#0f0f23');
+            gradient.addColorStop(1, '#1a1a2e');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw center line
+            ctx.strokeStyle = 'rgba(255, 107, 157, 0.3)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw game objects
+            drawLuchador(player, true);
+            drawLuchador(ai, false);
+            drawBall();
+            drawParticles();
+        }
+        
+        function gameLoop() {
+            if (!gameStarted) return;
+            if (!gameRunning) return;
+            
+            updatePlayer();
+            updateAI();
+            updateBall();
+            draw();
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize the game with title screen
+        function init() {
+            draw(); // Draw initial state
+        }
+        
+        // Start the initialization
+        init();
+    </script>
+</body>
+</html>
