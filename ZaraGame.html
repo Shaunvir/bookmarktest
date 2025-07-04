@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Hunt for Princess Zara</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a0033, #330066, #660099);
+            font-family: 'Orbitron', monospace;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            background: #000;
+            border: 4px solid #00ffff;
+            box-shadow: 0 0 30px #00ffff;
+        }
+        
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, #1a0033, #000);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            z-index: 1000;
+        }
+        
+        .title {
+            font-size: 3.5rem;
+            font-weight: 900;
+            color: #00ffff;
+            text-shadow: 0 0 20px #00ffff;
+            margin-bottom: 2rem;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #00ffff; }
+            to { text-shadow: 0 0 30px #00ffff, 0 0 40px #00ffff; }
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #ff00ff;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+        
+        .instructions {
+            font-size: 1rem;
+            color: #ffffff;
+            margin-bottom: 2rem;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #ff00ff, #00ffff);
+            border: none;
+            color: #000;
+            font-family: 'Orbitron', monospace;
+            font-size: 1.2rem;
+            font-weight: 700;
+            padding: 15px 40px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+        
+        .start-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 30px rgba(255, 0, 255, 0.8);
+        }
+        
+        .game-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            background: linear-gradient(45deg, #000033, #003366, #006699);
+        }
+        
+        .hud {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 100;
+        }
+        
+        .level-info {
+            color: #00ffff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .timer {
+            color: #ff00ff;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px #ff00ff;
+        }
+        
+        .game-area {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border: 2px solid #00ffff;
+            border-radius: 5px;
+            overflow: hidden;
+            cursor: crosshair;
+        }
+        
+        .character {
+            position: absolute;
+            width: 40px;
+            height: 50px;
+            cursor: pointer;
+            transition: transform 0.1s ease;
+            image-rendering: pixelated;
+        }
+        
+        .character:hover {
+            transform: scale(1.1);
+        }
+        
+        .character.zara {
+            filter: drop-shadow(0 0 5px #00ff00);
+        }
+        
+        .success-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #00ff00;
+            font-size: 2rem;
+            font-weight: 700;
+            padding: 20px 40px;
+            border: 3px solid #00ff00;
+            border-radius: 10px;
+            text-shadow: 0 0 20px #00ff00;
+            animation: successPulse 0.5s ease-in-out;
+            z-index: 200;
+        }
+        
+        @keyframes successPulse {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+        
+        .wrong-click {
+            position: absolute;
+            color: #ff0000;
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-shadow: 0 0 10px #ff0000;
+            animation: wrongFade 1s ease-out forwards;
+            z-index: 150;
+            pointer-events: none;
+        }
+        
+        @keyframes wrongFade {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-30px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="start-screen" id="startScreen">
+            <h1 class="title">THE HUNT FOR<br>PRINCESS ZARA</h1>
+            <p class="subtitle">Retro Arcade Challenge</p>
+            <p class="instructions">
+                Princess Zara has been scattered across different dimensions!<br>
+                She appears as a green figure with a crown among crowds of colorful characters.<br><br>
+                <strong>Your Mission:</strong> Find Princess Zara and tap/click on her to advance to the next level.<br>
+                Each level gets more challenging with more characters to search through!
+            </p>
+            <button class="start-button" onclick="startGame()">Begin Hunt</button>
+        </div>
+        
+        <div class="game-screen" id="gameScreen">
+            <div class="hud">
+                <div class="level-info">LEVEL: <span id="levelNumber">1</span></div>
+                <div class="timer">TIME: <span id="timeDisplay">00:00</span></div>
+            </div>
+            <div class="game-area" id="gameArea"></div>
+        </div>
+    </div>
+
+    <script>
+        let currentLevel = 1;
+        let gameStartTime = 0;
+        let gameTimer;
+        let zaraPosition = { x: 0, y: 0 };
+        
+        const colors = ['#ff0000', '#0000ff', '#ffff00', '#ff00ff', '#00ffff', '#ffa500', '#800080', '#ffc0cb', '#00ff00', '#32cd32', '#228b22', '#90ee90'];
+        
+        function startGame() {
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            gameStartTime = Date.now();
+            startTimer();
+            generateLevel();
+        }
+        
+        function startTimer() {
+            gameTimer = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - gameStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                document.getElementById('timeDisplay').textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+        
+        function generateLevel() {
+            const gameArea = document.getElementById('gameArea');
+            gameArea.innerHTML = '';
+            
+            document.getElementById('levelNumber').textContent = currentLevel;
+            
+            const areaRect = gameArea.getBoundingClientRect();
+            const areaWidth = areaRect.width - 40;
+            const areaHeight = areaRect.height - 50;
+            
+            // Generate random positions for all characters
+            const positions = [];
+            const numCharacters = Math.min(50 + (currentLevel - 1) * 10, 150); // Increase difficulty
+            
+            // Create Princess Zara first
+            const zaraX = Math.random() * areaWidth;
+            const zaraY = Math.random() * areaHeight;
+            zaraPosition = { x: zaraX, y: zaraY };
+            
+            const zara = createCharacter(zaraX, zaraY, true);
+            gameArea.appendChild(zara);
+            positions.push({ x: zaraX, y: zaraY });
+            
+            // Create other characters
+            for (let i = 0; i < numCharacters; i++) {
+                let x, y;
+                let attempts = 0;
+                
+                // Try to find a position that doesn't overlap too much
+                do {
+                    x = Math.random() * areaWidth;
+                    y = Math.random() * areaHeight;
+                    attempts++;
+                } while (attempts < 50 && positions.some(pos => 
+                    Math.abs(pos.x - x) < 30 && Math.abs(pos.y - y) < 40
+                ));
+                
+                const character = createCharacter(x, y, false);
+                gameArea.appendChild(character);
+                positions.push({ x, y });
+            }
+        }
+        
+        function createCharacter(x, y, isZara) {
+            const character = document.createElement('div');
+            character.className = 'character' + (isZara ? ' zara' : '');
+            character.style.left = x + 'px';
+            character.style.top = y + 'px';
+            
+            // Create pixel art character
+            const canvas = document.createElement('canvas');
+            canvas.width = 40;
+            canvas.height = 50;
+            const ctx = canvas.getContext('2d');
+            
+            // Disable anti-aliasing for pixel art
+            ctx.imageSmoothingEnabled = false;
+            
+            if (isZara) {
+                drawZara(ctx);
+            } else {
+                drawRandomCharacter(ctx);
+            }
+            
+            character.appendChild(canvas);
+            
+            if (isZara) {
+                character.onclick = () => foundZara();
+            } else {
+                character.onclick = (e) => wrongClick(e);
+            }
+            
+            return character;
+        }
+        
+        function drawZara(ctx) {
+            // Princess Zara - green with subtle crown
+            ctx.fillStyle = '#00ff00'; // Green body
+            ctx.fillRect(15, 25, 10, 20); // Body
+            ctx.fillRect(10, 15, 20, 15); // Head
+            ctx.fillRect(5, 45, 30, 5); // Dress bottom
+            
+            // Subtle crown - smaller and less prominent
+            ctx.fillStyle = '#cccc00'; // Muted gold crown
+            ctx.fillRect(12, 12, 16, 3); // Main crown band
+            ctx.fillRect(14, 10, 2, 3); // Small point
+            ctx.fillRect(18, 9, 2, 4); // Middle point (slightly taller)
+            ctx.fillRect(22, 10, 2, 3); // Small point
+            
+            // Eyes
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(13, 18, 2, 2);
+            ctx.fillRect(25, 18, 2, 2);
+            
+            // Smile
+            ctx.fillRect(17, 22, 6, 1);
+        }
+        
+        function drawRandomCharacter(ctx) {
+            const color = colors[Math.floor(Math.random() * colors.length)];
+            
+            // Body
+            ctx.fillStyle = color;
+            ctx.fillRect(15, 25, 10, 20);
+            ctx.fillRect(10, 15, 20, 15);
+            ctx.fillRect(5, 45, 30, 5);
+            
+            // Eyes
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(13, 18, 2, 2);
+            ctx.fillRect(25, 18, 2, 2);
+            
+            // Random hat or hair
+            const hatType = Math.random();
+            if (hatType < 0.3) {
+                // Hat
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(8, 10, 24, 6);
+            } else if (hatType < 0.6) {
+                // Hair
+                ctx.fillStyle = '#654321';
+                ctx.fillRect(8, 8, 24, 10);
+            }
+            // Otherwise bald
+        }
+        
+        function foundZara() {
+            // Show success message
+            const successMsg = document.createElement('div');
+            successMsg.className = 'success-message';
+            successMsg.textContent = `LEVEL ${currentLevel} COMPLETE!`;
+            document.getElementById('gameScreen').appendChild(successMsg);
+            
+            // Move to next level after delay
+            setTimeout(() => {
+                successMsg.remove();
+                currentLevel++;
+                generateLevel();
+            }, 1500);
+        }
+        
+        function wrongClick(e) {
+            // Show "WRONG!" message at click location
+            const wrongMsg = document.createElement('div');
+            wrongMsg.className = 'wrong-click';
+            wrongMsg.textContent = 'WRONG!';
+            wrongMsg.style.left = e.pageX + 'px';
+            wrongMsg.style.top = e.pageY + 'px';
+            document.body.appendChild(wrongMsg);
+            
+            // Remove after animation
+            setTimeout(() => {
+                wrongMsg.remove();
+            }, 1000);
+        }
+        
+        // Add some background animations
+        function createStarfield() {
+            const gameArea = document.getElementById('gameArea');
+            for (let i = 0; i < 20; i++) {
+                const star = document.createElement('div');
+                star.style.position = 'absolute';
+                star.style.width = '2px';
+                star.style.height = '2px';
+                star.style.backgroundColor = '#ffffff';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.opacity = Math.random();
+                star.style.animation = `twinkle ${2 + Math.random() * 3}s infinite`;
+                gameArea.appendChild(star);
+            }
+        }
+        
+        // Add CSS animation for stars
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes twinkle {
+                0%, 100% { opacity: 0.3; }
+                50% { opacity: 1; }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
