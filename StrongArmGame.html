@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commander Strong-arm's Claw Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: #00ff00;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .header {
+            width: 100%;
+            background: linear-gradient(90deg, #0f3460, #16213e);
+            padding: 20px;
+            text-align: center;
+            border-bottom: 3px solid #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+        
+        .title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            text-shadow: 0 0 10px #00ff00;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff00, #00ccff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .lives {
+            color: #ff3333;
+        }
+        
+        .score {
+            color: #ffff00;
+        }
+        
+        .speed {
+            color: #00ccff;
+        }
+        
+        .game-area {
+            flex: 1;
+            width: 100%;
+            position: relative;
+            background: linear-gradient(180deg, #0f3460, #1a1a2e);
+        }
+        
+        .hole {
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            width: 120px;
+            height: 80px;
+            background: radial-gradient(ellipse, #000000, #333333);
+            border: 4px solid #666666;
+            border-radius: 50%;
+            transform: translateY(-50%);
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.8);
+            z-index: 1;
+        }
+        
+        .robot-hand {
+            position: absolute;
+            top: 50%;
+            left: 50px;
+            width: 120px;
+            height: 80px;
+            transform: translateY(-50%);
+            z-index: 2;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        
+        .robot-hand.deployed {
+            transform: translateY(-50%) translateX(250px) scale(1.2);
+        }
+        
+        .robot-hand.grabbing {
+            transform: translateY(-50%) translateX(250px) scale(1.2);
+        }
+        
+        .robot-hand.retracting {
+            transform: translateY(-50%) translateX(50px) scale(1.1);
+        }
+        
+        .hand-sprite {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #666666, #999999);
+            border: 3px solid #333333;
+            border-radius: 10px;
+            position: relative;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+        }
+        
+        .hand-sprite::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 60%;
+            height: 60%;
+            background: linear-gradient(45deg, #888888, #bbbbbb);
+            border-radius: 5px;
+        }
+        
+        .conveyor-belt {
+            position: absolute;
+            bottom: 100px;
+            left: 0;
+            width: 100%;
+            height: 120px;
+            background: linear-gradient(90deg, #333333, #555555);
+            border: 4px solid #666666;
+            border-left: none;
+            border-right: none;
+            overflow: hidden;
+        }
+        
+        .belt-surface {
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                90deg,
+                #444444,
+                #444444 20px,
+                #666666 20px,
+                #666666 40px
+            );
+            animation: belt-move 2s linear infinite;
+        }
+        
+        @keyframes belt-move {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-40px); }
+        }
+        
+        .item {
+            position: absolute;
+            bottom: 130px;
+            width: 60px;
+            height: 60px;
+            border: 3px solid;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            animation: item-move linear;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+        
+        .item.good {
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            border-color: #00aa00;
+            color: #ffffff;
+        }
+        
+        .item.bad {
+            background: linear-gradient(45deg, #ff0000, #cc0000);
+            border-color: #aa0000;
+            color: #ffffff;
+        }
+        
+        .item.grabbed {
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        @keyframes item-move {
+            0% { transform: translateX(100vw); }
+            100% { transform: translateX(-100px); }
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px solid #00ff00;
+            text-align: center;
+        }
+        
+        .deploy-btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.5);
+        }
+        
+        .deploy-btn:hover {
+            background: linear-gradient(45deg, #00cc00, #00aa00);
+            transform: scale(1.1);
+        }
+        
+        .deploy-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 4px solid #ff0000;
+            text-align: center;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .game-over.show {
+            display: block;
+        }
+        
+        .game-over h2 {
+            font-size: 2rem;
+            color: #ff0000;
+            margin-bottom: 20px;
+        }
+        
+        .restart-btn {
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #00ff00, #00cc00);
+            color: #000000;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        .instructions {
+            font-size: 0.9rem;
+            color: #00ccff;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="title">COMMANDER STRONG-ARM'S CLAW GAME</div>
+            <div class="stats">
+                <div class="stat lives">
+                    <span>❤️ LIVES:</span>
+                    <span id="lives">3</span>
+                </div>
+                <div class="stat score">
+                    <span>⭐ SCORE:</span>
+                    <span id="score">0</span>
+                </div>
+                <div class="stat speed">
+                    <span>⚡ SPEED:</span>
+                    <span id="speed">1.0x</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <div class="hole"></div>
+            <div class="robot-hand" id="robotHand">
+                <div class="hand-sprite"></div>
+            </div>
+            <div class="conveyor-belt">
+                <div class="belt-surface"></div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="deploy-btn" id="deployBtn">DEPLOY CLAW</button>
+            <div class="instructions">
+                Grab 💎 good items, avoid ☠️ bad items!<br>
+                Hand takes 0.5 seconds to deploy - time it right!
+            </div>
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>MISSION FAILED</h2>
+            <div>Commander Strong-arm is disappointed!</div>
+            <div>Final Score: <span id="finalScore">0</span></div>
+            <button class="restart-btn" id="restartBtn">RESTART MISSION</button>
+        </div>
+    </div>
+
+    <script>
+        class StrongArmClawGame {
+            constructor() {
+                this.lives = 3;
+                this.score = 0;
+                this.speed = 1.0;
+                this.isHandDeployed = false;
+                this.isGameOver = false;
+                this.items = [];
+                this.itemSpawnTimer = null;
+                this.speedIncreaseTimer = null;
+                
+                this.robotHand = document.getElementById('robotHand');
+                this.deployBtn = document.getElementById('deployBtn');
+                this.gameOverScreen = document.getElementById('gameOver');
+                this.restartBtn = document.getElementById('restartBtn');
+                
+                this.goodItems = ['💎', '🏆', '⭐', '🎯', '🔋'];
+                this.badItems = ['☠️', '💀', '⚠️', '🔥', '💣'];
+                
+                this.init();
+            }
+            
+            init() {
+                this.deployBtn.addEventListener('click', () => this.deployHand());
+                this.restartBtn.addEventListener('click', () => this.restartGame());
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space' && !this.isGameOver) {
+                        e.preventDefault();
+                        this.deployHand();
+                    }
+                });
+                
+                this.startGame();
+            }
+            
+            startGame() {
+                this.spawnItems();
+                this.startSpeedIncrease();
+                this.updateDisplay();
+            }
+            
+            deployHand() {
+                if (this.isHandDeployed || this.isGameOver) return;
+                
+                this.isHandDeployed = true;
+                this.robotHand.classList.add('deployed');
+                
+                // After 0.5 seconds, check for grab and start the grabbing sequence
+                setTimeout(() => {
+                    const grabbedItem = this.checkForGrab();
+                    if (grabbedItem) {
+                        this.performGrabSequence(grabbedItem);
+                    } else {
+                        // No item grabbed, just retract
+                        this.robotHand.classList.remove('deployed');
+                        this.isHandDeployed = false;
+                    }
+                }, 500);
+            }
+            
+            performGrabSequence(item) {
+                // Switch to grabbing state
+                this.robotHand.classList.remove('deployed');
+                this.robotHand.classList.add('grabbing');
+                
+                // Attach item to hand visually
+                item.element.classList.add('grabbed');
+                item.element.style.animationPlayState = 'paused';
+                
+                // Move item to hand position
+                const handRect = this.robotHand.getBoundingClientRect();
+                const itemRect = item.element.getBoundingClientRect();
+                
+                item.element.style.position = 'fixed';
+                item.element.style.left = handRect.left + handRect.width/2 - 30 + 'px';
+                item.element.style.top = handRect.top + handRect.height/2 - 30 + 'px';
+                item.element.style.zIndex = '1001';
+                
+                // Start retracting after a brief pause
+                setTimeout(() => {
+                    this.robotHand.classList.remove('grabbing');
+                    this.robotHand.classList.add('retracting');
+                    
+                    // Move item with the retracting hand
+                    const holeRect = document.querySelector('.hole').getBoundingClientRect();
+                    item.element.style.left = holeRect.left + holeRect.width/2 - 30 + 'px';
+                    item.element.style.top = holeRect.top + holeRect.height/2 - 30 + 'px';
+                    
+                    // Complete the grab sequence
+                    setTimeout(() => {
+                        this.completeGrab(item);
+                        this.robotHand.classList.remove('retracting');
+                        this.isHandDeployed = false;
+                    }, 300);
+                }, 200);
+            }
+            
+            checkForGrab() {
+                const handRect = this.robotHand.getBoundingClientRect();
+                const handX = handRect.left + handRect.width / 2;
+                const handY = handRect.top + handRect.height / 2;
+                
+                const grabbedItem = this.items.find(item => {
+                    const itemRect = item.element.getBoundingClientRect();
+                    const itemX = itemRect.left + itemRect.width / 2;
+                    const itemY = itemRect.top + itemRect.height / 2;
+                    
+                    const distance = Math.sqrt(
+                        Math.pow(handX - itemX, 2) + Math.pow(handY - itemY, 2)
+                    );
+                    
+                    return distance < 150;
+                });
+                
+                return grabbedItem;
+            }
+            
+            completeGrab(item) {
+                if (item.type === 'good') {
+                    this.score += 10;
+                    this.showFeedback('GOOD GRAB! +10', '#00ff00');
+                } else {
+                    this.lives--;
+                    this.showFeedback('BAD GRAB! -1 LIFE', '#ff0000');
+                    
+                    if (this.lives <= 0) {
+                        this.endGame();
+                    }
+                }
+                
+                this.removeItem(item);
+                this.updateDisplay();
+            }
+            
+            showFeedback(text, color) {
+                const feedback = document.createElement('div');
+                feedback.textContent = text;
+                feedback.style.cssText = `
+                    position: absolute;
+                    top: 200px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    color: ${color};
+                    z-index: 1000;
+                    pointer-events: none;
+                    text-shadow: 0 0 10px ${color};
+                `;
+                
+                document.body.appendChild(feedback);
+                
+                setTimeout(() => {
+                    feedback.remove();
+                }, 1500);
+            }
+            
+            spawnItems() {
+                if (this.isGameOver) return;
+                
+                const item = this.createItem();
+                this.items.push(item);
+                document.body.appendChild(item.element);
+                
+                // Remove item when it goes off screen
+                setTimeout(() => {
+                    this.removeItem(item);
+                }, 8000 / this.speed);
+                
+                // Schedule next item spawn
+                const spawnDelay = Math.random() * 1500 + 800; // 0.8-2.3 seconds
+                this.itemSpawnTimer = setTimeout(() => this.spawnItems(), spawnDelay / this.speed);
+            }
+            
+            createItem() {
+                const isGood = Math.random() > 0.4; // 60% chance for good items
+                const type = isGood ? 'good' : 'bad';
+                const symbols = isGood ? this.goodItems : this.badItems;
+                const symbol = symbols[Math.floor(Math.random() * symbols.length)];
+                
+                const element = document.createElement('div');
+                element.className = `item ${type}`;
+                element.textContent = symbol;
+                element.style.animationDuration = `${8 / this.speed}s`;
+                
+                return { element, type };
+            }
+            
+            removeItem(item) {
+                const index = this.items.indexOf(item);
+                if (index > -1) {
+                    this.items.splice(index, 1);
+                    if (item.element.parentNode) {
+                        item.element.parentNode.removeChild(item.element);
+                    }
+                }
+            }
+            
+            startSpeedIncrease() {
+                this.speedIncreaseTimer = setInterval(() => {
+                    this.speed += 0.1;
+                    this.updateDisplay();
+                    
+                    // Update belt animation speed
+                    const beltSurface = document.querySelector('.belt-surface');
+                    beltSurface.style.animationDuration = `${2 / this.speed}s`;
+                }, 5000);
+            }
+            
+            updateDisplay() {
+                document.getElementById('lives').textContent = this.lives;
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('speed').textContent = this.speed.toFixed(1) + 'x';
+            }
+            
+            endGame() {
+                this.isGameOver = true;
+                clearTimeout(this.itemSpawnTimer);
+                clearInterval(this.speedIncreaseTimer);
+                
+                // Remove all items
+                this.items.forEach(item => {
+                    if (item.element.parentNode) {
+                        item.element.parentNode.removeChild(item.element);
+                    }
+                });
+                this.items = [];
+                
+                document.getElementById('finalScore').textContent = this.score;
+                this.gameOverScreen.classList.add('show');
+            }
+            
+            restartGame() {
+                this.lives = 3;
+                this.score = 0;
+                this.speed = 1.0;
+                this.isHandDeployed = false;
+                this.isGameOver = false;
+                this.items = [];
+                
+                this.gameOverScreen.classList.remove('show');
+                this.updateDisplay();
+                
+                // Reset belt animation speed
+                const beltSurface = document.querySelector('.belt-surface');
+                beltSurface.style.animationDuration = '2s';
+                
+                this.startGame();
+            }
+        }
+        
+        // Start the game when page loads
+        window.addEventListener('load', () => {
+            new StrongArmClawGame();
+        });
+    </script>
+</body>
+</html>
