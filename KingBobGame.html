@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>King Bob's Exploding Arcade</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P:wght@400&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
         
         * {
             margin: 0;
@@ -14,7 +14,7 @@
         }
         
         body {
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Orbitron', monospace;
             background: linear-gradient(180deg, #2C1810 0%, #4A2C17 30%, #1A3A2E 70%, #0F2027 100%);
             min-height: 100vh;
             overflow: hidden;
@@ -66,26 +66,31 @@
         
         .start-screen-title {
             font-size: clamp(24px, 8vw, 48px);
+            font-weight: 900;
             color: #FFD700;
             text-shadow: 4px 4px 0px #8B0000, 8px 8px 15px rgba(255,100,0,0.8);
             animation: nuclearGlow 3s ease-in-out infinite alternate;
             margin-bottom: 20px;
             text-align: center;
+            letter-spacing: 2px;
         }
         
         .start-screen-subtitle {
             font-size: clamp(10px, 3vw, 18px);
+            font-weight: 700;
             color: #FF6B35;
             text-shadow: 2px 2px 0px #8B0000;
             text-align: center;
             margin-bottom: 15px;
+            letter-spacing: 1px;
         }
         
         .start-button {
             background: linear-gradient(45deg, #FF4500 0%, #FF6B35 50%, #FFD700 100%);
             border: 4px solid #8B0000;
             color: #FFFFFF;
-            font-family: 'Press Start 2P', monospace;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
             font-size: clamp(12px, 3vw, 20px);
             padding: 15px 30px;
             border-radius: 10px;
@@ -99,6 +104,7 @@
             animation: buttonGlow 2s ease-in-out infinite alternate;
             margin-top: 20px;
             user-select: none;
+            letter-spacing: 1px;
         }
         
         .start-button:hover {
@@ -141,15 +147,18 @@
         
         .title {
             font-size: clamp(16px, 6vw, 36px);
+            font-weight: 900;
             margin-bottom: 10px;
             animation: nuclearGlow 3s ease-in-out infinite alternate;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
         }
         
         .subtitle {
             font-size: clamp(8px, 2.5vw, 16px);
+            font-weight: 700;
             color: #FF6B35;
             text-shadow: 2px 2px 0px #8B0000, 4px 4px 8px rgba(255,100,0,0.8);
+            letter-spacing: 1px;
         }
         
         @keyframes nuclearGlow {
@@ -167,8 +176,10 @@
             right: 30px;
             color: #FFD700;
             font-size: clamp(12px, 3vw, 20px);
+            font-weight: 700;
             text-shadow: 2px 2px 0px #8B0000, 4px 4px 8px rgba(255,100,0,0.8);
             z-index: 100;
+            letter-spacing: 1px;
         }
         
         .lives {
@@ -177,8 +188,22 @@
             right: 30px;
             color: #FF4500;
             font-size: clamp(12px, 3vw, 20px);
+            font-weight: 700;
             text-shadow: 2px 2px 0px #8B0000, 4px 4px 8px rgba(255,100,0,0.8);
             z-index: 100;
+            letter-spacing: 1px;
+        }
+        
+        .difficulty-indicator {
+            position: absolute;
+            top: 200px;
+            right: 30px;
+            color: #00FF00;
+            font-size: clamp(10px, 2.5vw, 16px);
+            font-weight: 700;
+            text-shadow: 2px 2px 0px #008000, 4px 4px 8px rgba(0,255,0,0.8);
+            z-index: 100;
+            letter-spacing: 1px;
         }
         
         .heart {
@@ -214,18 +239,22 @@
         
         .game-over-title {
             font-size: clamp(24px, 8vw, 48px);
+            font-weight: 900;
             color: #FF0000;
             text-shadow: 4px 4px 0px #8B0000, 8px 8px 15px rgba(255,0,0,0.8);
             animation: redGlow 2s ease-in-out infinite alternate;
             margin-bottom: 20px;
             text-align: center;
+            letter-spacing: 2px;
         }
         
         .final-score {
             font-size: clamp(14px, 4vw, 24px);
+            font-weight: 700;
             color: #FFD700;
             text-shadow: 2px 2px 0px #8B0000;
             margin-bottom: 20px;
+            letter-spacing: 1px;
         }
         
         @keyframes redGlow {
@@ -284,6 +313,118 @@
             position: relative;
             animation: emerge 1.5s ease-out, bob 3s ease-in-out infinite;
             box-shadow: 0 8px 16px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+        
+        /* Spider Monster */
+        .spider-monster .monster-body {
+            border-radius: 40% 60% 50% 50%;
+        }
+        
+        .spider-legs {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        
+        .spider-leg {
+            position: absolute;
+            width: 3px;
+            height: 30px;
+            background: #2F4F2F;
+            border-radius: 2px;
+            transform-origin: bottom center;
+            animation: spiderWalk 2s ease-in-out infinite;
+        }
+        
+        @keyframes spiderWalk {
+            0%, 100% { transform: rotate(0deg); }
+            50% { transform: rotate(15deg); }
+        }
+        
+        /* Skull Monster */
+        .skull-monster .monster-body {
+            border-radius: 50% 50% 40% 40%;
+        }
+        
+        .skull-features {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .skull-socket {
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            background: #000;
+            border-radius: 50%;
+            box-shadow: inset 0 0 5px rgba(255,0,0,0.5);
+        }
+        
+        .skull-socket:first-child { left: -10px; }
+        .skull-socket:last-child { right: -10px; }
+        
+        /* Blob Monster */
+        .blob-monster .monster-body {
+            border-radius: 60% 40% 30% 70%;
+            animation: emerge 1.5s ease-out, blobPulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes blobPulse {
+            0%, 100% { 
+                border-radius: 60% 40% 30% 70%;
+                transform: scale(1);
+            }
+            50% { 
+                border-radius: 40% 60% 70% 30%;
+                transform: scale(1.1);
+            }
+        }
+        
+        /* Crystal Monster */
+        .crystal-monster .monster-body {
+            border-radius: 20%;
+            transform: rotate(45deg);
+            background: linear-gradient(45deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+        }
+        
+        .crystal-facets {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, transparent 40%, rgba(255,255,255,0.2) 50%, transparent 60%);
+            border-radius: 20%;
+        }
+        
+        /* Tentacle Monster */
+        .tentacle-monster .monster-body {
+            border-radius: 50% 50% 30% 30%;
+        }
+        
+        .tentacles {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .tentacle {
+            position: absolute;
+            width: 4px;
+            height: 25px;
+            background: linear-gradient(to bottom, #4A2C2A, #8B4513);
+            border-radius: 2px;
+            transform-origin: top center;
+            animation: tentacleWave 3s ease-in-out infinite;
+        }
+        
+        @keyframes tentacleWave {
+            0%, 100% { transform: rotate(-15deg); }
+            50% { transform: rotate(15deg); }
         }
         
         .monster-eyes {
@@ -456,11 +597,12 @@
             position: absolute;
             color: #FFD700;
             font-size: clamp(14px, 4vw, 24px);
-            font-weight: bold;
+            font-weight: 700;
             text-shadow: 3px 3px 0px #8B0000, 6px 6px 12px rgba(255,100,0,0.8);
             pointer-events: none;
             z-index: 60;
             animation: nuclearScoreUp 1.5s ease-out forwards;
+            letter-spacing: 1px;
         }
         
         @keyframes nuclearScoreUp {
@@ -503,21 +645,12 @@
                 height: 8px;
             }
             
-            .mushroom-cloud {
-                width: 180px;
-                height: 250px;
-                left: -90px;
-                top: -220px;
+            .spider-leg {
+                height: 20px;
             }
             
-            .mushroom-head {
-                width: 120px;
-                height: 60px;
-            }
-            
-            .mushroom-stem {
-                width: 25px;
-                height: 120px;
+            .tentacle {
+                height: 18px;
             }
         }
     </style>
@@ -538,6 +671,7 @@
         
         <div class="score">SCORE: <span id="scoreValue">0</span></div>
         <div class="lives">LIVES: <span id="livesContainer"></span></div>
+        <div class="difficulty-indicator">DIFFICULTY: <span id="difficultyLevel">EASY</span></div>
         
         <div class="game-over-screen hidden" id="gameOverScreen">
             <div class="game-over-title">GAME OVER</div>
@@ -556,6 +690,7 @@
                 this.field = document.getElementById('field');
                 this.scoreElement = document.getElementById('scoreValue');
                 this.livesContainer = document.getElementById('livesContainer');
+                this.difficultyElement = document.getElementById('difficultyLevel');
                 this.startScreen = document.getElementById('startScreen');
                 this.startButton = document.getElementById('startButton');
                 this.gameOverScreen = document.getElementById('gameOverScreen');
@@ -564,10 +699,21 @@
                 this.monsters = [];
                 this.gameActive = false;
                 this.spawnInterval = null;
+                this.startTime = 0;
+                this.difficultyLevel = 0;
                 
                 this.monsterColors = [
                     '#8B0000', '#654321', '#2F4F2F', '#483D8B', 
                     '#8B4513', '#556B2F', '#800080', '#B22222'
+                ];
+                
+                this.monsterTypes = [
+                    'basic',
+                    'spider',
+                    'skull', 
+                    'blob',
+                    'crystal',
+                    'tentacle'
                 ];
                 
                 this.setupStartButton();
@@ -599,6 +745,61 @@
                     heart.innerHTML = '♥';
                     this.livesContainer.appendChild(heart);
                 }
+            }
+            
+            updateDifficulty() {
+                const gameTime = (Date.now() - this.startTime) / 1000;
+                const oldLevel = this.difficultyLevel;
+                
+                if (gameTime < 10) {
+                    this.difficultyLevel = 0;
+                    this.difficultyElement.textContent = 'EASY';
+                    this.difficultyElement.style.color = '#00FF00';
+                } else if (gameTime < 30) {
+                    this.difficultyLevel = 1;
+                    this.difficultyElement.textContent = 'MEDIUM';
+                    this.difficultyElement.style.color = '#FFFF00';
+                } else if (gameTime < 60) {
+                    this.difficultyLevel = 2;
+                    this.difficultyElement.textContent = 'HARD';
+                    this.difficultyElement.style.color = '#FF6B35';
+                } else if (gameTime < 120) {
+                    this.difficultyLevel = 3;
+                    this.difficultyElement.textContent = 'EXTREME';
+                    this.difficultyElement.style.color = '#FF4500';
+                } else {
+                    this.difficultyLevel = 4;
+                    this.difficultyElement.textContent = 'INSANE';
+                    this.difficultyElement.style.color = '#FF0000';
+                }
+                
+                // Reset spawn interval if difficulty changed
+                if (oldLevel !== this.difficultyLevel && this.gameActive) {
+                    clearInterval(this.spawnInterval);
+                    this.setupSpawnInterval();
+                }
+            }
+            
+            getMonsterLifetime() {
+                // Monster lifetime decreases with difficulty
+                const baseTimes = [3500, 3000, 2500, 2000, 1500]; // milliseconds
+                return baseTimes[this.difficultyLevel] || 1000;
+            }
+            
+            getSpawnRate() {
+                // Spawn rate increases with difficulty
+                const baseRates = [2500, 2000, 1500, 1000, 700]; // milliseconds
+                return baseRates[this.difficultyLevel] || 500;
+            }
+            
+            setupSpawnInterval() {
+                const spawnRate = this.getSpawnRate();
+                this.spawnInterval = setInterval(() => {
+                    if (this.gameActive) {
+                        this.spawnMonster();
+                        this.updateDifficulty();
+                    }
+                }, spawnRate);
             }
             
             loseLife() {
@@ -633,8 +834,11 @@
                 // Reset game state
                 this.score = 0;
                 this.lives = 5;
+                this.difficultyLevel = 0;
                 this.scoreElement.textContent = this.score;
                 this.updateLivesDisplay();
+                this.difficultyElement.textContent = 'EASY';
+                this.difficultyElement.style.color = '#00FF00';
                 
                 // Hide game over screen and start new game
                 this.gameOverScreen.classList.add('hidden');
@@ -645,17 +849,93 @@
                 if (this.gameActive) return;
                 
                 this.gameActive = true;
+                this.startTime = Date.now();
                 this.startScreen.classList.add('hidden');
                 
                 // Start spawning monsters immediately
                 this.spawnMonster();
                 
-                // Set up regular spawning
-                this.spawnInterval = setInterval(() => {
-                    if (this.gameActive) {
-                        this.spawnMonster();
-                    }
-                }, 2000 + Math.random() * 1500); // Spawn every 2-3.5 seconds
+                // Set up difficulty-based spawning
+                this.setupSpawnInterval();
+            }
+            
+            createMonsterHTML(type, color) {
+                const commonEyes = `
+                    <div class="monster-eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                `;
+                
+                const commonMouth = `<div class="monster-mouth"></div>`;
+                
+                switch(type) {
+                    case 'spider':
+                        return `
+                            <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 20)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
+                                ${commonEyes}
+                                ${commonMouth}
+                                <div class="spider-legs">
+                                    <div class="spider-leg" style="left: -25px; top: -10px; transform: rotate(-45deg);"></div>
+                                    <div class="spider-leg" style="left: -20px; top: 5px; transform: rotate(-20deg);"></div>
+                                    <div class="spider-leg" style="left: -20px; top: 20px; transform: rotate(20deg);"></div>
+                                    <div class="spider-leg" style="right: -25px; top: -10px; transform: rotate(45deg);"></div>
+                                    <div class="spider-leg" style="right: -20px; top: 5px; transform: rotate(20deg);"></div>
+                                    <div class="spider-leg" style="right: -20px; top: 20px; transform: rotate(-20deg);"></div>
+                                </div>
+                            </div>
+                        `;
+                    
+                    case 'skull':
+                        return `
+                            <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 20)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
+                                <div class="skull-features">
+                                    <div class="skull-socket"></div>
+                                    <div class="skull-socket"></div>
+                                </div>
+                                ${commonMouth}
+                            </div>
+                        `;
+                    
+                    case 'blob':
+                        return `
+                            <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 20)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
+                                ${commonEyes}
+                                ${commonMouth}
+                            </div>
+                        `;
+                    
+                    case 'crystal':
+                        return `
+                            <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 40)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
+                                <div class="crystal-facets"></div>
+                                ${commonEyes}
+                                ${commonMouth}
+                            </div>
+                        `;
+                    
+                    case 'tentacle':
+                        return `
+                            <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 20)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
+                                ${commonEyes}
+                                ${commonMouth}
+                                <div class="tentacles">
+                                    <div class="tentacle" style="left: -8px; animation-delay: 0s;"></div>
+                                    <div class="tentacle" style="left: -2px; animation-delay: 0.5s;"></div>
+                                    <div class="tentacle" style="left: 4px; animation-delay: 1s;"></div>
+                                    <div class="tentacle" style="left: 10px; animation-delay: 1.5s;"></div>
+                                </div>
+                            </div>
+                        `;
+                    
+                    default: // basic
+                        return `
+                            <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 20)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
+                                ${commonEyes}
+                                ${commonMouth}
+                            </div>
+                        `;
+                }
             }
             
             spawnMonster() {
@@ -663,13 +943,13 @@
                 
                 const monster = document.createElement('div');
                 monster.className = 'monster';
-                monster.spawnTime = Date.now(); // Track when monster spawned
+                monster.spawnTime = Date.now();
                 
                 const gameRect = this.field.parentElement.getBoundingClientRect();
                 const monsterSize = window.innerWidth <= 768 ? 60 : 80;
                 
                 // Spawn anywhere on screen except the header area
-                const minY = 200; // Below the header
+                const minY = 250; // Below the header and UI
                 const maxY = gameRect.height - monsterSize - 50;
                 const x = Math.random() * (gameRect.width - monsterSize);
                 const y = minY + Math.random() * (maxY - minY);
@@ -678,16 +958,12 @@
                 monster.style.top = y + 'px';
                 
                 const color = this.monsterColors[Math.floor(Math.random() * this.monsterColors.length)];
+                const type = this.monsterTypes[Math.floor(Math.random() * this.monsterTypes.length)];
                 
-                monster.innerHTML = `
-                    <div class="monster-body" style="background: linear-gradient(135deg, ${color} 0%, ${this.lightenColor(color, 20)} 50%, ${color} 100%); border: 2px solid ${this.darkenColor(color, 30)};">
-                        <div class="monster-eyes">
-                            <div class="eye"></div>
-                            <div class="eye"></div>
-                        </div>
-                        <div class="monster-mouth"></div>
-                    </div>
-                `;
+                // Add type class for specific styling
+                monster.classList.add(type + '-monster');
+                
+                monster.innerHTML = this.createMonsterHTML(type, color);
                 
                 // Add click/touch handlers
                 monster.addEventListener('click', (e) => this.explodeMonster(e, monster));
@@ -699,14 +975,15 @@
                 this.field.parentElement.appendChild(monster);
                 this.monsters.push(monster);
                 
-                // Remove monster after 3 seconds and lose a life
+                // Remove monster after difficulty-based time and lose a life
+                const lifetime = this.getMonsterLifetime();
                 monster.timeout = setTimeout(() => {
                     if (monster.parentNode && this.gameActive) {
                         monster.remove();
                         this.monsters = this.monsters.filter(m => m !== monster);
                         this.loseLife();
                     }
-                }, 3000);
+                }, lifetime);
             }
             
             lightenColor(color, percent) {
