@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prism Knight's Mining Experiment</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+            font-family: 'Orbitron', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+        }
+
+        .game-container {
+            background: rgba(0, 0, 0, 0.8);
+            border: 3px solid #00ffff;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.3);
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .title-screen {
+            display: block;
+        }
+
+        .game-screen {
+            display: none;
+        }
+
+        .game-over-screen {
+            display: none;
+        }
+
+        .game-title {
+            font-size: 2.5em;
+            font-weight: 900;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4, #45b7d1, #f9ca24);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            margin-bottom: 30px;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.3)); }
+            to { filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.6)); }
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            color: #00ffff;
+            margin-bottom: 40px;
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.5);
+        }
+
+        .start-button {
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.2em;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+        }
+
+        .game-stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+            font-weight: 700;
+        }
+
+        .stat {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px 15px;
+            border-radius: 5px;
+            border: 2px solid #00ffff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+        }
+
+        .score { color: #f9ca24; }
+        .level { color: #4ecdc4; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 3px;
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            border: 2px solid #00ffff;
+            box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.1);
+        }
+
+        .cell {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(145deg, #8b4513, #a0522d);
+            border: 2px solid #654321;
+            border-radius: 3px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .cell:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+        }
+
+        .cell.revealed {
+            cursor: default;
+            transform: none;
+        }
+
+        .cell.diamond {
+            background: linear-gradient(145deg, #00ffff, #40e0d0);
+            border-color: #00bfff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
+        }
+
+        .cell.coal {
+            background: linear-gradient(145deg, #2c2c2c, #1a1a1a);
+            border-color: #333;
+            box-shadow: 0 0 10px rgba(255, 0, 0, 0.3);
+        }
+
+        .cell::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 20px;
+            height: 20px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            background-position: center;
+        }
+
+        .cell.diamond::after {
+            content: '💎';
+            font-size: 18px;
+            animation: sparkle 1s ease-in-out;
+        }
+
+        .cell.coal::after {
+            content: '🪨';
+            font-size: 18px;
+            animation: shake 0.5s ease-in-out;
+        }
+
+        @keyframes sparkle {
+            0% { transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+            50% { transform: translate(-50%, -50%) scale(1.3) rotate(180deg); }
+            100% { transform: translate(-50%, -50%) scale(1) rotate(360deg); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
+            25% { transform: translate(-50%, -50%) rotate(-5deg); }
+            75% { transform: translate(-50%, -50%) rotate(5deg); }
+        }
+
+        .level-up {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 1.5em;
+            font-weight: 900;
+            text-transform: uppercase;
+            box-shadow: 0 0 40px rgba(255, 107, 107, 0.8);
+            animation: levelUpPulse 2s ease-in-out;
+            z-index: 1000;
+        }
+
+        .game-over-title {
+            font-size: 2.2em;
+            font-weight: 900;
+            color: #ff6b6b;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(255, 107, 107, 0.7);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        .game-over-message {
+            font-size: 1.1em;
+            color: #ccc;
+            margin-bottom: 30px;
+            line-height: 1.5;
+        }
+
+        .final-score {
+            font-size: 1.3em;
+            color: #f9ca24;
+            margin-bottom: 30px;
+            font-weight: 700;
+        }
+
+        @keyframes levelUpPulse {
+            0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
+            50% { transform: translate(-50%, -50%) scale(1.2); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+        }
+
+        .instructions {
+            margin-top: 20px;
+            font-size: 0.9em;
+            color: #ccc;
+            line-height: 1.4;
+        }
+
+        .reset-button {
+            margin-top: 15px;
+            background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            font-size: 1em;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .reset-button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 0 20px rgba(255, 107, 107, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title-screen" id="titleScreen">
+            <h1 class="game-title">PRISM KNIGHT'S<br>MINING EXPERIMENT</h1>
+            <p class="subtitle">Dig for diamonds and avoid the coal!</p>
+            <button class="start-button" onclick="startGame()">Start Mining</button>
+            <div class="instructions">
+                Click on dirt squares to reveal what's underneath<br>
+                💎 Diamond = +50 points | 🪨 Coal = -20 points<br>
+                Reach 500 points to advance to the next level!
+            </div>
+        </div>
+
+        <div class="game-screen" id="gameScreen">
+            <div class="game-stats">
+                <div class="stat score">Score: <span id="score">0</span></div>
+                <div class="stat level">Level: <span id="level">1</span></div>
+            </div>
+            
+            <div class="grid" id="grid"></div>
+            
+            <button class="reset-button" onclick="resetGame()">New Game</button>
+        </div>
+
+        <div class="game-over-screen" id="gameOverScreen">
+            <h1 class="game-over-title">GAME OVER</h1>
+            <p class="game-over-message">
+                You've revealed all the dirt patches but didn't reach 500 points!<br>
+                Better luck next time, miner.
+            </p>
+            <div class="final-score">Final Score: <span id="finalScore">0</span></div>
+            <button class="start-button" onclick="playAgain()">Try Again</button>
+            <button class="reset-button" onclick="backToTitle()">Back to Title</button>
+        </div>
+    </div>
+
+    <script>
+        let score = 0;
+        let level = 1;
+        let grid = [];
+        let gridSize = 8;
+        let revealedCount = 0;
+
+        function startGame() {
+            showGameScreen();
+            initializeGrid();
+        }
+
+        function resetGame() {
+            score = 0;
+            level = 1;
+            revealedCount = 0;
+            updateStats();
+            initializeGrid();
+        }
+
+        function playAgain() {
+            score = 0;
+            level = 1;
+            revealedCount = 0;
+            updateStats();
+            showGameScreen();
+            initializeGrid();
+        }
+
+        function backToTitle() {
+            score = 0;
+            level = 1;
+            revealedCount = 0;
+            updateStats();
+            showTitleScreen();
+        }
+
+        function showTitleScreen() {
+            document.getElementById('titleScreen').style.display = 'block';
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+        }
+
+        function showGameScreen() {
+            document.getElementById('titleScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'block';
+            document.getElementById('gameOverScreen').style.display = 'none';
+        }
+
+        function showGameOverScreen() {
+            document.getElementById('titleScreen').style.display = 'none';
+            document.getElementById('gameScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'block';
+            document.getElementById('finalScore').textContent = score;
+        }
+
+        function initializeGrid() {
+            const gridElement = document.getElementById('grid');
+            gridElement.innerHTML = '';
+            grid = [];
+            revealedCount = 0;
+
+            // Create grid with 50/50 chance of diamond or coal
+            for (let i = 0; i < gridSize * gridSize; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                cell.dataset.index = i;
+                
+                // 50/50 chance for diamond or coal
+                const type = Math.random() < 0.5 ? 'diamond' : 'coal';
+                cell.dataset.type = type;
+                
+                cell.addEventListener('click', revealCell);
+                gridElement.appendChild(cell);
+                grid.push(cell);
+            }
+        }
+
+        function revealCell(event) {
+            const cell = event.target;
+            if (cell.classList.contains('revealed')) return;
+
+            cell.classList.add('revealed');
+            revealedCount++;
+            const type = cell.dataset.type;
+
+            if (type === 'diamond') {
+                cell.classList.add('diamond');
+                score += 50;
+            } else if (type === 'coal') {
+                cell.classList.add('coal');
+                score -= 20;
+            }
+
+            updateStats();
+            
+            // Check if level completed first
+            if (checkLevelUp()) {
+                return; // Don't check game over if leveled up
+            }
+            
+            // Check if all cells revealed without reaching 500
+            if (revealedCount >= gridSize * gridSize) {
+                if (score < 500 * level) {
+                    setTimeout(() => {
+                        showGameOverScreen();
+                    }, 500); // Small delay to show the last revealed cell
+                }
+            }
+        }
+
+        function updateStats() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('level').textContent = level;
+        }
+
+        function checkLevelUp() {
+            if (score >= 500 * level) {
+                level++;
+                showLevelUp();
+                
+                setTimeout(() => {
+                    initializeGrid();
+                }, 2000);
+                
+                return true; // Indicates level up occurred
+            }
+            return false;
+        }
+
+        function showLevelUp() {
+            const levelUpDiv = document.createElement('div');
+            levelUpDiv.className = 'level-up';
+            levelUpDiv.textContent = `Level ${level} Reached!`;
+            document.body.appendChild(levelUpDiv);
+
+            setTimeout(() => {
+                document.body.removeChild(levelUpDiv);
+            }, 2000);
+        }
+
+        // Initialize the game stats
+        updateStats();
+    </script>
+</body>
+</html>
