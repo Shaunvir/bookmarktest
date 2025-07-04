@@ -44,13 +44,16 @@
             text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
         }
 
+        #ui, #controls {
+            display: none;
+        }
         #controls {
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
             z-index: 10;
-            display: flex;
+            display: none;
             gap: 20px;
         }
 
@@ -77,7 +80,7 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
 
-        #gameOver {
+        #gameOver, #titleScreen {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -89,6 +92,38 @@
             display: none;
             z-index: 20;
             box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #titleScreen {
+            display: block;
+            max-width: 90vw;
+            cursor: pointer;
+        }
+
+        #titleScreen h1 {
+            font-size: 24px;
+            color: #FF6B6B;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        #titleScreen .subtitle {
+            font-size: 16px;
+            color: #333;
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        #titleScreen .start-prompt {
+            font-size: 18px;
+            color: #4CAF50;
+            font-weight: bold;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
         }
 
         #restartBtn {
@@ -139,6 +174,17 @@
             <div class="control-btn" id="rightBtn">→</div>
         </div>
 
+        <div id="titleScreen">
+            <h1>🍄 RICK'S EXPLOSION ESCAPE 🔥</h1>
+            <div class="subtitle">
+                USE THE ARROW KEYS TO HELP RICK<br>
+                ESCAPE THE EXPLOSION HE CREATED!
+            </div>
+            <div class="start-prompt">
+                Click or Tap Anywhere to Start!
+            </div>
+        </div>
+
         <div id="gameOver">
             <h1>RICK'S EXPLOSION ESCAPE</h1>
             <h2>Game Over!</h2>
@@ -154,7 +200,7 @@
         const ctx = canvas.getContext('2d');
         
         // Game state
-        let gameRunning = true;
+        let gameState = 'title'; // 'title', 'playing', 'gameOver'
         let score = 0;
         let maxHeight = 0;
         let camera = { y: 0 };
@@ -349,7 +395,7 @@
 
         // Update game physics
         function updateGame(deltaTime) {
-            if (!gameRunning) return;
+            if (gameState !== 'playing') return;
 
             // Update game speed (gradually increase difficulty)
             gameSpeed = 1 + (score * 0.0001);
@@ -409,15 +455,23 @@
 
         // Game over
         function gameOver() {
-            gameRunning = false;
+            gameState = 'gameOver';
             document.getElementById('finalScore').textContent = score;
             document.getElementById('finalHeight').textContent = maxHeight;
             document.getElementById('gameOver').style.display = 'block';
         }
 
+        // Start game
+        function startGame() {
+            gameState = 'playing';
+            document.getElementById('titleScreen').style.display = 'none';
+            document.getElementById('controls').style.display = 'flex';
+            document.getElementById('ui').style.display = 'block';
+        }
+
         // Restart game
         function restartGame() {
-            gameRunning = true;
+            gameState = 'playing';
             score = 0;
             maxHeight = 0;
             camera.y = 0;
@@ -445,15 +499,27 @@
 
             // Update and draw
             updateGame(deltaTime);
-            drawExplosion();
-            drawPlatforms();
-            drawRick();
+            
+            if (gameState === 'playing') {
+                drawExplosion();
+                drawPlatforms();
+                drawRick();
+            } else if (gameState === 'title') {
+                // Draw a simple background scene for title screen
+                drawPlatforms();
+                drawRick();
+            }
 
             requestAnimationFrame(gameLoop);
         }
 
         // Event listeners
         document.addEventListener('keydown', (e) => {
+            if (gameState === 'title') {
+                startGame();
+                return;
+            }
+            
             switch(e.code) {
                 case 'ArrowLeft':
                     keys.left = true;
@@ -475,6 +541,13 @@
                     keys.right = false;
                     break;
             }
+        });
+
+        // Click/tap to start
+        document.getElementById('titleScreen').addEventListener('click', startGame);
+        document.getElementById('titleScreen').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            startGame();
         });
 
         // Touch controls
