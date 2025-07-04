@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RICK'S EXPLOSION ESCAPE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #98FB98 100%);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #gameContainer {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #gameCanvas {
+            border: 3px solid #4a4a4a;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            background: linear-gradient(180deg, #87CEEB 0%, #FFE4B5 100%);
+        }
+
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 10;
+            color: #333;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: flex;
+            gap: 20px;
+        }
+
+        .control-btn {
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.9);
+            border: 3px solid #4a4a4a;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        #gameOver {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.95);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        #restartBtn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        #restartBtn:hover {
+            background: #45a049;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+
+        @media (max-width: 768px) {
+            #controls {
+                bottom: 10px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="400" height="600"></canvas>
+        
+        <div id="ui">
+            <div>Score: <span id="score">0</span></div>
+            <div>Height: <span id="height">0</span>m</div>
+        </div>
+
+        <div id="controls">
+            <div class="control-btn" id="leftBtn">←</div>
+            <div class="control-btn" id="rightBtn">→</div>
+        </div>
+
+        <div id="gameOver">
+            <h1>RICK'S EXPLOSION ESCAPE</h1>
+            <h2>Game Over!</h2>
+            <p>Rick couldn't escape the explosion!</p>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <p>Max Height: <span id="finalHeight">0</span>m</p>
+            <button id="restartBtn">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameRunning = true;
+        let score = 0;
+        let maxHeight = 0;
+        let camera = { y: 0 };
+        let gameSpeed = 1;
+        let lastTime = 0;
+
+        // Rick (the mushroom)
+        const rick = {
+            x: 200,
+            y: 500,
+            width: 30,
+            height: 35,
+            velocityX: 0,
+            velocityY: 0,
+            onGround: false,
+            jumpPower: -12
+        };
+
+        // Platforms
+        let platforms = [];
+        const platformWidth = 80;
+        const platformHeight = 15;
+
+        // Explosion
+        const explosion = {
+            y: 700,
+            speed: 0.5
+        };
+
+        // Controls
+        const keys = {
+            left: false,
+            right: false
+        };
+
+        // Initialize platforms
+        function initPlatforms() {
+            platforms = [];
+            // Starting platform
+            platforms.push({
+                x: 160,
+                y: 550,
+                width: platformWidth,
+                height: platformHeight
+            });
+
+            // Generate initial platforms
+            for (let i = 1; i < 20; i++) {
+                platforms.push({
+                    x: Math.random() * (canvas.width - platformWidth),
+                    y: 550 - i * 80,
+                    width: platformWidth,
+                    height: platformHeight
+                });
+            }
+        }
+
+        // Generate new platforms as Rick climbs higher
+        function generatePlatforms() {
+            const highestPlatform = Math.min(...platforms.map(p => p.y));
+            if (highestPlatform > camera.y - 400) {
+                for (let i = 0; i < 5; i++) {
+                    platforms.push({
+                        x: Math.random() * (canvas.width - platformWidth),
+                        y: highestPlatform - 80 - i * 80,
+                        width: platformWidth,
+                        height: platformHeight
+                    });
+                }
+            }
+        }
+
+        // Remove platforms that are too far below
+        function cleanupPlatforms() {
+            platforms = platforms.filter(platform => 
+                platform.y < camera.y + canvas.height + 100
+            );
+        }
+
+        // Draw Rick the mushroom
+        function drawRick() {
+            const screenY = rick.y - camera.y;
+            
+            // Mushroom cap
+            ctx.fillStyle = '#FF6B6B';
+            ctx.beginPath();
+            ctx.ellipse(rick.x + rick.width/2, screenY + 10, rick.width/2, 12, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // White spots on cap
+            ctx.fillStyle = 'white';
+            ctx.beginPath();
+            ctx.ellipse(rick.x + rick.width/2 - 8, screenY + 8, 3, 3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(rick.x + rick.width/2 + 6, screenY + 6, 2, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(rick.x + rick.width/2 + 2, screenY + 12, 2.5, 2.5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Mushroom stem
+            ctx.fillStyle = '#F5F5DC';
+            ctx.fillRect(rick.x + rick.width/2 - 6, screenY + 15, 12, 20);
+
+            // Eyes
+            ctx.fillStyle = 'black';
+            ctx.beginPath();
+            ctx.ellipse(rick.x + rick.width/2 - 4, screenY + 8, 2, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(rick.x + rick.width/2 + 4, screenY + 8, 2, 2, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Smile
+            ctx.strokeStyle = 'black';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(rick.x + rick.width/2, screenY + 10, 3, 0.2 * Math.PI, 0.8 * Math.PI);
+            ctx.stroke();
+        }
+
+        // Draw platforms
+        function drawPlatforms() {
+            ctx.fillStyle = '#8B4513';
+            platforms.forEach(platform => {
+                const screenY = platform.y - camera.y;
+                if (screenY > -50 && screenY < canvas.height + 50) {
+                    // Platform base
+                    ctx.fillRect(platform.x, screenY, platform.width, platform.height);
+                    
+                    // Grass on top
+                    ctx.fillStyle = '#228B22';
+                    ctx.fillRect(platform.x, screenY, platform.width, 3);
+                    ctx.fillStyle = '#8B4513';
+                }
+            });
+        }
+
+        // Draw explosion
+        function drawExplosion() {
+            const screenY = explosion.y - camera.y;
+            if (screenY < canvas.height + 100) {
+                // Explosion gradient
+                const gradient = ctx.createLinearGradient(0, screenY, 0, screenY + 200);
+                gradient.addColorStop(0, 'rgba(255, 69, 0, 0.9)');
+                gradient.addColorStop(0.3, 'rgba(255, 140, 0, 0.8)');
+                gradient.addColorStop(0.6, 'rgba(255, 215, 0, 0.6)');
+                gradient.addColorStop(1, 'rgba(255, 69, 0, 0.2)');
+                
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, screenY, canvas.width, canvas.height);
+
+                // Flame effects
+                for (let i = 0; i < 20; i++) {
+                    const x = (i / 19) * canvas.width;
+                    const flameHeight = 30 + Math.sin(Date.now() * 0.01 + i) * 15;
+                    
+                    ctx.fillStyle = `rgba(255, ${100 + Math.random() * 100}, 0, 0.8)`;
+                    ctx.beginPath();
+                    ctx.ellipse(x, screenY, 15, flameHeight, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+
+        // Update camera to follow Rick
+        function updateCamera() {
+            const targetY = rick.y - canvas.height * 0.6;
+            camera.y += (targetY - camera.y) * 0.1;
+        }
+
+        // Check collisions with platforms
+        function checkPlatformCollisions() {
+            if (rick.velocityY > 0) { // Only when falling
+                platforms.forEach(platform => {
+                    if (rick.x < platform.x + platform.width &&
+                        rick.x + rick.width > platform.x &&
+                        rick.y + rick.height > platform.y &&
+                        rick.y + rick.height < platform.y + platform.height + 10) {
+                        
+                        rick.velocityY = rick.jumpPower;
+                        rick.y = platform.y - rick.height;
+                        rick.onGround = true;
+                        
+                        // Increase score
+                        score += 10;
+                    }
+                });
+            }
+        }
+
+        // Update game physics
+        function updateGame(deltaTime) {
+            if (!gameRunning) return;
+
+            // Update game speed (gradually increase difficulty)
+            gameSpeed = 1 + (score * 0.0001);
+            explosion.speed = 0.5 * gameSpeed;
+
+            // Handle input
+            if (keys.left) {
+                rick.velocityX = Math.max(rick.velocityX - 0.5, -6);
+            }
+            if (keys.right) {
+                rick.velocityX = Math.min(rick.velocityX + 0.5, 6);
+            }
+            
+            // Apply friction
+            rick.velocityX *= 0.95;
+
+            // Apply gravity
+            rick.velocityY += 0.4;
+
+            // Update Rick's position
+            rick.x += rick.velocityX;
+            rick.y += rick.velocityY;
+
+            // Wrap around screen horizontally
+            if (rick.x < -rick.width) {
+                rick.x = canvas.width;
+            } else if (rick.x > canvas.width) {
+                rick.x = -rick.width;
+            }
+
+            // Check platform collisions
+            checkPlatformCollisions();
+
+            // Update explosion
+            explosion.y -= explosion.speed;
+
+            // Update camera
+            updateCamera();
+
+            // Update max height
+            const currentHeight = Math.max(0, Math.floor((550 - rick.y) / 10));
+            maxHeight = Math.max(maxHeight, currentHeight);
+
+            // Generate new platforms
+            generatePlatforms();
+            cleanupPlatforms();
+
+            // Check if Rick is caught by explosion
+            if (rick.y > explosion.y - 50) {
+                gameOver();
+            }
+
+            // Update UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('height').textContent = maxHeight;
+        }
+
+        // Game over
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalHeight').textContent = maxHeight;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        // Restart game
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            maxHeight = 0;
+            camera.y = 0;
+            gameSpeed = 1;
+            
+            rick.x = 200;
+            rick.y = 500;
+            rick.velocityX = 0;
+            rick.velocityY = 0;
+            rick.onGround = false;
+            
+            explosion.y = 700;
+            
+            initPlatforms();
+            document.getElementById('gameOver').style.display = 'none';
+        }
+
+        // Game loop
+        function gameLoop(currentTime) {
+            const deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw
+            updateGame(deltaTime);
+            drawExplosion();
+            drawPlatforms();
+            drawRick();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            switch(e.code) {
+                case 'ArrowLeft':
+                    keys.left = true;
+                    e.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    keys.right = true;
+                    e.preventDefault();
+                    break;
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            switch(e.code) {
+                case 'ArrowLeft':
+                    keys.left = false;
+                    break;
+                case 'ArrowRight':
+                    keys.right = false;
+                    break;
+            }
+        });
+
+        // Touch controls
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
+            keys.left = true;
+            e.preventDefault();
+        });
+
+        document.getElementById('leftBtn').addEventListener('touchend', (e) => {
+            keys.left = false;
+            e.preventDefault();
+        });
+
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => {
+            keys.right = true;
+            e.preventDefault();
+        });
+
+        document.getElementById('rightBtn').addEventListener('touchend', (e) => {
+            keys.right = false;
+            e.preventDefault();
+        });
+
+        // Mouse controls for desktop
+        document.getElementById('leftBtn').addEventListener('mousedown', () => {
+            keys.left = true;
+        });
+
+        document.getElementById('leftBtn').addEventListener('mouseup', () => {
+            keys.left = false;
+        });
+
+        document.getElementById('rightBtn').addEventListener('mousedown', () => {
+            keys.right = true;
+        });
+
+        document.getElementById('rightBtn').addEventListener('mouseup', () => {
+            keys.right = false;
+        });
+
+        // Restart button
+        document.getElementById('restartBtn').addEventListener('click', restartGame);
+
+        // Initialize and start game
+        initPlatforms();
+        requestAnimationFrame(gameLoop);
+    </script>
+</body>
+</html>
