@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>President Cratt's Memory Game</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Orbitron', monospace;
+            background: linear-gradient(135deg, #0f0f23 0%, #1a1a3a 50%, #2d1b69 100%);
+            color: #00ff41;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: auto;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .title {
+            font-size: clamp(1.5rem, 4vw, 3rem);
+            font-weight: 900;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        .subtitle {
+            font-size: clamp(0.8rem, 2vw, 1.2rem);
+            margin-bottom: 30px;
+            color: #ffff00;
+            text-shadow: 0 0 10px #ffff00;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 0 0 20px #00ff41, 0 0 40px #00ff41; }
+            to { text-shadow: 0 0 30px #00ff41, 0 0 60px #00ff41, 0 0 80px #00ff41; }
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .stat {
+            background: rgba(0, 255, 65, 0.1);
+            border: 2px solid #00ff41;
+            border-radius: 10px;
+            padding: 10px 20px;
+            font-weight: 700;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.3);
+        }
+        
+        .level-selector {
+            margin-bottom: 20px;
+        }
+        
+        .level-btn {
+            background: linear-gradient(45deg, #ff006e, #8338ec);
+            border: none;
+            color: white;
+            padding: 12px 24px;
+            margin: 5px;
+            border-radius: 8px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
+        }
+        
+        .level-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 0, 110, 0.5);
+        }
+        
+        .level-btn.active {
+            background: linear-gradient(45deg, #00ff41, #39ff14);
+            color: #000;
+            box-shadow: 0 4px 15px rgba(0, 255, 65, 0.5);
+        }
+        
+        .game-board {
+            display: grid;
+            gap: 8px;
+            justify-content: center;
+            margin: 20px auto;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 2px solid #00ff41;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.2);
+        }
+        
+        .card {
+            aspect-ratio: 1;
+            background: linear-gradient(135deg, #1a1a3a, #2d1b69);
+            border: 2px solid #00ff41;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(1rem, 3vw, 2rem);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            user-select: none;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 20px rgba(0, 255, 65, 0.1);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .card:hover::before {
+            left: 100%;
+        }
+        
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 255, 65, 0.4), inset 0 0 20px rgba(0, 255, 65, 0.2);
+        }
+        
+        .card.flipped {
+            background: linear-gradient(135deg, #00ff41, #39ff14);
+            color: #000;
+            border-color: #ffff00;
+            transform: rotateY(180deg);
+            box-shadow: 0 0 25px rgba(0, 255, 65, 0.6);
+        }
+        
+        .card.matched {
+            background: linear-gradient(135deg, #ff006e, #8338ec);
+            border-color: #ff006e;
+            animation: matchGlow 0.6s ease-in-out;
+        }
+        
+        @keyframes matchGlow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); box-shadow: 0 0 40px rgba(255, 0, 110, 0.8); }
+        }
+        
+        .card.hidden {
+            opacity: 0;
+            transform: scale(0);
+            pointer-events: none;
+        }
+        
+        .card-back {
+            background: linear-gradient(135deg, #1a1a3a, #2d1b69);
+            color: #00ff41;
+        }
+        
+        .restart-btn {
+            background: linear-gradient(45deg, #ffff00, #ffa500);
+            border: none;
+            color: #000;
+            padding: 15px 30px;
+            margin: 20px;
+            border-radius: 8px;
+            font-family: 'Orbitron', monospace;
+            font-weight: 700;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 255, 0, 0.3);
+        }
+        
+        .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 255, 0, 0.5);
+        }
+        
+        .victory {
+            background: linear-gradient(135deg, #00ff41, #39ff14);
+            color: #000;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px 0;
+            font-weight: 700;
+            font-size: 1.5rem;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.5);
+            animation: victory 1s ease-in-out;
+        }
+        
+        @keyframes victory {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        /* Responsive grid layouts */
+        .grid-4x4 { grid-template-columns: repeat(4, minmax(60px, 80px)); }
+        .grid-6x6 { grid-template-columns: repeat(6, minmax(50px, 70px)); }
+        .grid-8x8 { grid-template-columns: repeat(8, minmax(40px, 60px)); }
+        .grid-10x10 { grid-template-columns: repeat(10, minmax(35px, 50px)); }
+        
+        @media (max-width: 600px) {
+            .grid-4x4 { grid-template-columns: repeat(4, minmax(50px, 70px)); }
+            .grid-6x6 { grid-template-columns: repeat(6, minmax(40px, 55px)); }
+            .grid-8x8 { grid-template-columns: repeat(8, minmax(30px, 45px)); }
+            .grid-10x10 { grid-template-columns: repeat(10, minmax(25px, 35px)); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">PRESIDENT CRATT'S MEMORY GAME</h1>
+        <p class="subtitle">Train your mind like the Galaxy's greatest leader!</p>
+        
+        <div class="stats">
+            <div class="stat">Level: <span id="current-level">1</span></div>
+            <div class="stat">Score: <span id="score">0</span></div>
+            <div class="stat">Moves: <span id="moves">0</span></div>
+            <div class="stat">Time: <span id="timer">0:00</span></div>
+        </div>
+        
+        <div class="level-selector">
+            <button class="level-btn active" onclick="setLevel(1)">Level 1 (4×4)</button>
+            <button class="level-btn" onclick="setLevel(2)">Level 2 (6×6)</button>
+            <button class="level-btn" onclick="setLevel(3)">Level 3 (8×8)</button>
+            <button class="level-btn" onclick="setLevel(4)">Level 4 (10×10)</button>
+        </div>
+        
+        <div id="game-board" class="game-board grid-4x4"></div>
+        
+        <button class="restart-btn" onclick="restartGame()">🚀 RESTART MISSION</button>
+        
+        <div id="victory-message" class="victory" style="display: none;">
+            🏆 MISSION ACCOMPLISHED! President Cratt is proud! 🏆
+        </div>
+    </div>
+
+    <script>
+        class MemoryGame {
+            constructor() {
+                this.currentLevel = 1;
+                this.score = 0;
+                this.moves = 0;
+                this.startTime = null;
+                this.timerInterval = null;
+                this.flippedCards = [];
+                this.matchedPairs = 0;
+                this.isProcessing = false;
+                
+                this.levels = {
+                    1: { size: 4, pairs: 8, class: 'grid-4x4' },
+                    2: { size: 6, pairs: 18, class: 'grid-6x6' },
+                    3: { size: 8, pairs: 32, class: 'grid-8x8' },
+                    4: { size: 10, pairs: 50, class: 'grid-10x10' }
+                };
+                
+                this.symbols = [
+                    '🚀', '⭐', '🌟', '💫', '🔥', '⚡', '💎', '🏆',
+                    '👑', '🎯', '🎪', '🎨', '🎭', '🎪', '🎸', '🎹',
+                    '🎺', '🎻', '🎲', '🎯', '🎱', '🏅', '🥇', '🥈',
+                    '🥉', '🏆', '🎖️', '🏵️', '🎗️', '🎀', '🎁', '🎊',
+                    '🎉', '🎈', '🎆', '🎇', '✨', '💥', '🔮', '🌈',
+                    '☄️', '🌠', '🌙', '☀️', '⭐', '🌟', '💫', '✨',
+                    '🔥', '⚡', '💎', '🏆', '👑', '🎯', '🎪', '🎨'
+                ];
+                
+                this.initGame();
+            }
+            
+            initGame() {
+                this.updateDisplay();
+                this.createBoard();
+                this.startTimer();
+            }
+            
+            setLevel(level) {
+                this.currentLevel = level;
+                document.querySelectorAll('.level-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.level-btn')[level - 1].classList.add('active');
+                this.restartGame();
+            }
+            
+            createBoard() {
+                const gameBoard = document.getElementById('game-board');
+                const level = this.levels[this.currentLevel];
+                
+                // Clear previous board
+                gameBoard.innerHTML = '';
+                gameBoard.className = `game-board ${level.class}`;
+                
+                // Create card pairs
+                const cards = [];
+                const availableSymbols = this.symbols.slice(0, level.pairs);
+                
+                // Add pairs
+                availableSymbols.forEach(symbol => {
+                    cards.push(symbol, symbol);
+                });
+                
+                // Shuffle cards
+                this.shuffleArray(cards);
+                
+                // Create card elements
+                cards.forEach((symbol, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'card card-back';
+                    card.dataset.symbol = symbol;
+                    card.dataset.index = index;
+                    card.innerHTML = '🎮';
+                    card.addEventListener('click', () => this.flipCard(card));
+                    gameBoard.appendChild(card);
+                });
+            }
+            
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+            }
+            
+            flipCard(card) {
+                if (this.isProcessing || card.classList.contains('flipped') || card.classList.contains('matched')) {
+                    return;
+                }
+                
+                // Start timer on first move
+                if (this.moves === 0) {
+                    this.startTime = Date.now();
+                }
+                
+                card.classList.remove('card-back');
+                card.classList.add('flipped');
+                card.innerHTML = card.dataset.symbol;
+                
+                this.flippedCards.push(card);
+                
+                if (this.flippedCards.length === 2) {
+                    this.moves++;
+                    this.updateDisplay();
+                    this.checkMatch();
+                }
+            }
+            
+            checkMatch() {
+                this.isProcessing = true;
+                const [card1, card2] = this.flippedCards;
+                
+                if (card1.dataset.symbol === card2.dataset.symbol) {
+                    // Match found
+                    setTimeout(() => {
+                        card1.classList.add('matched');
+                        card2.classList.add('matched');
+                        
+                        setTimeout(() => {
+                            card1.classList.add('hidden');
+                            card2.classList.add('hidden');
+                        }, 600);
+                        
+                        this.score += 10;
+                        this.matchedPairs++;
+                        this.updateDisplay();
+                        
+                        if (this.matchedPairs === this.levels[this.currentLevel].pairs) {
+                            this.gameWon();
+                        }
+                        
+                        this.flippedCards = [];
+                        this.isProcessing = false;
+                    }, 300);
+                } else {
+                    // No match
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        card1.classList.add('card-back');
+                        card2.classList.add('card-back');
+                        card1.innerHTML = '🎮';
+                        card2.innerHTML = '🎮';
+                        
+                        this.flippedCards = [];
+                        this.isProcessing = false;
+                    }, 1000);
+                }
+            }
+            
+            gameWon() {
+                clearInterval(this.timerInterval);
+                document.getElementById('victory-message').style.display = 'block';
+                
+                // Bonus points for speed and efficiency
+                const timeBonus = Math.max(0, 100 - Math.floor((Date.now() - this.startTime) / 1000));
+                const moveBonus = Math.max(0, 50 - this.moves);
+                this.score += timeBonus + moveBonus;
+                this.updateDisplay();
+            }
+            
+            startTimer() {
+                this.timerInterval = setInterval(() => {
+                    if (this.startTime) {
+                        const elapsed = Math.floor((Date.now() - this.startTime) / 1000);
+                        const minutes = Math.floor(elapsed / 60);
+                        const seconds = elapsed % 60;
+                        document.getElementById('timer').textContent = 
+                            `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    }
+                }, 1000);
+            }
+            
+            updateDisplay() {
+                document.getElementById('current-level').textContent = this.currentLevel;
+                document.getElementById('score').textContent = this.score;
+                document.getElementById('moves').textContent = this.moves;
+            }
+            
+            restartGame() {
+                clearInterval(this.timerInterval);
+                this.score = 0;
+                this.moves = 0;
+                this.startTime = null;
+                this.flippedCards = [];
+                this.matchedPairs = 0;
+                this.isProcessing = false;
+                
+                document.getElementById('victory-message').style.display = 'none';
+                document.getElementById('timer').textContent = '0:00';
+                
+                this.updateDisplay();
+                this.createBoard();
+                this.startTimer();
+            }
+        }
+        
+        // Global functions for HTML onclick handlers
+        let game;
+        
+        function setLevel(level) {
+            game.setLevel(level);
+        }
+        
+        function restartGame() {
+            game.restartGame();
+        }
+        
+        // Initialize game when page loads
+        window.addEventListener('load', () => {
+            game = new MemoryGame();
+        });
+    </script>
+</body>
+</html>
