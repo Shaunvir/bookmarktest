@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DJ Knowledge's Party Dodge</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+        
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 800px;
+            max-height: 600px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            border: 4px solid #333;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: crosshair;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            display: flex;
+            justify-content: space-between;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+            z-index: 10;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+        }
+        
+        .game-over h2 {
+            margin-top: 0;
+            color: #ff4444;
+        }
+        
+        .restart-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+        
+        .restart-btn:hover {
+            background: #45a049;
+        }
+        
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            text-align: center;
+            font-size: 12px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.7);
+        }
+        
+        .mobile-controls {
+            position: absolute;
+            bottom: -180px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            z-index: 15;
+        }
+        
+        .control-pad {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 5px;
+            width: 150px;
+            height: 150px;
+        }
+        
+        .control-btn {
+            background: rgba(0, 0, 0, 0.7);
+            border: 2px solid white;
+            border-radius: 10px;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .control-btn.up {
+            grid-column: 2;
+            grid-row: 1;
+        }
+        
+        .control-btn.left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+        
+        .control-btn.right {
+            grid-column: 3;
+            grid-row: 2;
+        }
+        
+        .control-btn.down {
+            grid-column: 2;
+            grid-row: 3;
+        }
+        
+        .title-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            z-index: 30;
+        }
+        
+        .title-screen h1 {
+            font-size: 3em;
+            margin: 0 0 20px 0;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.8);
+            background: linear-gradient(45deg, #FFD700, #FF6B6B);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .title-screen .subtitle {
+            font-size: 1.2em;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+        
+        .instructions {
+            background: rgba(0,0,0,0.7);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px;
+            max-width: 500px;
+        }
+        
+        .instructions h3 {
+            color: #FFD700;
+            margin-top: 0;
+        }
+        
+        .instructions p {
+            margin: 10px 0;
+            line-height: 1.4;
+        }
+        
+        .start-btn {
+            background: linear-gradient(45deg, #FF6B6B, #FFD700);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: transform 0.3s, box-shadow 0.3s;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .start-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        @media (max-width: 768px) {
+            .title-screen h1 {
+                font-size: 2em;
+            }
+            .instructions {
+                margin: 10px;
+                padding: 15px;
+            }
+            .mobile-controls {
+                bottom: -160px;
+            }
+            .ui-overlay {
+                font-size: 16px;
+            }
+            .controls {
+                display: none;
+            }
+            .mobile-controls {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title-screen" id="titleScreen">
+            <h1>🐺 DJ Knowledge's Party Dodge! 🎉</h1>
+            <div class="subtitle">Help the cool wolf reach his house!</div>
+            
+            <div class="instructions">
+                <h3>🎮 How to Play:</h3>
+                <p><strong>Goal:</strong> Navigate DJ Knowledge (the wolf with sunglasses) through the party crowds to reach his house at the top!</p>
+                <p><strong>PC Controls:</strong> Use Arrow Keys or WASD to move</p>
+                <p><strong>Mobile Controls:</strong> Use the directional buttons below the game</p>
+                <p><strong>Avoid:</strong> The colorful party-goers dancing across the lawn</p>
+                <p><strong>Lives:</strong> You have 3 lives - don't get caught partying too hard!</p>
+                <p><strong>Scoring:</strong> Reach the house to advance levels and earn points</p>
+            </div>
+            
+            <button class="start-btn" onclick="startGame()">🎵 Start Partying! 🎵</button>
+        </div>
+        
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        <div class="ui-overlay">
+            <div>Level: <span id="levelDisplay">1</span></div>
+            <div>Score: <span id="scoreDisplay">0</span></div>
+            <div>Lives: <span id="livesDisplay">3</span></div>
+        </div>
+        <div class="game-over" id="gameOver">
+            <h2>Game Over!</h2>
+            <p>DJ Knowledge couldn't make it to the party!</p>
+            <p>Final Score: <span id="finalScore">0</span></p>
+            <button class="restart-btn" onclick="restartGame()">Try Again</button>
+        </div>
+        <div class="controls">
+            PC: Use Arrow Keys or WASD | Mobile: Use control buttons below
+        </div>
+        <div class="mobile-controls">
+            <div class="control-pad">
+                <div class="control-btn up" id="upBtn">↑</div>
+                <div class="control-btn left" id="leftBtn">←</div>
+                <div class="control-btn right" id="rightBtn">→</div>
+                <div class="control-btn down" id="downBtn">↓</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameStarted = false;
+        let gameRunning = false;
+        let level = 1;
+        let score = 0;
+        let lives = 3;
+        let gameSpeed = 1;
+        
+        // Player (DJ Knowledge - the wolf)
+        const player = {
+            x: canvas.width / 2 - 20,
+            y: canvas.height - 60,
+            width: 40,
+            height: 40,
+            color: '#8B4513',
+            speed: 10  // Reduced from 20 to 10
+        };
+        
+        // Party rows
+        const rows = [];
+        const rowHeight = 100;  // Increased from 80 to 100 for more space
+        const numRows = 4;
+        
+        // Initialize party rows
+        function initializeRows() {
+            rows.length = 0;
+            for (let i = 0; i < numRows; i++) {
+                const row = {
+                    y: canvas.height - 120 - (i * rowHeight),
+                    partiers: [],
+                    speed: (Math.random() * 2 + 1) * gameSpeed * (Math.random() > 0.5 ? 1 : -1),
+                    direction: Math.random() > 0.5 ? 1 : -1
+                };
+                
+                // Add partiers to row (max 6)
+                const numPartiers = Math.floor(Math.random() * 4) + 2; // 2-5 partiers
+                for (let j = 0; j < numPartiers; j++) {
+                    row.partiers.push({
+                        x: j * 150 + Math.random() * 80,
+                        width: 25,
+                        height: 35,
+                        color: `hsl(${Math.random() * 360}, 70%, 60%)`
+                    });
+                }
+                rows.push(row);
+            }
+        }
+        
+        // Draw functions
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Wolf details
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(player.x + 5, player.y + 5, 30, 25);
+            
+            // Sunglasses
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 8, player.y + 8, 24, 8);
+            
+            // Eyes behind sunglasses
+            ctx.fillStyle = '#333';
+            ctx.fillRect(player.x + 10, player.y + 10, 6, 4);
+            ctx.fillRect(player.x + 24, player.y + 10, 6, 4);
+            
+            // Nose
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 18, player.y + 18, 4, 3);
+        }
+        
+        function drawPartier(partier, y) {
+            ctx.fillStyle = partier.color;
+            ctx.fillRect(partier.x, y, partier.width, partier.height);
+            
+            // Simple party hat
+            ctx.fillStyle = '#FF1493';
+            ctx.beginPath();
+            ctx.moveTo(partier.x + partier.width/2, y - 5);
+            ctx.lineTo(partier.x + 5, y + 5);
+            ctx.lineTo(partier.x + partier.width - 5, y + 5);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Party decorations
+            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(partier.x + 3, y + 10, 3, 3);
+            ctx.fillRect(partier.x + partier.width - 6, y + 10, 3, 3);
+        }
+        
+        function drawBackground() {
+            // Grass texture
+            ctx.fillStyle = '#90EE90';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Lawn stripes
+            for (let i = 0; i < canvas.height; i += 20) {
+                ctx.fillStyle = i % 40 === 0 ? '#8FBC8F' : '#90EE90';
+                ctx.fillRect(0, i, canvas.width, 20);
+            }
+            
+            // House at the top
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(canvas.width/2 - 60, 10, 120, 40);
+            ctx.fillStyle = '#DC143C';
+            ctx.beginPath();
+            ctx.moveTo(canvas.width/2 - 70, 50);
+            ctx.lineTo(canvas.width/2, 20);
+            ctx.lineTo(canvas.width/2 + 70, 50);
+            ctx.closePath();
+            ctx.fill();
+            
+            // Door
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(canvas.width/2 - 10, 25, 20, 25);
+        }
+        
+        function draw() {
+            if (!gameStarted) return;
+            
+            drawBackground();
+            
+            // Draw party rows
+            rows.forEach(row => {
+                row.partiers.forEach(partier => {
+                    drawPartier(partier, row.y);
+                });
+            });
+            
+            drawPlayer();
+        }
+        
+        // Update game state
+        function update() {
+            if (!gameRunning || !gameStarted) return;
+            
+            // Update partiers
+            rows.forEach(row => {
+                row.partiers.forEach(partier => {
+                    partier.x += row.speed;
+                    
+                    // Wrap around screen
+                    if (partier.x > canvas.width + 50) {
+                        partier.x = -50;
+                    } else if (partier.x < -50) {
+                        partier.x = canvas.width + 50;
+                    }
+                });
+            });
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Check if player reached the house
+            if (player.y <= 60) {
+                nextLevel();
+            }
+        }
+        
+        function checkCollisions() {
+            rows.forEach(row => {
+                row.partiers.forEach(partier => {
+                    if (player.x < partier.x + partier.width &&
+                        player.x + player.width > partier.x &&
+                        player.y < row.y + partier.height &&
+                        player.y + player.height > row.y) {
+                        
+                        // Collision detected!
+                        lives--;
+                        updateUI();
+                        
+                        if (lives <= 0) {
+                            gameOver();
+                        } else {
+                            resetPlayerPosition();
+                        }
+                    }
+                });
+            });
+        }
+        
+        function resetPlayerPosition() {
+            player.x = canvas.width / 2 - 20;
+            player.y = canvas.height - 60;
+        }
+        
+        function nextLevel() {
+            level++;
+            score += 100 * level;
+            gameSpeed += 0.3;
+            resetPlayerPosition();
+            initializeRows();
+            updateUI();
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        function startGame() {
+            gameStarted = true;
+            gameRunning = true;
+            document.getElementById('titleScreen').style.display = 'none';
+        }
+        
+        function restartGame() {
+            gameRunning = true;
+            level = 1;
+            score = 0;
+            lives = 3;
+            gameSpeed = 1;
+            resetPlayerPosition();
+            initializeRows();
+            updateUI();
+            document.getElementById('gameOver').style.display = 'none';
+        }
+        
+        function updateUI() {
+            document.getElementById('levelDisplay').textContent = level;
+            document.getElementById('scoreDisplay').textContent = score;
+            document.getElementById('livesDisplay').textContent = lives;
+        }
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        function handleInput() {
+            if (!gameRunning || !gameStarted) return;
+            
+            // Keyboard controls
+            if (keys['ArrowUp'] || keys['w'] || keys['W']) {
+                if (player.y > 0) player.y -= player.speed;
+            }
+            if (keys['ArrowDown'] || keys['s'] || keys['S']) {
+                if (player.y < canvas.height - player.height) player.y += player.speed;
+            }
+            if (keys['ArrowLeft'] || keys['a'] || keys['A']) {
+                if (player.x > 0) player.x -= player.speed;
+            }
+            if (keys['ArrowRight'] || keys['d'] || keys['D']) {
+                if (player.x < canvas.width - player.width) player.x += player.speed;
+            }
+        }
+        
+        // Mobile button controls
+        function setupMobileControls() {
+            const upBtn = document.getElementById('upBtn');
+            const downBtn = document.getElementById('downBtn');
+            const leftBtn = document.getElementById('leftBtn');
+            const rightBtn = document.getElementById('rightBtn');
+            
+            upBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.y > 0) player.y -= player.speed;
+            });
+            
+            downBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.y < canvas.height - player.height) player.y += player.speed;
+            });
+            
+            leftBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.x > 0) player.x -= player.speed;
+            });
+            
+            rightBtn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.x < canvas.width - player.width) player.x += player.speed;
+            });
+            
+            // Also support mouse clicks on buttons for desktop
+            upBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.y > 0) player.y -= player.speed;
+            });
+            
+            downBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.y < canvas.height - player.height) player.y += player.speed;
+            });
+            
+            leftBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.x > 0) player.x -= player.speed;
+            });
+            
+            rightBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (gameRunning && gameStarted && player.x < canvas.width - player.width) player.x += player.speed;
+            });
+        }
+        
+        // Touch controls for mobile
+        let touchStartX = 0;
+        let touchStartY = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            touchStartX = touch.clientX - rect.left;
+            touchStartY = touch.clientY - rect.top;
+        });
+        
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (!gameRunning || !gameStarted) return;
+            
+            const touch = e.changedTouches[0];
+            const rect = canvas.getBoundingClientRect();
+            const touchEndX = touch.clientX - rect.left;
+            const touchEndY = touch.clientY - rect.top;
+            
+            const deltaX = touchEndX - touchStartX;
+            const deltaY = touchEndY - touchStartY;
+            
+            const moveDistance = 10;  // Reduced from 20 to 10
+            
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                // Horizontal movement
+                if (deltaX > 20 && player.x < canvas.width - player.width) {
+                    player.x += moveDistance;
+                } else if (deltaX < -20 && player.x > 0) {
+                    player.x -= moveDistance;
+                }
+            } else {
+                // Vertical movement
+                if (deltaY > 20 && player.y < canvas.height - player.height) {
+                    player.y += moveDistance;
+                } else if (deltaY < -20 && player.y > 0) {
+                    player.y -= moveDistance;
+                }
+            }
+        });
+        
+        // Mouse controls for desktop (less sensitive)
+        canvas.addEventListener('click', (e) => {
+            if (!gameRunning || !gameStarted) return;
+            
+            const rect = canvas.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const clickY = e.clientY - rect.top;
+            
+            const playerCenterX = player.x + player.width / 2;
+            const playerCenterY = player.y + player.height / 2;
+            
+            const deltaX = clickX - playerCenterX;
+            const deltaY = clickY - playerCenterY;
+            
+            const moveDistance = 10;  // Reduced from 20 to 10
+            const minClickDistance = 60; // Minimum distance to register a click
+            
+            // Only move if click is far enough away
+            if (Math.abs(deltaX) > minClickDistance || Math.abs(deltaY) > minClickDistance) {
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Horizontal movement
+                    if (deltaX > 0 && player.x < canvas.width - player.width) {
+                        player.x += moveDistance;
+                    } else if (deltaX < 0 && player.x > 0) {
+                        player.x -= moveDistance;
+                    }
+                } else {
+                    // Vertical movement
+                    if (deltaY > 0 && player.y < canvas.height - player.height) {
+                        player.y += moveDistance;
+                    } else if (deltaY < 0 && player.y > 0) {
+                        player.y -= moveDistance;
+                    }
+                }
+            }
+        });
+        
+        // Game loop
+        function gameLoop() {
+            handleInput();
+            update();
+            draw();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Initialize game
+        initializeRows();
+        updateUI();
+        setupMobileControls();
+        gameLoop();
+    </script>
+</body>
+</html>
