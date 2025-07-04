@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ferdinand's Target Practice - Destroy the Approaching Robot!</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #0c0c0c, #1a1a2e);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+        }
+
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            max-width: 800px;
+            max-height: 600px;
+            background: #000;
+            border: 3px solid #00ff00;
+            box-shadow: 0 0 20px #00ff00;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }
+
+        .ui-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: #00ff00;
+            font-size: 16px;
+            z-index: 10;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #ff0000;
+            font-size: 24px;
+            text-align: center;
+            z-index: 20;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border: 2px solid #ff0000;
+            border-radius: 10px;
+            text-shadow: 0 0 10px #ff0000;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff00;
+            font-size: 12px;
+            text-align: center;
+            z-index: 10;
+            text-shadow: 0 0 5px #00ff00;
+        }
+
+        .title {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #00ff00;
+            font-size: 18px;
+            font-weight: bold;
+            text-shadow: 0 0 15px #00ff00;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        .start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            z-index: 30;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { text-shadow: 0 0 10px #00ff00; }
+            to { text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00; }
+        }
+
+        .start-title {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            line-height: 1.2;
+        }
+
+        .start-subtitle {
+            font-size: 18px;
+            margin-bottom: 30px;
+            color: #ffff00;
+        }
+
+        .start-instructions {
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.4;
+            max-width: 400px;
+        }
+
+        .start-controls {
+            font-size: 12px;
+            margin-bottom: 30px;
+            color: #888;
+        }
+
+        .start-button {
+            font-size: 16px;
+            padding: 10px 20px;
+            background: transparent;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+
+        .start-button:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        @media (max-width: 600px) {
+            .game-container {
+                max-width: 100vw;
+                max-height: 100vh;
+                border: 2px solid #00ff00;
+            }
+            
+            .title {
+                font-size: 14px;
+                top: -30px;
+            }
+            
+            .ui-overlay {
+                font-size: 14px;
+            }
+            
+            .game-over {
+                font-size: 20px;
+                padding: 15px;
+            }
+            
+            .start-title {
+                font-size: 22px;
+            }
+            
+            .start-subtitle {
+                font-size: 16px;
+            }
+            
+            .start-instructions {
+                font-size: 12px;
+                margin: 0 10px 20px 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title">FERDINAND'S TARGET PRACTICE<br>DESTROY THE APPROACHING ROBOT!</div>
+        <canvas id="gameCanvas"></canvas>
+        <div class="ui-overlay">
+            <div>SCORE: <span id="score">0</span></div>
+            <div>LEVEL: <span id="level">1</span></div>
+            <div>LIVES: <span id="lives">5</span></div>
+            <div>ROBOTS: <span id="robotCount">1/3</span></div>
+        </div>
+        <div class="controls">
+            PC: ARROW KEYS + SPACEBAR | MOBILE: TOUCH TO MOVE & SHOOT
+        </div>
+        <div id="gameOver" class="game-over" style="display: none;">
+            <div>GAME OVER!</div>
+            <div>Final Score: <span id="finalScore">0</span></div>
+            <div style="font-size: 16px; margin-top: 10px;">Press R to Restart</div>
+        </div>
+        <div id="startScreen" class="start-screen">
+            <div class="start-title">
+                FERDINAND'S<br>TARGET PRACTICE
+            </div>
+            <div class="start-subtitle">
+                DESTROY THE APPROACHING ROBOT!
+            </div>
+            <div class="start-instructions">
+                Help Ferdinand the brave beaver defend against the giant mechanical menace! 
+                Shoot all segments of the slithering robot before it reaches you. 
+                Each level gets faster and requires more robots to defeat!
+            </div>
+            <div class="start-controls">
+                PC: Arrow Keys + Spacebar | Mobile: Touch to Move & Shoot
+            </div>
+            <button class="start-button" onclick="startGame()">
+                START GAME
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size
+        function resizeCanvas() {
+            const container = document.querySelector('.game-container');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // Game state
+        let gameState = {
+            score: 0,
+            level: 1,
+            lives: 5,
+            gameOver: false,
+            paused: false,
+            baseSpeed: 0.5,
+            robotsDefeated: 0,
+            robotsPerLevel: 3,
+            gameStarted: false
+        };
+
+        // Player (Ferdinand the Beaver)
+        const player = {
+            x: canvas.width / 2,
+            y: canvas.height - 60,
+            width: 30,
+            height: 30,
+            speed: 6,
+            color: '#8B4513'
+        };
+
+        // Bullets
+        const bullets = [];
+        const bulletSpeed = 10;
+        const bulletWidth = 4;
+        const bulletHeight = 10;
+
+        // Robot segments
+        const robotSegments = [];
+        const segmentSize = 24;
+        const robotLength = 10;
+
+        // Input handling
+        const keys = {};
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let isTouching = false;
+
+        // Initialize robot
+        function initRobot() {
+            robotSegments.length = 0;
+            const startX = Math.random() * (canvas.width - robotLength * segmentSize);
+            
+            for (let i = 0; i < robotLength; i++) {
+                robotSegments.push({
+                    x: startX + i * segmentSize,
+                    y: -i * segmentSize,
+                    destroyed: false
+                });
+            }
+        }
+
+        // Draw functions
+        function drawPlayer() {
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // Draw beaver tail
+            ctx.fillStyle = '#654321';
+            ctx.fillRect(player.x + 5, player.y + 20, 20, 8);
+            
+            // Draw gun
+            ctx.fillStyle = '#333';
+            ctx.fillRect(player.x + 13, player.y - 5, 4, 10);
+            
+            // Draw eyes
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 8, player.y + 8, 3, 3);
+            ctx.fillRect(player.x + 19, player.y + 8, 3, 3);
+        }
+
+        function drawBullets() {
+            ctx.fillStyle = '#ffff00';
+            bullets.forEach(bullet => {
+                ctx.fillRect(bullet.x, bullet.y, bulletWidth, bulletHeight);
+                
+                // Add glowing effect
+                ctx.shadowColor = '#ffff00';
+                ctx.shadowBlur = 10;
+                ctx.fillRect(bullet.x, bullet.y, bulletWidth, bulletHeight);
+                ctx.shadowBlur = 0;
+            });
+        }
+
+        function drawRobot() {
+            robotSegments.forEach((segment, index) => {
+                if (!segment.destroyed) {
+                    // Robot body
+                    ctx.fillStyle = index === 0 ? '#ff0000' : '#666'; // Head is red
+                    ctx.fillRect(segment.x, segment.y, segmentSize, segmentSize);
+                    
+                    // Robot details
+                    ctx.fillStyle = '#333';
+                    ctx.fillRect(segment.x + 2, segment.y + 2, segmentSize - 4, segmentSize - 4);
+                    
+                    // Glowing effect for head
+                    if (index === 0) {
+                        ctx.shadowColor = '#ff0000';
+                        ctx.shadowBlur = 15;
+                        ctx.fillRect(segment.x, segment.y, segmentSize, segmentSize);
+                        ctx.shadowBlur = 0;
+                        
+                        // Robot eyes
+                        ctx.fillStyle = '#ffff00';
+                        ctx.fillRect(segment.x + 4, segment.y + 6, 4, 4);
+                        ctx.fillRect(segment.x + 12, segment.y + 6, 4, 4);
+                    }
+                }
+            });
+        }
+
+        function drawBackground() {
+            // Starfield effect
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 50; i++) {
+                const x = (Math.sin(Date.now() * 0.001 + i) * canvas.width + canvas.width) % canvas.width;
+                const y = (Math.cos(Date.now() * 0.001 + i * 0.5) * canvas.height + canvas.height) % canvas.height;
+                ctx.fillRect(x, y, 1, 1);
+            }
+        }
+
+        // Game logic
+        function updatePlayer() {
+            if (keys['ArrowLeft'] || keys['a']) {
+                player.x = Math.max(0, player.x - player.speed);
+            }
+            if (keys['ArrowRight'] || keys['d']) {
+                player.x = Math.min(canvas.width - player.width, player.x + player.speed);
+            }
+            if (keys['ArrowUp'] || keys['w']) {
+                player.y = Math.max(canvas.height * 0.6, player.y - player.speed);
+            }
+            if (keys['ArrowDown'] || keys['s']) {
+                player.y = Math.min(canvas.height - player.height, player.y + player.speed);
+            }
+        }
+
+        function shoot() {
+            bullets.push({
+                x: player.x + player.width / 2 - bulletWidth / 2,
+                y: player.y,
+                active: true
+            });
+        }
+
+        function updateBullets() {
+            for (let i = bullets.length - 1; i >= 0; i--) {
+                const bullet = bullets[i];
+                bullet.y -= bulletSpeed;
+                
+                if (bullet.y < 0) {
+                    bullets.splice(i, 1);
+                    continue;
+                }
+                
+                // Check collision with robot
+                robotSegments.forEach((segment, segmentIndex) => {
+                    if (!segment.destroyed && 
+                        bullet.x < segment.x + segmentSize &&
+                        bullet.x + bulletWidth > segment.x &&
+                        bullet.y < segment.y + segmentSize &&
+                        bullet.y + bulletHeight > segment.y) {
+                        
+                        segment.destroyed = true;
+                        bullets.splice(i, 1);
+                        gameState.score += 10;
+                        
+                        // Check if all segments destroyed
+                        if (robotSegments.every(seg => seg.destroyed)) {
+                            nextLevel();
+                        }
+                    }
+                });
+            }
+        }
+
+        function updateRobot() {
+            const speed = gameState.baseSpeed + (gameState.level - 1) * 0.3;
+            
+            robotSegments.forEach((segment, index) => {
+                if (!segment.destroyed) {
+                    segment.y += speed;
+                    
+                    // Snake-like movement
+                    segment.x += Math.sin(Date.now() * 0.002 + index * 0.4) * 1.5;
+                    
+                    // Check if robot reached player area
+                    if (segment.y > canvas.height - 120) {
+                        loseLife();
+                    }
+                }
+            });
+        }
+
+        function nextLevel() {
+            gameState.robotsDefeated++;
+            gameState.score += 100;
+            
+            // Check if we need to advance to next level
+            if (gameState.robotsDefeated >= gameState.robotsPerLevel) {
+                gameState.level++;
+                gameState.robotsDefeated = 0;
+                gameState.robotsPerLevel = Math.min(5, 3 + Math.floor(gameState.level / 3)); // Gradually increase robots per level
+                gameState.score += 200; // Bonus for completing level
+            }
+            
+            initRobot();
+            updateUI();
+        }
+
+        function loseLife() {
+            gameState.lives--;
+            if (gameState.lives <= 0) {
+                endGame();
+            } else {
+                initRobot();
+                updateUI();
+            }
+        }
+
+        function endGame() {
+            gameState.gameOver = true;
+            document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('finalScore').textContent = gameState.score;
+        }
+
+        function startGame() {
+            gameState.gameStarted = true;
+            document.getElementById('startScreen').style.display = 'none';
+        }
+
+        function resetGame() {
+            gameState = {
+                score: 0,
+                level: 1,
+                lives: 5,
+                gameOver: false,
+                paused: false,
+                baseSpeed: 0.5,
+                robotsDefeated: 0,
+                robotsPerLevel: 3,
+                gameStarted: false
+            };
+            
+            bullets.length = 0;
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 60;
+            
+            initRobot();
+            updateUI();
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'flex';
+        }
+
+        function updateUI() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('level').textContent = gameState.level;
+            document.getElementById('lives').textContent = gameState.lives;
+            document.getElementById('robotCount').textContent = `${gameState.robotsDefeated + 1}/${gameState.robotsPerLevel}`;
+        }
+
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                if (!gameState.gameStarted) {
+                    startGame();
+                } else if (!gameState.gameOver) {
+                    shoot();
+                }
+            }
+            if (e.key === 'r' || e.key === 'R') {
+                if (gameState.gameOver) resetGame();
+            }
+            if (e.key === 'Enter') {
+                if (!gameState.gameStarted) startGame();
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Touch controls
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (!gameState.gameStarted) {
+                startGame();
+                return;
+            }
+            
+            isTouching = true;
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            touchStartX = touch.clientX - rect.left;
+            touchStartY = touch.clientY - rect.top;
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isTouching || gameState.gameOver) return;
+            
+            const touch = e.touches[0];
+            const rect = canvas.getBoundingClientRect();
+            const currentX = touch.clientX - rect.left;
+            const currentY = touch.clientY - rect.top;
+            
+            // Move player towards touch position
+            const targetX = currentX - player.width / 2;
+            const targetY = currentY - player.height / 2;
+            
+            player.x = Math.max(0, Math.min(canvas.width - player.width, targetX));
+            player.y = Math.max(canvas.height * 0.6, Math.min(canvas.height - player.height, targetY));
+        });
+
+        canvas.addEventListener('touchend', (e) => {
+            e.preventDefault();
+            if (gameState.gameStarted && !gameState.gameOver) shoot();
+            isTouching = false;
+        });
+
+        // Game loop
+        function gameLoop() {
+            if (gameState.gameStarted && !gameState.gameOver) {
+                // Clear canvas
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw everything
+                drawBackground();
+                drawPlayer();
+                drawBullets();
+                drawRobot();
+                
+                // Update game state
+                updatePlayer();
+                updateBullets();
+                updateRobot();
+            } else if (!gameState.gameStarted) {
+                // Draw background even on start screen
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                drawBackground();
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initialize game
+        function init() {
+            resizeCanvas();
+            player.x = canvas.width / 2;
+            player.y = canvas.height - 60;
+            initRobot();
+            updateUI();
+            gameLoop();
+        }
+
+        // Start game
+        init();
+    </script>
+</body>
+</html>
