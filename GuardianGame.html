@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian Frost's Art Therapy</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Comfortaa:wght@300;400;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Comfortaa', cursive;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow: hidden;
+            height: 100vh;
+            user-select: none;
+        }
+        
+        .screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.8s ease;
+        }
+        
+        .hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Title Screen */
+        .title-screen {
+            background: linear-gradient(45deg, #2C3E50, #3498DB);
+            text-align: center;
+        }
+        
+        .title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            font-weight: 300;
+            margin-bottom: 3rem;
+            opacity: 0.9;
+        }
+        
+        .start-button {
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border: none;
+            padding: 1rem 2rem;
+            font-size: 1.1rem;
+            font-family: 'Comfortaa', cursive;
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+        }
+        
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(0,0,0,0.3);
+        }
+        
+        /* Game Screen */
+        .game-screen {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        }
+        
+        .game-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+        }
+        
+        .canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        
+        .controls-panel {
+            width: 300px;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(10px);
+            padding: 2rem;
+            overflow-y: auto;
+            border-left: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .controls-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            text-align: center;
+            color: #FFD700;
+        }
+        
+        .control-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .control-label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            color: #E8F4FD;
+        }
+        
+        .slider-container {
+            position: relative;
+            margin-bottom: 0.5rem;
+        }
+        
+        .slider {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+        
+        .slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(45deg, #FF6B6B, #4ECDC4);
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .slider-value {
+            font-size: 0.8rem;
+            color: #B8E6B8;
+            text-align: center;
+        }
+        
+        .back-button {
+            position: absolute;
+            top: 2rem;
+            left: 2rem;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            color: white;
+            border-radius: 20px;
+            cursor: pointer;
+            font-family: 'Comfortaa', cursive;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: rgba(0,0,0,0.5);
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            .controls-panel {
+                width: 100%;
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                height: 40%;
+                border-left: none;
+                border-top: 1px solid rgba(255,255,255,0.1);
+            }
+            
+            .canvas-container {
+                height: 60%;
+            }
+            
+            .title {
+                font-size: 2rem;
+            }
+            
+            .controls-title {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Title Screen -->
+    <div class="screen title-screen" id="titleScreen">
+        <h1 class="title">Guardian Frost's<br>Art Therapy</h1>
+        <p class="subtitle">Create beautiful, calming patterns with gentle touches</p>
+        <button class="start-button" onclick="startGame()">Begin Your Journey</button>
+    </div>
+    
+    <!-- Game Screen -->
+    <div class="screen game-screen hidden" id="gameScreen">
+        <button class="back-button" onclick="goHome()">← Home</button>
+        
+        <div class="game-container">
+            <div class="canvas-container">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+            
+            <div class="controls-panel">
+                <h2 class="controls-title">✨ Art Controls ✨</h2>
+                
+                <div class="control-group">
+                    <label class="control-label">Speed</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+                        <div class="slider-value" id="speedValue">1.0</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Particle Count</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="particleSlider" min="10" max="200" step="10" value="50">
+                        <div class="slider-value" id="particleValue">50</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Size</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="sizeSlider" min="1" max="20" step="1" value="5">
+                        <div class="slider-value" id="sizeValue">5</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Color Shift</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="colorSlider" min="0" max="360" step="10" value="180">
+                        <div class="slider-value" id="colorValue">180</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Pattern Type</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="patternSlider" min="1" max="5" step="1" value="1">
+                        <div class="slider-value" id="patternValue">Spiral</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Glow Intensity</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="glowSlider" min="0" max="20" step="1" value="10">
+                        <div class="slider-value" id="glowValue">10</div>
+                    </div>
+                </div>
+                
+                <div class="control-group">
+                    <label class="control-label">Harmony</label>
+                    <div class="slider-container">
+                        <input type="range" class="slider" id="harmonySlider" min="0.1" max="2" step="0.1" value="1">
+                        <div class="slider-value" id="harmonyValue">1.0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Game state
+        let canvas, ctx;
+        let animationId;
+        let particles = [];
+        let time = 0;
+        
+        // Control values
+        let controls = {
+            speed: 1,
+            particleCount: 50,
+            size: 5,
+            colorShift: 180,
+            pattern: 1,
+            glow: 10,
+            harmony: 1
+        };
+        
+        const patternNames = ['Spiral', 'Wave', 'Flower', 'Galaxy', 'Mandala'];
+        
+        function startGame() {
+            document.getElementById('titleScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            
+            setTimeout(() => {
+                initGame();
+            }, 100);
+        }
+        
+        function goHome() {
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('titleScreen').classList.remove('hidden');
+            
+            if (animationId) {
+                cancelAnimationFrame(animationId);
+            }
+        }
+        
+        function initGame() {
+            canvas = document.getElementById('gameCanvas');
+            ctx = canvas.getContext('2d');
+            
+            resizeCanvas();
+            setupControls();
+            initParticles();
+            animate();
+            
+            window.addEventListener('resize', resizeCanvas);
+        }
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+        }
+        
+        function setupControls() {
+            const sliders = {
+                speed: document.getElementById('speedSlider'),
+                particleCount: document.getElementById('particleSlider'),
+                size: document.getElementById('sizeSlider'),
+                colorShift: document.getElementById('colorSlider'),
+                pattern: document.getElementById('patternSlider'),
+                glow: document.getElementById('glowSlider'),
+                harmony: document.getElementById('harmonySlider')
+            };
+            
+            const values = {
+                speed: document.getElementById('speedValue'),
+                particleCount: document.getElementById('particleValue'),
+                size: document.getElementById('sizeValue'),
+                colorShift: document.getElementById('colorValue'),
+                pattern: document.getElementById('patternValue'),
+                glow: document.getElementById('glowValue'),
+                harmony: document.getElementById('harmonyValue')
+            };
+            
+            Object.keys(sliders).forEach(key => {
+                sliders[key].addEventListener('input', (e) => {
+                    const value = parseFloat(e.target.value);
+                    controls[key] = value;
+                    
+                    if (key === 'pattern') {
+                        values[key].textContent = patternNames[value - 1];
+                    } else {
+                        values[key].textContent = value.toFixed(1);
+                    }
+                    
+                    if (key === 'particleCount') {
+                        initParticles();
+                    }
+                });
+            });
+        }
+        
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < controls.particleCount; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    angle: (i / controls.particleCount) * Math.PI * 2,
+                    radius: 0,
+                    life: Math.random(),
+                    hue: Math.random() * 360
+                });
+            }
+        }
+        
+        function animate() {
+            time += controls.speed * 0.016;
+            
+            // Clear canvas with trail effect
+            ctx.fillStyle = 'rgba(30, 60, 114, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            
+            particles.forEach((particle, index) => {
+                updateParticle(particle, index, centerX, centerY);
+                drawParticle(particle);
+            });
+            
+            animationId = requestAnimationFrame(animate);
+        }
+        
+        function updateParticle(particle, index, centerX, centerY) {
+            const progress = (index / particles.length) * controls.harmony;
+            const t = time + progress * Math.PI * 2;
+            
+            switch (controls.pattern) {
+                case 1: // Spiral
+                    particle.radius = Math.sin(t * 0.5) * 150 + 100;
+                    particle.angle = t * 0.8 + index * 0.1;
+                    break;
+                case 2: // Wave
+                    particle.radius = 150 + Math.sin(t + index * 0.2) * 50;
+                    particle.angle = index * 0.3 + Math.sin(t * 0.5) * 0.5;
+                    break;
+                case 3: // Flower
+                    const petals = 6;
+                    particle.radius = 100 + Math.sin(t + index * 0.1) * 80 * Math.sin(index * petals * 0.1);
+                    particle.angle = t * 0.3 + index * 0.05;
+                    break;
+                case 4: // Galaxy
+                    particle.radius = 50 + index * 2 + Math.sin(t + index * 0.1) * 30;
+                    particle.angle = t * 0.2 + index * 0.8;
+                    break;
+                case 5: // Mandala
+                    const arms = 8;
+                    particle.radius = 120 + Math.sin(t * 2 + index * 0.3) * 60 * Math.cos(index * arms * 0.05);
+                    particle.angle = t * 0.1 + index * 0.1;
+                    break;
+            }
+            
+            particle.x = centerX + Math.cos(particle.angle) * particle.radius;
+            particle.y = centerY + Math.sin(particle.angle) * particle.radius;
+            
+            particle.hue = (particle.hue + controls.colorShift * 0.01) % 360;
+            particle.life = Math.sin(t + index * 0.1) * 0.5 + 0.5;
+        }
+        
+        function drawParticle(particle) {
+            const alpha = particle.life * 0.8;
+            const size = controls.size * (0.5 + particle.life * 0.5);
+            
+            ctx.save();
+            
+            // Glow effect
+            if (controls.glow > 0) {
+                ctx.shadowColor = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
+                ctx.shadowBlur = controls.glow;
+            }
+            
+            // Draw particle
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, size, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${particle.hue}, 70%, 60%, ${alpha})`;
+            ctx.fill();
+            
+            // Inner glow
+            ctx.beginPath();
+            ctx.arc(particle.x, particle.y, size * 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = `hsla(${particle.hue}, 80%, 80%, ${alpha * 0.8})`;
+            ctx.fill();
+            
+            ctx.restore();
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', () => {
+            // Add some sparkle animations to the title screen
+            const titleScreen = document.getElementById('titleScreen');
+            
+            for (let i = 0; i < 20; i++) {
+                const sparkle = document.createElement('div');
+                sparkle.style.position = 'absolute';
+                sparkle.style.width = '2px';
+                sparkle.style.height = '2px';
+                sparkle.style.background = 'white';
+                sparkle.style.borderRadius = '50%';
+                sparkle.style.opacity = '0.5';
+                sparkle.style.pointerEvents = 'none';
+                sparkle.style.left = Math.random() * 100 + '%';
+                sparkle.style.top = Math.random() * 100 + '%';
+                sparkle.style.animation = `twinkle ${2 + Math.random() * 3}s infinite`;
+                titleScreen.appendChild(sparkle);
+            }
+        });
+        
+        // Add CSS animation for sparkles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes twinkle {
+                0%, 100% { opacity: 0.2; transform: scale(0.8); }
+                50% { opacity: 0.8; transform: scale(1.2); }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
