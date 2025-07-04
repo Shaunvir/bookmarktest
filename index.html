@@ -438,14 +438,17 @@
             z-index: 2000;
             display: none;
             cursor: pointer;
+            overflow-y: auto;
         }
 
         .fullscreen-overlay.show {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
+            justify-content: flex-start;
             animation: fadeIn 0.3s ease;
+            padding: 20px;
+            padding-top: 40px;
         }
 
         @keyframes fadeIn {
@@ -453,10 +456,10 @@
             to { opacity: 1; }
         }
 
-        /* Better balanced images - Large but maintains aspect ratio */
+        /* FIXED: Better image sizing to always fit viewport */
         .fullscreen-image {
-            max-width: 85vw;
-            max-height: 75vh;
+            max-width: 90vw;
+            max-height: 60vh;
             width: auto;
             height: auto;
             border: 6px solid #00ff00;
@@ -465,8 +468,9 @@
                 0 0 0 9px #008800,
                 0 0 40px rgba(0, 255, 0, 0.8);
             image-rendering: pixelated;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
             object-fit: contain;
+            display: block;
         }
 
         .fullscreen-title {
@@ -485,11 +489,12 @@
             background: rgba(0, 0, 0, 0.8);
             padding: 15px 25px;
             border: 3px solid #00ff00;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            line-height: 1.4;
         }
 
         .exit-hint {
-            position: absolute;
+            position: fixed;
             top: 20px;
             right: 20px;
             font-family: 'Press Start 2P', monospace;
@@ -784,11 +789,16 @@
 
             /* Mobile images - nicely sized and properly proportioned */
             .fullscreen-image {
-                max-width: 80vw;
+                max-width: 85vw;
                 max-height: 65vh;
                 border-width: 4px;
                 margin-bottom: 10px;
                 object-fit: contain;
+            }
+
+            .fullscreen-overlay.show {
+                padding: 15px;
+                padding-top: 30px;
             }
 
             .exit-hint {
@@ -871,13 +881,32 @@
 
             /* Reasonable size on extra small screens */
             .fullscreen-image {
-                max-width: 75vw;
+                max-width: 80vw;
                 max-height: 60vh;
                 object-fit: contain;
             }
+
+            .fullscreen-overlay.show {
+                padding: 10px;
+                padding-top: 25px;
+            }
         }
 
-        /* Very wide screens - MASSIVE IMAGES */
+        /* FIXED: Desktop/larger screens - ensure images never exceed viewport */
+        @media (min-width: 769px) {
+            .fullscreen-image {
+                max-width: 85vw;
+                max-height: 55vh;
+                object-fit: contain;
+            }
+
+            .fullscreen-overlay.show {
+                padding: 30px;
+                padding-top: 50px;
+            }
+        }
+
+        /* Very wide screens - still constrained to viewport */
         @media (min-width: 1200px) {
             .title {
                 font-size: 3.5rem;
@@ -899,11 +928,16 @@
                 margin-bottom: 25px;
             }
 
-            /* On large screens, images are big but not overwhelming */
+            /* On large screens, images are well-sized but never too big */
             .fullscreen-image {
-                max-width: 90vw;
-                max-height: 80vh;
+                max-width: 80vw;
+                max-height: 60vh;
                 object-fit: contain;
+            }
+
+            .fullscreen-overlay.show {
+                padding: 40px;
+                padding-top: 60px;
             }
         }
     </style>
