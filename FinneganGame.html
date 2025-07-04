@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lord Finnegan's Fishing Fun</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #87CEEB 0%, #98D8E8 50%, #B0E0E6 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 800px;
+            height: 600px;
+            background: linear-gradient(to bottom, #87CEEB 0%, #4682B4 30%, #2F4F4F 100%);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .title-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #FFE4B5 0%, #DDA0DD 50%, #98FB98 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .title {
+            font-size: 48px;
+            color: #2F4F4F;
+            text-shadow: 3px 3px 0px #FFD700;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            font-size: 24px;
+            color: #4682B4;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+
+        .start-button {
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: #2F4F4F;
+            border: none;
+            padding: 20px 40px;
+            font-size: 24px;
+            font-weight: bold;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-family: inherit;
+        }
+
+        .start-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+        }
+
+        .water-surface {
+            position: absolute;
+            top: 100px;
+            left: 0;
+            width: 100%;
+            height: 10px;
+            background: linear-gradient(90deg, #00CED1, #20B2AA, #00CED1);
+            animation: wave 2s ease-in-out infinite;
+        }
+
+        @keyframes wave {
+            0%, 100% { transform: scaleY(1); }
+            50% { transform: scaleY(1.2); }
+        }
+
+        .lord-finnegan {
+            position: absolute;
+            bottom: 50px;
+            left: 50px;
+            width: 120px;
+            height: 80px;
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            border-radius: 50px 20px 50px 20px;
+            transition: transform 0.3s ease;
+        }
+
+        .lord-finnegan::before {
+            content: '';
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 15px;
+            height: 15px;
+            background: #000;
+            border-radius: 50%;
+            box-shadow: 30px 0 0 #000;
+        }
+
+        .lord-finnegan::after {
+            content: '';
+            position: absolute;
+            right: -20px;
+            top: 20px;
+            width: 0;
+            height: 0;
+            border-left: 30px solid #FF6B6B;
+            border-top: 20px solid transparent;
+            border-bottom: 20px solid transparent;
+        }
+
+        .fishing-line {
+            position: absolute;
+            bottom: 130px;
+            left: 170px;
+            width: 3px;
+            background: #8B4513;
+            transform-origin: bottom;
+            transition: all 0.5s ease;
+        }
+
+        .hook {
+            position: absolute;
+            bottom: -10px;
+            left: -5px;
+            width: 10px;
+            height: 10px;
+            background: #C0C0C0;
+            border-radius: 50%;
+        }
+
+        .fish {
+            position: absolute;
+            width: 40px;
+            height: 25px;
+            background: linear-gradient(45deg, #32CD32, #00FF00);
+            border-radius: 20px 5px 20px 5px;
+            transition: all 0.3s ease;
+            animation: swim 3s ease-in-out infinite;
+        }
+
+        .fish::before {
+            content: '';
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            width: 5px;
+            height: 5px;
+            background: #000;
+            border-radius: 50%;
+        }
+
+        .fish::after {
+            content: '';
+            position: absolute;
+            right: -15px;
+            top: 5px;
+            width: 0;
+            height: 0;
+            border-left: 20px solid #32CD32;
+            border-top: 8px solid transparent;
+            border-bottom: 8px solid transparent;
+        }
+
+        @keyframes swim {
+            0%, 100% { transform: translateX(0px) translateY(0px); }
+            25% { transform: translateX(10px) translateY(-5px); }
+            50% { transform: translateX(0px) translateY(-10px); }
+            75% { transform: translateX(-10px) translateY(-5px); }
+        }
+
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #FFF;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+
+        .cast-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: linear-gradient(45deg, #FF6B6B, #FF8E8E);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: transform 0.2s;
+            font-family: inherit;
+        }
+
+        .cast-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .cast-button:disabled {
+            background: #888;
+            cursor: not-allowed;
+        }
+
+        .reel-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            font-size: 24px;
+            color: #2F4F4F;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            z-index: 500;
+            animation: pulse 0.5s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+        }
+
+        .bubbles {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .bubble {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            animation: bubble-rise 4s ease-in-out infinite;
+        }
+
+        @keyframes bubble-rise {
+            0% {
+                transform: translateY(0px);
+                opacity: 0.7;
+            }
+            100% {
+                transform: translateY(-600px);
+                opacity: 0;
+            }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .seaweed {
+            position: absolute;
+            bottom: 0;
+            width: 20px;
+            height: 150px;
+            background: linear-gradient(to top, #228B22, #32CD32);
+            border-radius: 10px;
+            animation: sway 3s ease-in-out infinite;
+        }
+
+        @keyframes sway {
+            0%, 100% { transform: rotate(-5deg); }
+            50% { transform: rotate(5deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="title-screen" id="titleScreen">
+            <h1 class="title">Lord Finnegan's<br>Fishing Fun</h1>
+            <p class="subtitle">A Cozy Underwater Adventure</p>
+            <button class="start-button" onclick="startGame()">🎣 Start Fishing 🎣</button>
+        </div>
+
+        <div class="water-surface"></div>
+        
+        <div class="bubbles" id="bubbles"></div>
+        
+        <div class="seaweed" style="left: 100px; height: 120px; animation-delay: 0s;"></div>
+        <div class="seaweed" style="left: 300px; height: 140px; animation-delay: 1s;"></div>
+        <div class="seaweed" style="left: 500px; height: 110px; animation-delay: 2s;"></div>
+        <div class="seaweed" style="left: 700px; height: 130px; animation-delay: 0.5s;"></div>
+        
+        <div class="lord-finnegan" id="lordFinnegan"></div>
+        
+        <div class="fishing-line hidden" id="fishingLine">
+            <div class="hook"></div>
+        </div>
+        
+        <div class="ui">
+            <div>Fish Caught: <span id="fishCount">0</span></div>
+        </div>
+        
+        <button class="cast-button hidden" id="castButton" onclick="castLine()">Cast Line!</button>
+        
+        <div class="reel-prompt hidden" id="reelPrompt">
+            <div>🐟 Fish on the line! 🐟</div>
+            <div style="font-size: 18px; margin-top: 10px;">Click rapidly to reel it in!</div>
+            <div id="reelProgress" style="margin-top: 15px; font-size: 14px;"></div>
+        </div>
+    </div>
+
+    <script>
+        let gameState = {
+            isPlaying: false,
+            fishCaught: 0,
+            isLineCast: false,
+            fishOnLine: false,
+            reelProgress: 0,
+            reelTarget: 10,
+            currentFish: null,
+            bubbleInterval: null
+        };
+
+        function startGame() {
+            document.getElementById('titleScreen').classList.add('hidden');
+            document.getElementById('castButton').classList.remove('hidden');
+            gameState.isPlaying = true;
+            
+            // Start bubble animation
+            startBubbles();
+            
+            // Spawn some fish
+            spawnFish();
+        }
+
+        function startBubbles() {
+            const bubblesContainer = document.getElementById('bubbles');
+            
+            gameState.bubbleInterval = setInterval(() => {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.style.left = Math.random() * 800 + 'px';
+                bubble.style.bottom = '0px';
+                bubble.style.animationDelay = Math.random() * 2 + 's';
+                bubble.style.width = (Math.random() * 15 + 10) + 'px';
+                bubble.style.height = bubble.style.width;
+                
+                bubblesContainer.appendChild(bubble);
+                
+                setTimeout(() => {
+                    if (bubble.parentNode) {
+                        bubble.parentNode.removeChild(bubble);
+                    }
+                }, 4000);
+            }, 800);
+        }
+
+        function spawnFish() {
+            // Remove existing fish
+            const existingFish = document.querySelectorAll('.fish');
+            existingFish.forEach(fish => fish.remove());
+            
+            // Spawn 3-5 fish
+            const fishCount = Math.floor(Math.random() * 3) + 3;
+            for (let i = 0; i < fishCount; i++) {
+                setTimeout(() => {
+                    const fish = document.createElement('div');
+                    fish.className = 'fish';
+                    fish.style.left = Math.random() * 600 + 100 + 'px';
+                    fish.style.bottom = Math.random() * 200 + 150 + 'px';
+                    fish.style.animationDelay = Math.random() * 3 + 's';
+                    
+                    // Random fish colors
+                    const colors = ['#32CD32', '#FF6B6B', '#FFD700', '#FF69B4', '#00CED1'];
+                    const color = colors[Math.floor(Math.random() * colors.length)];
+                    fish.style.background = `linear-gradient(45deg, ${color}, ${color}88)`;
+                    
+                    document.querySelector('.game-container').appendChild(fish);
+                }, i * 500);
+            }
+        }
+
+        function castLine() {
+            if (gameState.isLineCast) return;
+            
+            gameState.isLineCast = true;
+            const fishingLine = document.getElementById('fishingLine');
+            const castButton = document.getElementById('castButton');
+            const lordFinnegan = document.getElementById('lordFinnegan');
+            
+            // Animate Lord Finnegan
+            lordFinnegan.style.transform = 'rotate(-10deg)';
+            
+            // Randomize casting position
+            const castPosition = Math.random() * 500 + 150; // Random position between 150px and 650px
+            const lineHeight = Math.random() * 300 + 200;
+            
+            // Show and animate fishing line at random position
+            fishingLine.classList.remove('hidden');
+            fishingLine.style.height = lineHeight + 'px';
+            fishingLine.style.bottom = '130px';
+            fishingLine.style.left = castPosition + 'px';
+            
+            castButton.disabled = true;
+            castButton.textContent = 'Waiting...';
+            
+            // Check if fish is caught after a delay
+            setTimeout(() => {
+                // 20% chance (1 in 5) of catching a fish
+                const catchChance = Math.random();
+                
+                if (catchChance < 0.2) {
+                    // Fish caught! Find a nearby fish or create a virtual one
+                    const fishElements = document.querySelectorAll('.fish');
+                    let targetFish = null;
+                    
+                    if (fishElements.length > 0) {
+                        // Pick a random existing fish
+                        targetFish = fishElements[Math.floor(Math.random() * fishElements.length)];
+                    }
+                    
+                    gameState.currentFish = targetFish;
+                    startReeling();
+                } else {
+                    // No fish caught, reel in empty
+                    setTimeout(() => {
+                        reelInLine();
+                    }, 1500);
+                }
+            }, 1000);
+        }
+
+        function startReeling() {
+            gameState.fishOnLine = true;
+            gameState.reelProgress = 0;
+            gameState.reelTarget = Math.floor(Math.random() * 8) + 8;
+            
+            const reelPrompt = document.getElementById('reelPrompt');
+            reelPrompt.classList.remove('hidden');
+            
+            updateReelProgress();
+            
+            // Add click listener for rapid clicking
+            document.addEventListener('click', reelClick);
+            
+            // Time limit for reeling
+            setTimeout(() => {
+                if (gameState.fishOnLine) {
+                    // Fish got away
+                    gameState.fishOnLine = false;
+                    reelPrompt.classList.add('hidden');
+                    document.removeEventListener('click', reelClick);
+                    reelInLine();
+                }
+            }, 5000);
+        }
+
+        function reelClick() {
+            if (!gameState.fishOnLine) return;
+            
+            gameState.reelProgress++;
+            updateReelProgress();
+            
+            if (gameState.reelProgress >= gameState.reelTarget) {
+                // Fish caught!
+                gameState.fishOnLine = false;
+                gameState.fishCaught++;
+                document.getElementById('fishCount').textContent = gameState.fishCaught;
+                
+                // Remove the caught fish
+                if (gameState.currentFish) {
+                    gameState.currentFish.remove();
+                }
+                
+                const reelPrompt = document.getElementById('reelPrompt');
+                reelPrompt.innerHTML = '<div>🎉 Fish Caught! 🎉</div><div style="font-size: 18px; margin-top: 10px;">Great job!</div>';
+                
+                document.removeEventListener('click', reelClick);
+                
+                setTimeout(() => {
+                    reelPrompt.classList.add('hidden');
+                    reelInLine();
+                }, 1500);
+            }
+        }
+
+        function updateReelProgress() {
+            const progress = document.getElementById('reelProgress');
+            const percentage = Math.min((gameState.reelProgress / gameState.reelTarget) * 100, 100);
+            progress.innerHTML = `Progress: ${'🐟'.repeat(Math.floor(percentage / 10))} ${Math.floor(percentage)}%`;
+        }
+
+        function reelInLine() {
+            const fishingLine = document.getElementById('fishingLine');
+            const castButton = document.getElementById('castButton');
+            const lordFinnegan = document.getElementById('lordFinnegan');
+            
+            // Reset Lord Finnegan
+            lordFinnegan.style.transform = 'rotate(0deg)';
+            
+            // Hide fishing line
+            fishingLine.classList.add('hidden');
+            
+            // Reset button
+            castButton.disabled = false;
+            castButton.textContent = 'Cast Line!';
+            gameState.isLineCast = false;
+            
+            // Spawn new fish occasionally
+            if (Math.random() < 0.3) {
+                spawnFish();
+            }
+        }
+
+        // Add some initial ambiance
+        document.addEventListener('DOMContentLoaded', () => {
+            // Pre-load some bubbles for ambiance
+            setTimeout(() => {
+                const bubblesContainer = document.getElementById('bubbles');
+                for (let i = 0; i < 5; i++) {
+                    const bubble = document.createElement('div');
+                    bubble.className = 'bubble';
+                    bubble.style.left = Math.random() * 800 + 'px';
+                    bubble.style.bottom = Math.random() * 200 + 'px';
+                    bubble.style.animationDelay = Math.random() * 2 + 's';
+                    bubble.style.width = (Math.random() * 15 + 10) + 'px';
+                    bubble.style.height = bubble.style.width;
+                    bubblesContainer.appendChild(bubble);
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
