@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Princess Witch's Forest</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #2c1810, #4a2c17);
+            font-family: 'Press Start 2P', cursive;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .title {
+            text-align: center;
+            color: #e8d5c4;
+            font-size: 16px;
+            padding: 20px;
+            text-shadow: 2px 2px 0px #2c1810;
+            background: rgba(76, 44, 23, 0.8);
+            border-bottom: 3px solid #5a3419;
+        }
+
+        .instructions {
+            text-align: center;
+            color: #c4a484;
+            font-size: 10px;
+            padding: 10px;
+            background: rgba(44, 24, 16, 0.9);
+        }
+
+        .forest-grid {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(8, 1fr);
+            gap: 2px;
+            padding: 10px;
+            background: rgba(44, 24, 16, 0.5);
+            overflow: hidden;
+        }
+
+        .dirt-square {
+            background: #3d2817;
+            border: 2px solid #2c1810;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+            border-radius: 3px;
+            min-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            overflow: visible;
+        }
+
+        .dirt-square:hover {
+            background: #4a2f1a;
+            transform: scale(1.05);
+        }
+
+        .dirt-square.has-plant {
+            background: #2d4a2d;
+            border-color: #1a3d1a;
+        }
+
+        .dirt-square.has-plant:hover {
+            background: #345a34;
+        }
+
+        /* Plant growth stages - more reasonable size progression */
+        .growth-stage-0 { 
+            font-size: 14px; 
+            opacity: 0.7;
+        }
+        .growth-stage-1 { 
+            font-size: 18px; 
+            opacity: 0.85;
+        }
+        .growth-stage-2 { 
+            font-size: 24px; 
+            opacity: 1;
+        }
+        .growth-stage-3 { 
+            font-size: 32px; 
+            opacity: 1;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
+            z-index: 5;
+            position: relative;
+        }
+        .growth-stage-4 { 
+            font-size: 40px; 
+            opacity: 1;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+            animation: mega-glow 2s ease-in-out infinite;
+            z-index: 10;
+            position: relative;
+        }
+
+        .magic-counter {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(44, 24, 16, 0.9);
+            color: #e8d5c4;
+            padding: 10px 15px;
+            border-radius: 5px;
+            font-size: 12px;
+            border: 2px solid #5a3419;
+        }
+
+        .sparkle {
+            position: absolute;
+            color: #ffd700;
+            font-size: 12px;
+            animation: sparkle 1s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes mega-glow {
+            0%, 100% { 
+                transform: scale(1); 
+                text-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+            }
+            50% { 
+                transform: scale(1.1); 
+                text-shadow: 0 0 16px rgba(255, 255, 255, 0.8), 0 0 25px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        @keyframes gentle-glow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes sparkle {
+            0% { opacity: 1; transform: scale(0.5) translateY(0); }
+            100% { opacity: 0; transform: scale(1.5) translateY(-30px); }
+        }
+
+        @media (max-width: 768px) {
+            .forest-grid {
+                grid-template-columns: repeat(8, 1fr);
+                grid-template-rows: repeat(10, 1fr);
+            }
+            .title { font-size: 12px; }
+            .instructions { font-size: 8px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="title">🌸 The Princess Witch's Forest 🌸</h1>
+        <div class="instructions">✨ Click anywhere to grow plants! ✨</div>
+        <div class="magic-counter">🌿 Plants: <span id="plant-count">0</span></div>
+        <div class="forest-grid" id="forest-grid"></div>
+    </div>
+
+    <script>
+        class ForestGame {
+            constructor() {
+                this.grid = document.getElementById('forest-grid');
+                this.plantCount = 0;
+                this.plantTypes = [
+                    { name: 'grass', stages: ['🌱', '🌿', '🍃', '🌾', '🌳'] },
+                    { name: 'flower', stages: ['🌱', '🌸', '🌺', '🌻', '🌷'] },
+                    { name: 'tree', stages: ['🌱', '🌿', '🌲', '🌴', '🌳'] },
+                    { name: 'mushroom', stages: ['🌱', '🍄', '🍄‍🟫', '🍄‍🟫', '🍄‍🟫'] },
+                    { name: 'herb', stages: ['🌱', '🌿', '🪴', '🌾', '🌳'] },
+                    { name: 'magic', stages: ['✨', '🌟', '⭐', '💫', '🌠'] }
+                ];
+                this.squares = [];
+                this.initializeGrid();
+            }
+
+            initializeGrid() {
+                // Create grid squares
+                for (let i = 0; i < 96; i++) {
+                    const square = document.createElement('div');
+                    square.className = 'dirt-square';
+                    square.dataset.index = i;
+                    square.addEventListener('click', (e) => this.handleSquareClick(e, i));
+                    this.grid.appendChild(square);
+                    this.squares.push({
+                        element: square,
+                        hasPlant: false,
+                        plantType: null,
+                        growthStage: 0
+                    });
+                }
+            }
+
+            handleSquareClick(event, index) {
+                const square = this.squares[index];
+                
+                if (!square.hasPlant) {
+                    // Plant a new seed
+                    this.plantSeed(square);
+                    this.createSparkle(event.target);
+                } else {
+                    // Grow existing plant
+                    this.growPlant(square);
+                    this.createSparkle(event.target);
+                }
+            }
+
+            plantSeed(square) {
+                // Choose random plant type
+                const plantType = this.plantTypes[Math.floor(Math.random() * this.plantTypes.length)];
+                
+                square.hasPlant = true;
+                square.plantType = plantType;
+                square.growthStage = 0;
+                square.element.classList.add('has-plant');
+                square.element.classList.add('growth-stage-0');
+                square.element.textContent = plantType.stages[0];
+                
+                this.plantCount++;
+                this.updatePlantCounter();
+            }
+
+            growPlant(square) {
+                if (square.growthStage < square.plantType.stages.length - 1) {
+                    // Remove old growth stage class
+                    square.element.classList.remove(`growth-stage-${square.growthStage}`);
+                    
+                    square.growthStage++;
+                    square.element.textContent = square.plantType.stages[square.growthStage];
+                    
+                    // Add new growth stage class for size
+                    square.element.classList.add(`growth-stage-${square.growthStage}`);
+                    
+                    // Add visual feedback for growth with satisfying bounce
+                    square.element.style.transform = 'scale(1.4)';
+                    setTimeout(() => {
+                        square.element.style.transform = '';
+                    }, 300);
+                }
+            }
+
+            createSparkle(element) {
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.textContent = '✨';
+                
+                const rect = element.getBoundingClientRect();
+                sparkle.style.left = (rect.left + rect.width / 2 - 6) + 'px';
+                sparkle.style.top = (rect.top + rect.height / 2 - 6) + 'px';
+                sparkle.style.position = 'fixed';
+                
+                document.body.appendChild(sparkle);
+                
+                setTimeout(() => {
+                    sparkle.remove();
+                }, 1000);
+            }
+
+            updatePlantCounter() {
+                document.getElementById('plant-count').textContent = this.plantCount;
+            }
+        }
+
+        // Initialize the game when page loads
+        window.addEventListener('load', () => {
+            new ForestGame();
+        });
+
+        // Add some ambient magic
+        setInterval(() => {
+            const squares = document.querySelectorAll('.dirt-square.has-plant');
+            if (squares.length > 0) {
+                const randomSquare = squares[Math.floor(Math.random() * squares.length)];
+                const sparkle = document.createElement('div');
+                sparkle.className = 'sparkle';
+                sparkle.textContent = ['✨', '🌟', '💫'][Math.floor(Math.random() * 3)];
+                
+                const rect = randomSquare.getBoundingClientRect();
+                sparkle.style.left = (rect.left + Math.random() * rect.width) + 'px';
+                sparkle.style.top = (rect.top + Math.random() * rect.height) + 'px';
+                sparkle.style.position = 'fixed';
+                
+                document.body.appendChild(sparkle);
+                
+                setTimeout(() => {
+                    sparkle.remove();
+                }, 1000);
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
