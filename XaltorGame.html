@@ -323,32 +323,50 @@
                 this.text = text;
                 this.x = x;
                 this.y = y;
-                this.life = 180; // 3 seconds at 60fps
-                this.maxLife = 180;
+                this.life = 240; // 4 seconds at 60fps
+                this.maxLife = 240;
             }
             
             update() {
-                this.y -= 2;
+                this.y -= 1; // Slower movement
                 this.life--;
                 return this.life > 0;
             }
             
             draw() {
-                const alpha = this.life / this.maxLife;
+                // Keep text fully opaque longer, then fade at the end
+                const fadeStart = this.maxLife * 0.7; // Start fading at 70% of life
+                let alpha = 1;
+                if (this.life < fadeStart) {
+                    alpha = this.life / fadeStart;
+                }
+                
+                // Turn off any existing shadow/blur effects
+                ctx.shadowBlur = 0;
+                ctx.shadowColor = 'transparent';
                 
                 // Make win text much bigger and more obvious
                 if (this.text.includes('WON:')) {
-                    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
-                    ctx.font = 'bold 28px Courier New';
-                    ctx.strokeStyle = `rgba(138, 43, 226, ${alpha})`;
-                    ctx.lineWidth = 3;
+                    // Black outline for contrast
+                    ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
+                    ctx.lineWidth = 4;
+                    ctx.font = 'bold 32px Courier New';
                     ctx.textAlign = 'center';
                     ctx.strokeText(this.text, this.x, this.y);
+                    
+                    // Bright gold text
+                    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
                     ctx.fillText(this.text, this.x, this.y);
                 } else {
-                    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
-                    ctx.font = '16px Courier New';
+                    // Black outline for flavor text too
+                    ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
+                    ctx.lineWidth = 2;
+                    ctx.font = 'bold 18px Courier New';
                     ctx.textAlign = 'center';
+                    ctx.strokeText(this.text, this.x, this.y);
+                    
+                    // Bright gold text
+                    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
                     ctx.fillText(this.text, this.x, this.y);
                 }
             }
