@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moon Bidder: One Gem to Rule Them All</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #0a0a2e, #16213e, #1a1a3e);
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            height: 100vh;
+            position: relative;
+        }
+
+        .starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 2s infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { opacity: 0.3; }
+            100% { opacity: 1; }
+        }
+
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background: transparent;
+            border: 2px solid #4a4a8a;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+        }
+
+        .ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 18px;
+            text-shadow: 0 0 10px rgba(138, 43, 226, 0.8);
+        }
+
+        .start-screen, .game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            text-align: center;
+            z-index: 100;
+        }
+
+        .title {
+            font-size: 48px;
+            color: #8a2be2;
+            text-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .subtitle {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #ffd700;
+        }
+
+        .instruction {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #ccc;
+        }
+
+        .button {
+            padding: 15px 30px;
+            font-size: 20px;
+            background: linear-gradient(45deg, #8a2be2, #4b0082);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            transition: all 0.3s;
+        }
+
+        .button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.8);
+        }
+
+        .flavor-text {
+            position: absolute;
+            color: #ffd700;
+            font-size: 16px;
+            pointer-events: none;
+            animation: floatUp 3s linear forwards;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0); }
+            100% { opacity: 0; transform: translateY(-100px); }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="starfield" id="starfield"></div>
+    
+    <div class="start-screen" id="startScreen">
+        <div class="title">MOON BIDDER</div>
+        <div class="subtitle">One Gem to Rule Them All</div>
+        <div class="instruction">You are Xaltor the Elder, cosmic billionaire extraordinaire!</div>
+        <div class="instruction">Drop gems to win galactic auctions. Miss and face... inflation!</div>
+        <div class="instruction">Press SPACE or CLICK to drop gems</div>
+        <button class="button" onclick="startGame()">Begin Cosmic Bidding</button>
+    </div>
+
+    <div class="game-over hidden" id="gameOverScreen">
+        <div class="title">AUCTION CLOSED</div>
+        <div class="subtitle" id="finalScore"></div>
+        <div class="instruction" id="gameOverMessage"></div>
+        <button class="button" onclick="restartGame()">Bid Again</button>
+    </div>
+
+    <div class="ui">
+        <div>Score: <span id="score">0</span></div>
+        <div>Throne Level: <span id="throneLevel">Bronze</span></div>
+        <div>Wins: <span id="wins">0</span></div>
+    </div>
+
+    <canvas id="gameCanvas" width="1000" height="700"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let gameState = 'start'; // 'start', 'playing', 'gameOver'
+        let score = 0;
+        let wins = 0;
+        let gameSpeed = 1;
+        let throneLevel = 'Bronze';
+        
+        // Game objects
+        let gem = null;
+        let auctionItems = [];
+        let flavorTexts = [];
+        
+        // Input handling
+        let spacePressed = false;
+        
+        // Auction item names
+        const auctionNames = [
+            'Europa', 'Titan', 'Mars Colony', 'Jupiter\'s Storm', 'Saturn\'s Rings',
+            'Black Hole Lease', 'Time Permit', 'Dark Matter', 'Quantum Foam',
+            'Parallel Universe', 'Wormhole Toll', 'Galactic Highway', 'Asteroid Belt',
+            'Comet Tail', 'Solar Flare', 'Neutron Star', 'Pulsar Rights',
+            'Gravity Well', 'Space-Time Deed', 'Cosmic Microwave'
+        ];
+        
+        const flavorMessages = [
+            'You just bought Pluto\'s atmosphere!',
+            'Xaltor sneezes diamonds.',
+            'Your gem is worth 47 galaxies!',
+            'The universe trembles at your wealth!',
+            'You own Tuesday now.',
+            'Congratulations on purchasing gravity!',
+            'Your ego expands faster than the universe!',
+            'Even black holes owe you money.',
+            'You just trademarked the color purple.',
+            'Your accountant lives in another dimension.'
+        ];
+        
+        const gameOverMessages = [
+            'Too slow... the Coalition Mushrooms outbid you!',
+            'Intergalactic tax audit incoming!',
+            'Your cosmic credit rating has been frozen!',
+            'The Galactic Revenue Service wants a word...',
+            'Market inflation has consumed your empire!',
+            'You\'ve been outbid by a sentient calculator!',
+            'The universe has repossessed your throne!',
+            'Cosmic bankruptcy court is now in session!'
+        ];
+        
+        class Gem {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 15;
+                this.speed = 8;
+                this.glow = 0;
+            }
+            
+            update() {
+                this.y += this.speed;
+                this.glow += 0.2;
+                
+                // Remove if off screen
+                if (this.y > canvas.height + this.radius) {
+                    return false;
+                }
+                return true;
+            }
+            
+            draw() {
+                const glowIntensity = Math.sin(this.glow) * 0.3 + 0.7;
+                
+                // Glow effect
+                ctx.shadowColor = '#8a2be2';
+                ctx.shadowBlur = 20 * glowIntensity;
+                
+                // Gem body
+                ctx.fillStyle = `rgba(138, 43, 226, ${glowIntensity})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Inner sparkle
+                ctx.fillStyle = `rgba(255, 255, 255, ${glowIntensity * 0.8})`;
+                ctx.beginPath();
+                ctx.arc(this.x - 3, this.y - 3, this.radius * 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.shadowBlur = 0;
+            }
+            
+            checkCollision(item) {
+                const dx = this.x - item.x;
+                const dy = this.y - item.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                return distance < this.radius + item.height / 2;
+            }
+        }
+        
+        class AuctionItem {
+            constructor() {
+                this.x = canvas.width + 100;
+                this.y = canvas.height / 2 + (Math.random() - 0.5) * 200;
+                this.width = 150;
+                this.height = 60;
+                this.speed = 2 * gameSpeed;
+                this.name = auctionNames[Math.floor(Math.random() * auctionNames.length)];
+                this.color = this.getRandomColor();
+                this.pulse = 0;
+            }
+            
+            getRandomColor() {
+                const colors = ['#ff6b6b', '#4ecdc4', '#45b7d1', '#96ceb4', '#feca57', '#ff9ff3', '#54a0ff'];
+                return colors[Math.floor(Math.random() * colors.length)];
+            }
+            
+            update() {
+                this.x -= this.speed;
+                this.pulse += 0.1;
+                
+                // Remove if off screen
+                if (this.x + this.width < 0) {
+                    return false;
+                }
+                return true;
+            }
+            
+            draw() {
+                const pulseEffect = Math.sin(this.pulse) * 0.1 + 1;
+                
+                // Item body
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y - this.height/2, this.width, this.height);
+                
+                // Border
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x, this.y - this.height/2, this.width, this.height);
+                
+                // Text
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 16px Courier New';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.strokeText(this.name, this.x + this.width/2, this.y + 5);
+                ctx.fillText(this.name, this.x + this.width/2, this.y + 5);
+                
+                // Price indicator
+                ctx.font = 'bold 12px Courier New';
+                ctx.strokeText('1 GEM', this.x + this.width/2, this.y - 15);
+                ctx.fillText('1 GEM', this.x + this.width/2, this.y - 15);
+            }
+        }
+        
+        class FlavorText {
+            constructor(text, x, y) {
+                this.text = text;
+                this.x = x;
+                this.y = y;
+                this.life = 180; // 3 seconds at 60fps
+                this.maxLife = 180;
+            }
+            
+            update() {
+                this.y -= 2;
+                this.life--;
+                return this.life > 0;
+            }
+            
+            draw() {
+                const alpha = this.life / this.maxLife;
+                
+                // Make win text much bigger and more obvious
+                if (this.text.includes('WON:')) {
+                    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+                    ctx.font = 'bold 28px Courier New';
+                    ctx.strokeStyle = `rgba(138, 43, 226, ${alpha})`;
+                    ctx.lineWidth = 3;
+                    ctx.textAlign = 'center';
+                    ctx.strokeText(this.text, this.x, this.y);
+                    ctx.fillText(this.text, this.x, this.y);
+                } else {
+                    ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+                    ctx.font = '16px Courier New';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(this.text, this.x, this.y);
+                }
+            }
+        }
+        
+        function createStarfield() {
+            const starfield = document.getElementById('starfield');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = (Math.random() * 3 + 1) + 'px';
+                star.style.animationDelay = Math.random() * 2 + 's';
+                starfield.appendChild(star);
+            }
+        }
+        
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('wins').textContent = wins;
+            document.getElementById('throneLevel').textContent = throneLevel;
+        }
+        
+        function updateThroneLevel() {
+            if (score >= 1000) throneLevel = 'Cosmic Emperor';
+            else if (score >= 500) throneLevel = 'Galactic King';
+            else if (score >= 200) throneLevel = 'Silver';
+            else throneLevel = 'Bronze';
+        }
+        
+        function addFlavorText(text) {
+            flavorTexts.push(new FlavorText(text, canvas.width / 2, canvas.height / 2 - 50));
+        }
+        
+        function addWinText(itemName) {
+            const winText = `🎉 WON: ${itemName.toUpperCase()}! 🎉`;
+            const bigWinText = new FlavorText(winText, canvas.width / 2, canvas.height / 2);
+            bigWinText.life = 240; // Show longer
+            bigWinText.maxLife = 240;
+            flavorTexts.push(bigWinText);
+        }
+        
+        function dropGem() {
+            if (!gem) {
+                gem = new Gem(canvas.width / 2, 50);
+            }
+        }
+        
+        function spawnAuctionItem() {
+            if (Math.random() < 0.02 * gameSpeed) { // Spawn rate increases with speed
+                auctionItems.push(new AuctionItem());
+            }
+        }
+        
+        function checkCollisions() {
+            if (!gem) return;
+            
+            for (let i = auctionItems.length - 1; i >= 0; i--) {
+                if (gem.checkCollision(auctionItems[i])) {
+                    // Hit!
+                    score += 100;
+                    wins++;
+                    
+                    // Remove both gem and item
+                    const wonItemName = auctionItems[i].name;
+                    gem = null;
+                    auctionItems.splice(i, 1);
+                    
+                    // Add big win text
+                    addWinText(wonItemName);
+                    
+                    // Add flavor text below
+                    setTimeout(() => {
+                        addFlavorText(flavorMessages[Math.floor(Math.random() * flavorMessages.length)]);
+                    }, 500);
+                    
+                    // Increase speed every 5 wins
+                    if (wins % 5 === 0) {
+                        gameSpeed += 0.3;
+                    }
+                    
+                    updateThroneLevel();
+                    break;
+                }
+            }
+        }
+        
+        function checkMisses() {
+            // Check if auction items escaped
+            for (let i = auctionItems.length - 1; i >= 0; i--) {
+                if (auctionItems[i].x + auctionItems[i].width < 0) {
+                    // Missed an auction item - game over!
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // Check if gem fell off screen
+            if (gem && gem.y > canvas.height + gem.radius) {
+                gem = null;
+            }
+        }
+        
+        function gameOver() {
+            gameState = 'gameOver';
+            document.getElementById('finalScore').textContent = `Final Score: ${score} (${wins} successful bids)`;
+            document.getElementById('gameOverMessage').textContent = gameOverMessages[Math.floor(Math.random() * gameOverMessages.length)];
+            document.getElementById('gameOverScreen').classList.remove('hidden');
+        }
+        
+        function startGame() {
+            gameState = 'playing';
+            score = 0;
+            wins = 0;
+            gameSpeed = 1;
+            throneLevel = 'Bronze';
+            gem = null;
+            auctionItems = [];
+            flavorTexts = [];
+            
+            document.getElementById('startScreen').classList.add('hidden');
+            document.getElementById('gameOverScreen').classList.add('hidden');
+            updateUI();
+        }
+        
+        function restartGame() {
+            startGame();
+        }
+        
+        function drawBackground() {
+            // Clear canvas
+            ctx.fillStyle = 'rgba(10, 10, 46, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw Xaltor's throne area
+            if (score >= 500) {
+                ctx.fillStyle = 'rgba(255, 215, 0, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, 100);
+                
+                // Fancy throne
+                ctx.fillStyle = '#ffd700';
+                ctx.font = '20px Courier New';
+                ctx.textAlign = 'center';
+                ctx.fillText('🏰 XALTOR\'S COSMIC THRONE 🏰', canvas.width / 2, 30);
+            }
+        }
+        
+        function gameLoop() {
+            if (gameState !== 'playing') {
+                requestAnimationFrame(gameLoop);
+                return;
+            }
+            
+            drawBackground();
+            
+            // Spawn auction items
+            spawnAuctionItem();
+            
+            // Update gem
+            if (gem) {
+                if (!gem.update()) {
+                    gem = null;
+                }
+            }
+            
+            // Update auction items
+            for (let i = auctionItems.length - 1; i >= 0; i--) {
+                if (!auctionItems[i].update()) {
+                    auctionItems.splice(i, 1);
+                }
+            }
+            
+            // Update flavor texts
+            for (let i = flavorTexts.length - 1; i >= 0; i--) {
+                if (!flavorTexts[i].update()) {
+                    flavorTexts.splice(i, 1);
+                }
+            }
+            
+            // Check collisions and misses
+            checkCollisions();
+            checkMisses();
+            
+            // Draw everything
+            auctionItems.forEach(item => item.draw());
+            if (gem) gem.draw();
+            flavorTexts.forEach(text => text.draw());
+            
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && gameState === 'playing') {
+                e.preventDefault();
+                dropGem();
+            }
+        });
+        
+        canvas.addEventListener('click', () => {
+            if (gameState === 'playing') {
+                dropGem();
+            }
+        });
+        
+        // Initialize
+        createStarfield();
+        updateUI();
+        gameLoop();
+    </script>
+</body>
+</html>
