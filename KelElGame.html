@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Silent Step: Shadow Dash</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #0f0f23, #1a1a2e, #16213e);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        
+        canvas {
+            border: 2px solid #333;
+            background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #2a2a3e 100%);
+            cursor: pointer;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div class="ui-overlay" id="scoreDisplay">Score: 0</div>
+    
+    <script>
+        // Game state constants
+        const GAME_STATES = {
+            TITLE: 'title',
+            PLAYING: 'playing',
+            GAME_OVER: 'game_over'
+        };
+        
+        // Game configuration
+        const CONFIG = {
+            CANVAS_WIDTH: 800,
+            CANVAS_HEIGHT: 400,
+            GROUND_HEIGHT: 80,
+            PLAYER_SIZE: 20,
+            ENEMY_SIZE: 15,
+            GAP_WIDTH: 60,
+            DASH_RANGE: 80,
+            GRAVITY: 0.5,
+            JUMP_FORCE: -12,
+            BASE_SPEED: 2,
+            SPEED_INCREMENT: 0.1,
+            DIFFICULTY_INTERVAL: 15000, // 15 seconds
+            ENEMY_SPAWN_BASE: 120,
+            ENEMY_SPAWN_DECREASE: 5
+        };
+        
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('gameCanvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.scoreDisplay = document.getElementById('scoreDisplay');
+                
+                this.state = GAME_STATES.TITLE;
+                this.score = 0;
+                this.timeAlive = 0;
+                this.gameSpeed = CONFIG.BASE_SPEED;
+                this.lastDifficultyIncrease = 0;
+                this.enemySpawnRate = CONFIG.ENEMY_SPAWN_BASE;
+                this.lastEnemySpawn = 0;
+                this.lastGapSpawn = 0;
+                
+                this.player = new Player(100, CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT - CONFIG.PLAYER_SIZE);
+                this.enemies = [];
+                this.gaps = [];
+                this.backgroundOffset = 0;
+                
+                this.inputHandler = new InputHandler(this);
+                
+                // Bind methods
+                this.gameLoop = this.gameLoop.bind(this);
+                this.restart = this.restart.bind(this);
+                
+                // Start the game loop
+                this.gameLoop();
+            }
+            
+            update(deltaTime) {
+                if (this.state !== GAME_STATES.PLAYING) return;
+                
+                this.timeAlive += deltaTime;
+                this.backgroundOffset += this.gameSpeed;
+                
+                // Increase difficulty over time
+                if (this.timeAlive - this.lastDifficultyIncrease >= CONFIG.DIFFICULTY_INTERVAL) {
+                    this.gameSpeed += CONFIG.SPEED_INCREMENT;
+                    this.enemySpawnRate = Math.max(60, this.enemySpawnRate - CONFIG.ENEMY_SPAWN_DECREASE);
+                    this.lastDifficultyIncrease = this.timeAlive;
+                }
+                
+                // Update player
+                this.player.update(deltaTime);
+                
+                // Spawn enemies
+                if (this.timeAlive - this.lastEnemySpawn >= this.enemySpawnRate * 16.67) { // Convert to ms
+                    if (Math.random() < 0.7) { // 70% chance to spawn enemy
+                        this.enemies.push(new Enemy(CONFIG.CANVAS_WIDTH + 20, CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT - CONFIG.ENEMY_SIZE));
+                    }
+                    this.lastEnemySpawn = this.timeAlive;
+                }
+                
+                // Spawn gaps occasionally
+                if (this.timeAlive - this.lastGapSpawn >= 200 * 16.67 && Math.random() < 0.3) {
+                    this.gaps.push(new Gap(CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT));
+                    this.lastGapSpawn = this.timeAlive;
+                }
+                
+                // Update enemies
+                this.enemies.forEach(enemy => enemy.update(this.gameSpeed));
+                this.enemies = this.enemies.filter(enemy => enemy.x > -CONFIG.ENEMY_SIZE);
+                
+                // Update gaps
+                this.gaps.forEach(gap => gap.update(this.gameSpeed));
+                this.gaps = this.gaps.filter(gap => gap.x > -CONFIG.GAP_WIDTH);
+                
+                // Check collisions
+                this.checkCollisions();
+                
+                // Update score (time survival + assassination bonus)
+                this.score = Math.floor(this.timeAlive / 100) + (this.player.killCount * 100);
+                this.scoreDisplay.textContent = `Score: ${this.score}`;
+                
+                // Check if player fell off screen
+                if (this.player.y > CONFIG.CANVAS_HEIGHT) {
+                    this.gameOver();
+                }
+            }
+            
+            checkCollisions() {
+                const playerGroundY = CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT - CONFIG.PLAYER_SIZE;
+                
+                // Check enemy collisions
+                this.enemies.forEach((enemy, index) => {
+                    if (this.player.x < enemy.x + CONFIG.ENEMY_SIZE &&
+                        this.player.x + CONFIG.PLAYER_SIZE > enemy.x &&
+                        this.player.y < enemy.y + CONFIG.ENEMY_SIZE &&
+                        this.player.y + CONFIG.PLAYER_SIZE > enemy.y) {
+                        
+                        if (!this.player.isDashing) {
+                            this.gameOver();
+                        }
+                    }
+                });
+                
+                // Check if player is over a gap
+                let overGap = false;
+                this.gaps.forEach(gap => {
+                    if (this.player.x + CONFIG.PLAYER_SIZE > gap.x && 
+                        this.player.x < gap.x + CONFIG.GAP_WIDTH &&
+                        this.player.y >= playerGroundY) {
+                        overGap = true;
+                    }
+                });
+                
+                // If player is on ground and over gap, fall
+                if (overGap && this.player.y >= playerGroundY && !this.player.isDashing) {
+                    this.player.velocityY = 1; // Start falling
+                }
+                
+                // Ground collision (if not over gap)
+                if (!overGap && this.player.y >= playerGroundY) {
+                    this.player.y = playerGroundY;
+                    this.player.velocityY = 0;
+                    this.player.isGrounded = true;
+                }
+            }
+            
+            shadowDash() {
+                if (this.state !== GAME_STATES.PLAYING) return;
+                
+                // Check for enemies in dash range
+                let enemyInRange = null;
+                this.enemies.forEach((enemy, index) => {
+                    const distance = enemy.x - this.player.x;
+                    if (distance >= 0 && distance <= CONFIG.DASH_RANGE) {
+                        enemyInRange = { enemy, index };
+                    }
+                });
+                
+                if (enemyInRange) {
+                    // Assassinate enemy
+                    this.enemies.splice(enemyInRange.index, 1);
+                    this.player.killCount++;
+                    this.player.startDash();
+                    this.playSlashSound();
+                } else {
+                    // Dash jump
+                    if (this.player.isGrounded || this.player.y < CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT) {
+                        this.player.velocityY = CONFIG.JUMP_FORCE;
+                        this.player.isGrounded = false;
+                        this.player.startDash();
+                    }
+                }
+            }
+            
+            playSlashSound() {
+                // Placeholder for sound effect
+                // In a real game, you'd play an actual audio file
+                console.log("SLASH!");
+            }
+            
+            gameOver() {
+                this.state = GAME_STATES.GAME_OVER;
+            }
+            
+            restart() {
+                this.state = GAME_STATES.PLAYING;
+                this.score = 0;
+                this.timeAlive = 0;
+                this.gameSpeed = CONFIG.BASE_SPEED;
+                this.lastDifficultyIncrease = 0;
+                this.enemySpawnRate = CONFIG.ENEMY_SPAWN_BASE;
+                this.lastEnemySpawn = 0;
+                this.lastGapSpawn = 0;
+                this.backgroundOffset = 0;
+                
+                this.player = new Player(100, CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT - CONFIG.PLAYER_SIZE);
+                this.enemies = [];
+                this.gaps = [];
+                
+                this.scoreDisplay.textContent = 'Score: 0';
+            }
+            
+            render() {
+                // Clear canvas
+                this.ctx.clearRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+                
+                // Draw parallax background
+                this.drawBackground();
+                
+                if (this.state === GAME_STATES.TITLE) {
+                    this.drawTitleScreen();
+                } else if (this.state === GAME_STATES.PLAYING) {
+                    this.drawGame();
+                } else if (this.state === GAME_STATES.GAME_OVER) {
+                    this.drawGame(); // Show final state
+                    this.drawGameOverScreen();
+                }
+            }
+            
+            drawBackground() {
+                // Draw scrolling rooftop silhouettes
+                const rooftopY = CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT;
+                
+                // Main ground
+                this.ctx.fillStyle = '#1a1a1a';
+                this.ctx.fillRect(0, rooftopY, CONFIG.CANVAS_WIDTH, CONFIG.GROUND_HEIGHT);
+                
+                // Parallax buildings in background
+                this.ctx.fillStyle = '#2a2a2a';
+                for (let i = -1; i <= Math.ceil(CONFIG.CANVAS_WIDTH / 100); i++) {
+                    const x = (i * 100 - (this.backgroundOffset * 0.3) % 100);
+                    const height = 40 + Math.sin(i * 0.5) * 20;
+                    this.ctx.fillRect(x, rooftopY - height, 80, height);
+                }
+                
+                // Closer buildings
+                this.ctx.fillStyle = '#3a3a3a';
+                for (let i = -1; i <= Math.ceil(CONFIG.CANVAS_WIDTH / 60); i++) {
+                    const x = (i * 60 - (this.backgroundOffset * 0.6) % 60);
+                    const height = 20 + Math.sin(i * 0.8) * 15;
+                    this.ctx.fillRect(x, rooftopY - height, 50, height);
+                }
+            }
+            
+            drawGame() {
+                // Draw gaps
+                this.gaps.forEach(gap => gap.render(this.ctx));
+                
+                // Draw enemies
+                this.enemies.forEach(enemy => enemy.render(this.ctx));
+                
+                // Draw player
+                this.player.render(this.ctx);
+            }
+            
+            drawTitleScreen() {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                this.ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+                
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = 'bold 36px Courier New';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('SILENT STEP:', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 - 40);
+                this.ctx.fillText('SHADOW DASH', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2);
+                
+                this.ctx.font = '18px Courier New';
+                this.ctx.fillStyle = '#ccc';
+                this.ctx.fillText("Press Space or Click to Begin Kel El's NIGHT ADVENTURE!", CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 60);
+                
+                this.ctx.font = '14px Courier New';
+                this.ctx.fillText('Dash into enemies to assassinate them, or use dash to jump gaps!', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 100);
+                
+                this.ctx.textAlign = 'left';
+            }
+            
+            drawGameOverScreen() {
+                this.ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+                this.ctx.fillRect(0, 0, CONFIG.CANVAS_WIDTH, CONFIG.CANVAS_HEIGHT);
+                
+                this.ctx.fillStyle = '#ff4444';
+                this.ctx.font = 'bold 48px Courier New';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('GAME OVER', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 - 40);
+                
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = '24px Courier New';
+                this.ctx.fillText(`Final Score: ${this.score}`, CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 10);
+                this.ctx.fillText(`Enemies Eliminated: ${this.player.killCount}`, CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 40);
+                
+                this.ctx.font = '18px Courier New';
+                this.ctx.fillStyle = '#ccc';
+                this.ctx.fillText('Press Space or Click to Restart', CONFIG.CANVAS_WIDTH / 2, CONFIG.CANVAS_HEIGHT / 2 + 80);
+                
+                this.ctx.textAlign = 'left';
+            }
+            
+            gameLoop() {
+                const now = performance.now();
+                const deltaTime = now - (this.lastTime || now);
+                this.lastTime = now;
+                
+                this.update(deltaTime);
+                this.render();
+                
+                requestAnimationFrame(this.gameLoop);
+            }
+        }
+        
+        class Player {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.velocityY = 0;
+                this.isGrounded = true;
+                this.isDashing = false;
+                this.dashTimer = 0;
+                this.killCount = 0;
+                this.afterImages = [];
+            }
+            
+            update(deltaTime) {
+                // Apply gravity
+                if (!this.isGrounded) {
+                    this.velocityY += CONFIG.GRAVITY;
+                }
+                
+                this.y += this.velocityY;
+                
+                // Update dash
+                if (this.isDashing) {
+                    this.dashTimer -= deltaTime;
+                    if (this.dashTimer <= 0) {
+                        this.isDashing = false;
+                    }
+                    
+                    // Add after-image effect
+                    this.afterImages.push({
+                        x: this.x,
+                        y: this.y,
+                        alpha: 0.8,
+                        life: 200
+                    });
+                }
+                
+                // Update after-images
+                this.afterImages.forEach(img => {
+                    img.life -= deltaTime;
+                    img.alpha = img.life / 200;
+                });
+                this.afterImages = this.afterImages.filter(img => img.life > 0);
+            }
+            
+            startDash() {
+                this.isDashing = true;
+                this.dashTimer = 200; // 200ms dash duration
+            }
+            
+            render(ctx) {
+                // Draw after-images
+                this.afterImages.forEach(img => {
+                    ctx.save();
+                    ctx.globalAlpha = img.alpha * 0.5;
+                    ctx.fillStyle = '#888';
+                    ctx.fillRect(img.x, img.y, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
+                    ctx.restore();
+                });
+                
+                // Draw player
+                ctx.fillStyle = this.isDashing ? '#fff' : '#000';
+                ctx.fillRect(this.x, this.y, CONFIG.PLAYER_SIZE, CONFIG.PLAYER_SIZE);
+                
+                // Draw eyes
+                ctx.fillStyle = this.isDashing ? '#000' : '#ff0000';
+                ctx.fillRect(this.x + 3, this.y + 3, 3, 3);
+                ctx.fillRect(this.x + 12, this.y + 3, 3, 3);
+            }
+        }
+        
+        class Enemy {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = CONFIG.ENEMY_SIZE;
+            }
+            
+            update(gameSpeed) {
+                this.x -= gameSpeed;
+            }
+            
+            render(ctx) {
+                // Draw enemy body
+                ctx.fillStyle = '#cc3333';
+                ctx.fillRect(this.x, this.y, this.size, this.size);
+                
+                // Draw simple face
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(this.x + 2, this.y + 2, 2, 2);
+                ctx.fillRect(this.x + this.size - 4, this.y + 2, 2, 2);
+                
+                // Draw weapon
+                ctx.fillStyle = '#999';
+                ctx.fillRect(this.x + this.size/2 - 1, this.y - 3, 2, 3);
+            }
+        }
+        
+        class Gap {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = CONFIG.GAP_WIDTH;
+                this.height = CONFIG.GROUND_HEIGHT;
+            }
+            
+            update(gameSpeed) {
+                this.x -= gameSpeed;
+            }
+            
+            render(ctx) {
+                // Draw gap as darker area
+                ctx.fillStyle = '#0a0a0a';
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Draw gap edges
+                ctx.fillStyle = '#333';
+                ctx.fillRect(this.x - 2, this.y, 2, this.height);
+                ctx.fillRect(this.x + this.width, this.y, 2, this.height);
+            }
+        }
+        
+        class InputHandler {
+            constructor(game) {
+                this.game = game;
+                this.setupEventListeners();
+            }
+            
+            setupEventListeners() {
+                // Keyboard input
+                document.addEventListener('keydown', (e) => {
+                    if (e.code === 'Space') {
+                        e.preventDefault();
+                        this.handleInput();
+                    }
+                });
+                
+                // Mouse/touch input
+                this.game.canvas.addEventListener('click', () => {
+                    this.handleInput();
+                });
+                
+                this.game.canvas.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.handleInput();
+                });
+            }
+            
+            handleInput() {
+                if (this.game.state === GAME_STATES.TITLE) {
+                    this.game.state = GAME_STATES.PLAYING;
+                } else if (this.game.state === GAME_STATES.PLAYING) {
+                    this.game.shadowDash();
+                } else if (this.game.state === GAME_STATES.GAME_OVER) {
+                    this.game.restart();
+                }
+            }
+        }
+        
+        // Initialize the game when the page loads
+        window.addEventListener('load', () => {
+            new Game();
+        });
+    </script>
+</body>
+</html>
