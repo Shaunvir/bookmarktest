@@ -264,16 +264,16 @@
                 let bottomHeight = this.canvas.height * 0.8; // More space at bottom
                 
                 for (let x = 0; x <= this.canvas.width + 200; x += 10) {
-                    // Progressive terrain variation based on time
+                    // Progressive terrain variation based on time - much more dramatic
                     const gameTimeSeconds = (Date.now() - this.gameStartTime) / 1000;
                     let terrainVariation = 0;
                     
                     if (gameTimeSeconds > 15) {
-                        // After 15 seconds, start introducing gentle variation
-                        terrainVariation = Math.min(4, (gameTimeSeconds - 15) / 10); // Gradually increase to max 4
+                        // After 15 seconds, rapidly introduce significant variation
+                        terrainVariation = Math.min(12, (gameTimeSeconds - 15) / 3); // Much faster increase to max 12
                     }
                     
-                    // Very gentle terrain changes that increase over time
+                    // Much more dramatic terrain changes that ramp up quickly
                     topHeight += (Math.random() - 0.5) * terrainVariation;
                     bottomHeight += (Math.random() - 0.5) * terrainVariation;
                     
@@ -415,14 +415,14 @@
                 // Progressive difficulty increase based on time
                 const gameTimeSeconds = (Date.now() - this.gameStartTime) / 1000;
                 
-                // Speed increases gradually after 30 seconds
-                if (gameTimeSeconds > 30) {
-                    this.scrollSpeed = Math.min(3, 1.5 + (gameTimeSeconds - 30) / 60); // Very gradual speed increase
+                // Speed increases more aggressively after 15 seconds
+                if (gameTimeSeconds > 15) {
+                    this.scrollSpeed = Math.min(4.5, 1.5 + (gameTimeSeconds - 15) / 15); // Much faster speed increase after 15s
                 }
                 
-                // Gap starts shrinking significantly after 15 seconds
+                // Gap shrinks much more dramatically after 15 seconds
                 if (gameTimeSeconds > 15) {
-                    this.terrain.minGapHeight = Math.max(120, 280 - (gameTimeSeconds - 15) * 3); // More significant gap reduction starting at 15s
+                    this.terrain.minGapHeight = Math.max(80, 280 - (gameTimeSeconds - 15) * 6); // Aggressive gap reduction - 6px per second!
                 }
                 
                 // Update UI
