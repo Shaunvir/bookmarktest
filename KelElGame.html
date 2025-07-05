@@ -11,6 +11,43 @@
             box-sizing: border-box;
         }
         
+        class SlashAnimation {
+            constructor(x, y) {
+                this.x = x + CONFIG.ENEMY_SIZE / 2; // Center on enemy position
+                this.y = y - 10; // Slightly above enemy
+                this.life = 800; // Animation duration in ms
+                this.maxLife = 800;
+                this.velocityY = -1; // Float upward
+                this.size = 1;
+            }
+            
+            update(deltaTime) {
+                this.life -= deltaTime;
+                this.y += this.velocityY;
+                this.size = Math.min(2, this.size + deltaTime / 200); // Grow slightly
+            }
+            
+            render(ctx) {
+                ctx.save();
+                
+                // Calculate alpha based on remaining life
+                const alpha = this.life / this.maxLife;
+                
+                // Set font and styling
+                ctx.font = `bold ${16 * this.size}px Courier New`;
+                ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+                ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.textAlign = 'center';
+                
+                // Draw text with outline
+                ctx.strokeText('SLASH!', this.x, this.y);
+                ctx.fillText('SLASH!', this.x, this.y);
+                
+                ctx.restore();
+            }
+        }
+        
         body {
             background: linear-gradient(135deg, #0f0f23, #1a1a2e, #16213e);
             font-family: 'Courier New', monospace;
@@ -63,10 +100,50 @@
             JUMP_FORCE: -12,
             BASE_SPEED: 2,
             SPEED_INCREMENT: 0.1,
-            DIFFICULTY_INTERVAL: 15000, // 15 seconds
+            DIFFICULTY_INTERVAL: 1000, // 1 second for gradual scaling
+            DIFFICULTY_START_TIME: 10000, // Start difficulty scaling after 10 seconds
             ENEMY_SPAWN_BASE: 120,
-            ENEMY_SPAWN_DECREASE: 5
+            ENEMY_SPAWN_DECREASE: 3,
+            SPEED_INCREMENT: 0.05
         };
+        
+        // SlashAnimation class - must be defined before Game class uses it
+        class SlashAnimation {
+            constructor(x, y) {
+                this.x = x + CONFIG.ENEMY_SIZE / 2; // Center on enemy position
+                this.y = y - 10; // Slightly above enemy
+                this.life = 800; // Animation duration in ms
+                this.maxLife = 800;
+                this.velocityY = -1; // Float upward
+                this.size = 1;
+            }
+            
+            update(deltaTime) {
+                this.life -= deltaTime;
+                this.y += this.velocityY;
+                this.size = Math.min(2, this.size + deltaTime / 200); // Grow slightly
+            }
+            
+            render(ctx) {
+                ctx.save();
+                
+                // Calculate alpha based on remaining life
+                const alpha = this.life / this.maxLife;
+                
+                // Set font and styling
+                ctx.font = `bold ${16 * this.size}px Courier New`;
+                ctx.fillStyle = `rgba(255, 255, 0, ${alpha})`;
+                ctx.strokeStyle = `rgba(255, 0, 0, ${alpha})`;
+                ctx.lineWidth = 2;
+                ctx.textAlign = 'center';
+                
+                // Draw text with outline
+                ctx.strokeText('SLASH!', this.x, this.y);
+                ctx.fillText('SLASH!', this.x, this.y);
+                
+                ctx.restore();
+            }
+        }
         
         class Game {
             constructor() {
@@ -86,7 +163,9 @@
                 this.player = new Player(100, CONFIG.CANVAS_HEIGHT - CONFIG.GROUND_HEIGHT - CONFIG.PLAYER_SIZE);
                 this.enemies = [];
                 this.gaps = [];
+                this.slashAnimations = [];
                 this.backgroundOffset = 0;
+                this.slashAnimations = []; // For "SLASH!" text animations
                 
                 this.inputHandler = new InputHandler(this);
                 
@@ -104,10 +183,11 @@
                 this.timeAlive += deltaTime;
                 this.backgroundOffset += this.gameSpeed;
                 
-                // Increase difficulty over time
-                if (this.timeAlive - this.lastDifficultyIncrease >= CONFIG.DIFFICULTY_INTERVAL) {
+                // Increase difficulty over time (start after 10 seconds, then every 1 second)
+                if (this.timeAlive >= CONFIG.DIFFICULTY_START_TIME && 
+                    this.timeAlive - this.lastDifficultyIncrease >= CONFIG.DIFFICULTY_INTERVAL) {
                     this.gameSpeed += CONFIG.SPEED_INCREMENT;
-                    this.enemySpawnRate = Math.max(60, this.enemySpawnRate - CONFIG.ENEMY_SPAWN_DECREASE);
+                    this.enemySpawnRate = Math.max(30, this.enemySpawnRate - CONFIG.ENEMY_SPAWN_DECREASE);
                     this.lastDifficultyIncrease = this.timeAlive;
                 }
                 
@@ -135,6 +215,10 @@
                 // Update gaps
                 this.gaps.forEach(gap => gap.update(this.gameSpeed));
                 this.gaps = this.gaps.filter(gap => gap.x > -CONFIG.GAP_WIDTH);
+                
+                // Update slash animations
+                this.slashAnimations.forEach(anim => anim.update(deltaTime));
+                this.slashAnimations = this.slashAnimations.filter(anim => anim.life > 0);
                 
                 // Check collisions
                 this.checkCollisions();
@@ -202,9 +286,12 @@
                 
                 if (enemyInRange) {
                     // Assassinate enemy
+                    const enemyX = enemyInRange.enemy.x;
+                    const enemyY = enemyInRange.enemy.y;
                     this.enemies.splice(enemyInRange.index, 1);
                     this.player.killCount++;
                     this.player.startDash();
+                    this.addSlashAnimation(enemyX, enemyY);
                     this.playSlashSound();
                 } else {
                     // Dash jump
@@ -214,6 +301,10 @@
                         this.player.startDash();
                     }
                 }
+            }
+            
+            addSlashAnimation(x, y) {
+                this.slashAnimations.push(new SlashAnimation(x, y));
             }
             
             playSlashSound() {
@@ -295,6 +386,9 @@
                 
                 // Draw player
                 this.player.render(this.ctx);
+                
+                // Draw slash animations
+                this.slashAnimations.forEach(anim => anim.render(this.ctx));
             }
             
             drawTitleScreen() {
