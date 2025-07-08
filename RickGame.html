@@ -42,11 +42,9 @@
             color: #333;
             font-weight: bold;
             text-shadow: 1px 1px 2px rgba(255,255,255,0.8);
-        }
-
-        #ui, #controls {
             display: none;
         }
+
         #controls {
             position: absolute;
             bottom: 20px;
@@ -58,12 +56,12 @@
         }
 
         .control-btn {
-            width: 60px;
-            height: 60px;
-            background: rgba(255,255,255,0.9);
+            width: 70px;
+            height: 70px;
+            background: rgba(255,255,255,0.95);
             border: 3px solid #4a4a4a;
             border-radius: 50%;
-            font-size: 24px;
+            font-size: 28px;
             font-weight: bold;
             color: #333;
             cursor: pointer;
@@ -71,13 +69,19 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             transition: all 0.1s;
+            touch-action: manipulation;
         }
 
         .control-btn:active {
-            transform: scale(0.95);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transform: scale(0.9);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            background: rgba(200,200,200,0.95);
+        }
+
+        .control-btn:hover {
+            background: rgba(230,230,230,0.95);
         }
 
         #gameOver, #titleScreen {
@@ -135,10 +139,15 @@
             border-radius: 8px;
             cursor: pointer;
             margin-top: 15px;
+            touch-action: manipulation;
         }
 
         #restartBtn:hover {
             background: #45a049;
+        }
+
+        #restartBtn:active {
+            transform: scale(0.95);
         }
 
         h1 {
@@ -149,13 +158,41 @@
 
         @media (max-width: 768px) {
             #controls {
-                bottom: 10px;
+                bottom: 15px;
+                gap: 30px;
             }
             
             .control-btn {
-                width: 50px;
-                height: 50px;
+                width: 65px;
+                height: 65px;
+                font-size: 24px;
+            }
+            
+            #titleScreen h1 {
                 font-size: 20px;
+            }
+            
+            #titleScreen .subtitle {
+                font-size: 14px;
+            }
+            
+            #ui {
+                top: 15px;
+                left: 15px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 22px;
+            }
+            
+            #controls {
+                bottom: 10px;
+                gap: 25px;
             }
         }
     </style>
@@ -178,7 +215,8 @@
             <h1>🍄 RICK'S EXPLOSION ESCAPE 🔥</h1>
             <div class="subtitle">
                 USE THE ARROW KEYS TO HELP RICK<br>
-                ESCAPE THE EXPLOSION HE CREATED!
+                ESCAPE THE EXPLOSION HE CREATED!<br>
+                <small>(Touch controls available on mobile)</small>
             </div>
             <div class="start-prompt">
                 Click or Tap Anywhere to Start!
@@ -459,6 +497,7 @@
             document.getElementById('finalScore').textContent = score;
             document.getElementById('finalHeight').textContent = maxHeight;
             document.getElementById('gameOver').style.display = 'block';
+            document.getElementById('controls').style.display = 'none';
         }
 
         // Start game
@@ -487,6 +526,12 @@
             
             initPlatforms();
             document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('controls').style.display = 'flex';
+        }
+
+        // Prevent default touch behaviors
+        function preventDefault(e) {
+            e.preventDefault();
         }
 
         // Game loop
@@ -550,13 +595,18 @@
             startGame();
         });
 
-        // Touch controls
+        // Touch controls - Enhanced for better mobile experience
         document.getElementById('leftBtn').addEventListener('touchstart', (e) => {
             keys.left = true;
             e.preventDefault();
         });
 
         document.getElementById('leftBtn').addEventListener('touchend', (e) => {
+            keys.left = false;
+            e.preventDefault();
+        });
+
+        document.getElementById('leftBtn').addEventListener('touchcancel', (e) => {
             keys.left = false;
             e.preventDefault();
         });
@@ -571,12 +621,21 @@
             e.preventDefault();
         });
 
+        document.getElementById('rightBtn').addEventListener('touchcancel', (e) => {
+            keys.right = false;
+            e.preventDefault();
+        });
+
         // Mouse controls for desktop
         document.getElementById('leftBtn').addEventListener('mousedown', () => {
             keys.left = true;
         });
 
         document.getElementById('leftBtn').addEventListener('mouseup', () => {
+            keys.left = false;
+        });
+
+        document.getElementById('leftBtn').addEventListener('mouseleave', () => {
             keys.left = false;
         });
 
@@ -588,8 +647,16 @@
             keys.right = false;
         });
 
+        document.getElementById('rightBtn').addEventListener('mouseleave', () => {
+            keys.right = false;
+        });
+
         // Restart button
         document.getElementById('restartBtn').addEventListener('click', restartGame);
+
+        // Prevent scrolling and zooming on touch devices
+        document.addEventListener('touchmove', preventDefault, { passive: false });
+        document.addEventListener('touchstart', preventDefault, { passive: false });
 
         // Initialize and start game
         initPlatforms();
