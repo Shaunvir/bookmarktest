@@ -56,32 +56,36 @@
         }
 
         .control-btn {
-            width: 70px;
-            height: 70px;
-            background: rgba(255,255,255,0.95);
-            border: 3px solid #4a4a4a;
-            border-radius: 50%;
-            font-size: 28px;
-            font-weight: bold;
-            color: #333;
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(145deg, #ffffff, #e6e6e6);
+            border: 4px solid #2c3e50;
+            border-radius: 20px;
+            font-size: 36px;
+            font-weight: 900;
+            color: #2c3e50;
             cursor: pointer;
             user-select: none;
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-            transition: all 0.1s;
+            box-shadow: 0 6px 15px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.8);
+            transition: all 0.15s;
             touch-action: manipulation;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
         }
 
         .control-btn:active {
-            transform: scale(0.9);
-            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-            background: rgba(200,200,200,0.95);
+            transform: scale(0.85) translateY(2px);
+            box-shadow: 0 3px 8px rgba(0,0,0,0.4), inset 0 4px 8px rgba(0,0,0,0.2);
+            background: linear-gradient(145deg, #d4d4d4, #b8b8b8);
+            color: #1a252f;
         }
 
         .control-btn:hover {
-            background: rgba(230,230,230,0.95);
+            background: linear-gradient(145deg, #f8f8f8, #dcdcdc);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.9);
         }
 
         #gameOver, #titleScreen {
@@ -158,14 +162,15 @@
 
         @media (max-width: 768px) {
             #controls {
-                bottom: 15px;
-                gap: 30px;
+                bottom: 25px;
+                gap: 40px;
             }
             
             .control-btn {
-                width: 65px;
-                height: 65px;
-                font-size: 24px;
+                width: 85px;
+                height: 85px;
+                font-size: 38px;
+                border-radius: 25px;
             }
             
             #titleScreen h1 {
@@ -185,14 +190,15 @@
 
         @media (max-width: 480px) {
             .control-btn {
-                width: 60px;
-                height: 60px;
-                font-size: 22px;
+                width: 80px;
+                height: 80px;
+                font-size: 36px;
+                border-radius: 22px;
             }
             
             #controls {
-                bottom: 10px;
-                gap: 25px;
+                bottom: 20px;
+                gap: 35px;
             }
         }
     </style>
