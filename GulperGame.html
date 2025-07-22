@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gas Gulpers Adventure</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Press Start 2P', monospace;
+            background: linear-gradient(45deg, #0a0a2e, #16213e, #0f0f23);
+            color: #00ff00;
+            overflow: hidden;
+            user-select: none;
+        }
+        
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 10px;
+        }
+        
+        .title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 0px #004400;
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes glow {
+            from { text-shadow: 2px 2px 0px #004400, 0 0 10px #00ff00; }
+            to { text-shadow: 2px 2px 0px #004400, 0 0 20px #00ff00, 0 0 30px #00ff00; }
+        }
+        
+        .hud {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .game-canvas {
+            border: 3px solid #00ff00;
+            background: #000011;
+            box-shadow: 0 0 20px #00ff0050;
+            image-rendering: pixelated;
+        }
+        
+        .controls {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 10px;
+            line-height: 1.5;
+        }
+        
+        .mobile-controls {
+            display: none;
+            margin-top: 10px;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+            gap: 10px;
+            width: 150px;
+            height: 150px;
+        }
+        
+        .control-btn {
+            background: #00ff0030;
+            border: 2px solid #00ff00;
+            color: #00ff00;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.1s;
+        }
+        
+        .control-btn:active {
+            background: #00ff0060;
+            transform: scale(0.95);
+        }
+        
+        .control-btn.up { grid-column: 2; grid-row: 1; }
+        .control-btn.left { grid-column: 1; grid-row: 2; }
+        .control-btn.right { grid-column: 3; grid-row: 2; }
+        .control-btn.down { grid-column: 2; grid-row: 3; }
+        
+        .game-over {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 3px solid #ff0000;
+            padding: 30px;
+            text-align: center;
+            font-size: 16px;
+            color: #ff0000;
+            display: none;
+        }
+        
+        .restart-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background: #ff000030;
+            border: 2px solid #ff0000;
+            color: #ff0000;
+            font-family: 'Press Start 2P', monospace;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        
+        .restart-btn:hover {
+            background: #ff000060;
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-controls { display: grid; }
+            .title { font-size: 18px; }
+            .hud { font-size: 10px; }
+            .controls { display: none; }
+        }
+        
+        .stars {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+        
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    
+    <div class="game-container">
+        <h1 class="title">GAS GULPERS ADVENTURE</h1>
+        
+        <div class="hud">
+            <div>SCORE: <span id="score">0</span></div>
+            <div>NEBULAS: <span id="nebulas">0</span></div>
+            <div>ASTEROIDS HIT: <span id="asteroids">0</span>/3</div>
+        </div>
+        
+        <canvas id="gameCanvas" class="game-canvas" width="800" height="600"></canvas>
+        
+        <div class="controls">
+            PC: Use ARROW KEYS to move the green monster<br>
+            Eat the blue nebulas! Avoid the brown asteroids!
+        </div>
+        
+        <div class="mobile-controls" id="mobileControls">
+            <button class="control-btn up" data-direction="up">↑</button>
+            <button class="control-btn left" data-direction="left">←</button>
+            <button class="control-btn right" data-direction="right">→</button>
+            <button class="control-btn down" data-direction="down">↓</button>
+        </div>
+    </div>
+    
+    <div class="game-over" id="gameOver">
+        <div>GAME OVER!</div>
+        <div style="margin-top: 10px; font-size: 12px;">You ate too many asteroids!</div>
+        <button class="restart-btn" onclick="restartGame()">RESTART</button>
+    </div>
+
+    <script>
+        // Game variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let gameState = {
+            player: { x: 400, y: 300, size: 30, speed: 4 },
+            nebulas: [],
+            asteroids: [],
+            score: 0,
+            nebulaCount: 0,
+            asteroidHits: 0,
+            gameRunning: false,
+            gameStarted: false,
+            keys: {}
+        };
+        
+        // Create starfield background
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.width = star.style.height = Math.random() * 3 + 1 + 'px';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+        
+        // Initialize game
+        function init() {
+            createStars();
+            gameLoop();
+        }
+        
+        // Spawn nebula
+        function spawnNebula() {
+            if (!gameState.gameRunning) return;
+            
+            const edge = Math.floor(Math.random() * 4);
+            let x, y, vx, vy;
+            
+            switch(edge) {
+                case 0: // Top
+                    x = Math.random() * canvas.width;
+                    y = -20;
+                    vx = (Math.random() - 0.5) * 3;
+                    vy = Math.random() * 3 + 1.5;
+                    break;
+                case 1: // Right
+                    x = canvas.width + 20;
+                    y = Math.random() * canvas.height;
+                    vx = -(Math.random() * 3 + 1.5);
+                    vy = (Math.random() - 0.5) * 3;
+                    break;
+                case 2: // Bottom
+                    x = Math.random() * canvas.width;
+                    y = canvas.height + 20;
+                    vx = (Math.random() - 0.5) * 3;
+                    vy = -(Math.random() * 3 + 1.5);
+                    break;
+                case 3: // Left
+                    x = -20;
+                    y = Math.random() * canvas.height;
+                    vx = Math.random() * 3 + 1.5;
+                    vy = (Math.random() - 0.5) * 3;
+                    break;
+            }
+            
+            gameState.nebulas.push({
+                x, y, vx, vy,
+                size: 15,
+                glow: 0
+            });
+            
+            setTimeout(spawnNebula, 800 + Math.random() * 1200);
+        }
+        
+        // Spawn asteroid
+        function spawnAsteroid() {
+            if (!gameState.gameRunning) return;
+            
+            const edge = Math.floor(Math.random() * 4);
+            let x, y, vx, vy;
+            
+            switch(edge) {
+                case 0: // Top
+                    x = Math.random() * canvas.width;
+                    y = -25;
+                    vx = (Math.random() - 0.5) * 4;
+                    vy = Math.random() * 4 + 1.5;
+                    break;
+                case 1: // Right
+                    x = canvas.width + 25;
+                    y = Math.random() * canvas.height;
+                    vx = -(Math.random() * 4 + 1.5);
+                    vy = (Math.random() - 0.5) * 4;
+                    break;
+                case 2: // Bottom
+                    x = Math.random() * canvas.width;
+                    y = canvas.height + 25;
+                    vx = (Math.random() - 0.5) * 4;
+                    vy = -(Math.random() * 4 + 1.5);
+                    break;
+                case 3: // Left
+                    x = -25;
+                    y = Math.random() * canvas.height;
+                    vx = Math.random() * 4 + 1.5;
+                    vy = (Math.random() - 0.5) * 4;
+                    break;
+            }
+            
+            gameState.asteroids.push({
+                x, y, vx, vy,
+                size: 20,
+                rotation: 0,
+                rotationSpeed: (Math.random() - 0.5) * 0.2
+            });
+            
+            setTimeout(spawnAsteroid, 600 + Math.random() * 1000);
+        }
+        
+        // Draw start screen
+        function drawStartScreen() {
+            // Background overlay
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Title
+            ctx.fillStyle = '#00ff00';
+            ctx.font = '36px "Press Start 2P"';
+            ctx.textAlign = 'center';
+            ctx.fillText('GAS GULPERS', canvas.width/2, 120);
+            ctx.fillText('ADVENTURE', canvas.width/2, 170);
+            
+            // Instructions
+            ctx.font = '14px "Press Start 2P"';
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText('HOW TO PLAY:', canvas.width/2, 230);
+            
+            ctx.font = '12px "Press Start 2P"';
+            ctx.fillStyle = '#00ff00';
+            
+            // Draw sample nebula
+            const nebulaX = canvas.width/2 - 100;
+            const nebulaY = 280;
+            const gradient = ctx.createRadialGradient(nebulaX, nebulaY, 0, nebulaX, nebulaY, 20);
+            gradient.addColorStop(0, 'rgba(100, 200, 255, 0.8)');
+            gradient.addColorStop(0.5, 'rgba(50, 150, 255, 0.4)');
+            gradient.addColorStop(1, 'rgba(0, 100, 255, 0)');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(nebulaX, nebulaY, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(150, 220, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(nebulaX, nebulaY, 12, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Draw sample asteroid
+            const asteroidX = canvas.width/2 + 100;
+            const asteroidY = 280;
+            ctx.save();
+            ctx.translate(asteroidX, asteroidY);
+            ctx.fillStyle = '#8B4513';
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            const points = 8;
+            for (let i = 0; i < points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const radius = 15 * (0.8 + Math.sin(i) * 0.4);
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+            
+            ctx.fillStyle = '#00ff00';
+            ctx.textAlign = 'left';
+            ctx.fillText('EAT NEBULAS', nebulaX - 60, 320);
+            ctx.fillText('+100 POINTS', nebulaX - 60, 340);
+            
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('AVOID ASTEROIDS', asteroidX - 80, 320);
+            ctx.fillText('3 HITS = GAME OVER', asteroidX - 80, 340);
+            
+            // Controls
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.fillText('CONTROLS:', canvas.width/2, 390);
+            
+            ctx.font = '10px "Press Start 2P"';
+            ctx.fillStyle = '#ffff00';
+            
+            // Check if mobile
+            const isMobile = window.innerWidth <= 768;
+            if (isMobile) {
+                ctx.fillText('USE TOUCH BUTTONS BELOW TO MOVE', canvas.width/2, 420);
+            } else {
+                ctx.fillText('USE ARROW KEYS TO MOVE YOUR GREEN MONSTER', canvas.width/2, 420);
+            }
+            
+            // Start instruction
+            ctx.font = '16px "Press Start 2P"';
+            ctx.fillStyle = '#00ff00';
+            const startText = isMobile ? 'TAP ANY ARROW TO START' : 'PRESS ANY ARROW KEY TO START';
+            ctx.fillText(startText, canvas.width/2, 480);
+            
+            // Blinking effect
+            const blink = Math.floor(Date.now() / 500) % 2;
+            if (blink) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(startText, canvas.width/2, 480);
+            }
+        }
+        function drawMonster(x, y, size) {
+            const pixelSize = size / 8;
+            
+            // Monster sprite pattern (8x8)
+            const pattern = [
+                "00111100",
+                "01111110",
+                "11011011",
+                "11111111",
+                "01111110",
+                "00111100",
+                "00100100",
+                "01000010"
+            ];
+            
+            ctx.fillStyle = '#00ff00';
+            
+            for (let row = 0; row < pattern.length; row++) {
+                for (let col = 0; col < pattern[row].length; col++) {
+                    if (pattern[row][col] === '1') {
+                        ctx.fillRect(
+                            x - size/2 + col * pixelSize,
+                            y - size/2 + row * pixelSize,
+                            pixelSize,
+                            pixelSize
+                        );
+                    }
+                }
+            }
+            
+            // Eyes
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(x - size/4, y - size/4, pixelSize, pixelSize);
+            ctx.fillRect(x + size/8, y - size/4, pixelSize, pixelSize);
+        }
+        
+        // Draw nebula
+        function drawNebula(nebula) {
+            nebula.glow += 0.1;
+            
+            // Outer glow
+            const gradient = ctx.createRadialGradient(
+                nebula.x, nebula.y, 0,
+                nebula.x, nebula.y, nebula.size * 2
+            );
+            gradient.addColorStop(0, `rgba(100, 200, 255, ${0.8 + Math.sin(nebula.glow) * 0.2})`);
+            gradient.addColorStop(0.5, `rgba(50, 150, 255, ${0.4 + Math.sin(nebula.glow) * 0.1})`);
+            gradient.addColorStop(1, 'rgba(0, 100, 255, 0)');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(nebula.x, nebula.y, nebula.size * 2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Core
+            ctx.fillStyle = `rgba(150, 220, 255, ${0.9 + Math.sin(nebula.glow) * 0.1})`;
+            ctx.beginPath();
+            ctx.arc(nebula.x, nebula.y, nebula.size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Draw asteroid
+        function drawAsteroid(asteroid) {
+            ctx.save();
+            ctx.translate(asteroid.x, asteroid.y);
+            ctx.rotate(asteroid.rotation);
+            
+            // Asteroid shape
+            ctx.fillStyle = '#8B4513';
+            ctx.strokeStyle = '#654321';
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            const points = 8;
+            for (let i = 0; i < points; i++) {
+                const angle = (i / points) * Math.PI * 2;
+                const radius = asteroid.size * (0.8 + Math.random() * 0.4);
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Crater details
+            ctx.fillStyle = '#5A2D0A';
+            for (let i = 0; i < 3; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * asteroid.size * 0.5;
+                const x = Math.cos(angle) * distance;
+                const y = Math.sin(angle) * distance;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, 2 + Math.random() * 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        // Check collision
+        function checkCollision(obj1, obj2, threshold) {
+            const dx = obj1.x - obj2.x;
+            const dy = obj1.y - obj2.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance < threshold;
+        }
+        
+        // Update game
+        function update() {
+            if (!gameState.gameRunning) return;
+            
+            // Check for game start
+            if (!gameState.gameStarted) {
+                const arrowKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
+                if (arrowKeys.some(key => gameState.keys[key])) {
+                    startGame();
+                    return;
+                }
+            }
+            
+            if (!gameState.gameStarted) return;
+            
+            // Move player
+            if (gameState.keys['ArrowLeft'] && gameState.player.x > gameState.player.size/2) {
+                gameState.player.x -= gameState.player.speed;
+            }
+            if (gameState.keys['ArrowRight'] && gameState.player.x < canvas.width - gameState.player.size/2) {
+                gameState.player.x += gameState.player.speed;
+            }
+            if (gameState.keys['ArrowUp'] && gameState.player.y > gameState.player.size/2) {
+                gameState.player.y -= gameState.player.speed;
+            }
+            if (gameState.keys['ArrowDown'] && gameState.player.y < canvas.height - gameState.player.size/2) {
+                gameState.player.y += gameState.player.speed;
+            }
+            
+            // Update nebulas
+            gameState.nebulas.forEach((nebula, index) => {
+                nebula.x += nebula.vx;
+                nebula.y += nebula.vy;
+                
+                // Check collision with player
+                if (checkCollision(gameState.player, nebula, 25)) {
+                    gameState.nebulas.splice(index, 1);
+                    gameState.score += 100;
+                    gameState.nebulaCount++;
+                    playEatSound();
+                }
+                
+                // Remove if off screen
+                if (nebula.x < -50 || nebula.x > canvas.width + 50 || 
+                    nebula.y < -50 || nebula.y > canvas.height + 50) {
+                    gameState.nebulas.splice(index, 1);
+                }
+            });
+            
+            // Update asteroids
+            gameState.asteroids.forEach((asteroid, index) => {
+                asteroid.x += asteroid.vx;
+                asteroid.y += asteroid.vy;
+                asteroid.rotation += asteroid.rotationSpeed;
+                
+                // Check collision with player
+                if (checkCollision(gameState.player, asteroid, 25)) {
+                    gameState.asteroids.splice(index, 1);
+                    gameState.asteroidHits++;
+                    playHitSound();
+                    
+                    if (gameState.asteroidHits >= 3) {
+                        gameOver();
+                    }
+                }
+                
+                // Remove if off screen
+                if (asteroid.x < -50 || asteroid.x > canvas.width + 50 || 
+                    asteroid.y < -50 || asteroid.y > canvas.height + 50) {
+                    gameState.asteroids.splice(index, 1);
+                }
+            });
+            
+            updateHUD();
+        }
+        
+        // Render game
+        function render() {
+            // Clear canvas
+            ctx.fillStyle = '#000011';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw space dust
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+            for (let i = 0; i < 50; i++) {
+                const x = (Date.now() * 0.01 + i * 15.7) % canvas.width;
+                const y = (Date.now() * 0.005 + i * 23.3) % canvas.height;
+                ctx.fillRect(x, y, 1, 1);
+            }
+            
+            // Show start screen if game hasn't started
+            if (!gameState.gameStarted) {
+                drawStartScreen();
+                return;
+            }
+            
+            // Draw nebulas
+            gameState.nebulas.forEach(drawNebula);
+            
+            // Draw asteroids
+            gameState.asteroids.forEach(drawAsteroid);
+            
+            // Draw player
+            drawMonster(gameState.player.x, gameState.player.y, gameState.player.size);
+        }
+        
+        // Game loop
+        function gameLoop() {
+            update();
+            render();
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Update HUD
+        function updateHUD() {
+            document.getElementById('score').textContent = gameState.score;
+            document.getElementById('nebulas').textContent = gameState.nebulaCount;
+            document.getElementById('asteroids').textContent = gameState.asteroidHits;
+        }
+        
+        // Game over
+        function gameOver() {
+            gameState.gameRunning = false;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        // Restart game
+        function restartGame() {
+            gameState = {
+                player: { x: 400, y: 300, size: 30, speed: 4 },
+                nebulas: [],
+                asteroids: [],
+                score: 0,
+                nebulaCount: 0,
+                asteroidHits: 0,
+                gameRunning: true,
+                gameStarted: false,
+                keys: {}
+            };
+            
+            document.getElementById('gameOver').style.display = 'none';
+            updateHUD();
+        }
+        
+        // Sound effects (8-bit style using Web Audio API)
+        function playEatSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.1);
+        }
+        
+        function playHitSound() {
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.2);
+            
+            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + 0.2);
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            gameState.keys[e.code] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            gameState.keys[e.code] = false;
+        });
+        
+        // Mobile controls
+        document.getElementById('mobileControls').addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const direction = e.target.dataset.direction;
+            if (direction) {
+                gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
+            }
+        });
+        
+        document.getElementById('mobileControls').addEventListener('touchend', (e) => {
+            e.preventDefault();
+            Object.keys(gameState.keys).forEach(key => {
+                if (key.startsWith('Arrow')) {
+                    gameState.keys[key] = false;
+                }
+            });
+        });
+        
+        // Also handle individual button events for better mobile responsiveness
+        document.querySelectorAll('.control-btn').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const direction = e.target.dataset.direction;
+                if (direction) {
+                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
+                }
+            });
+            
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const direction = e.target.dataset.direction;
+                if (direction) {
+                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = false;
+                }
+            });
+            
+            // Also add mouse events for desktop testing of mobile controls
+            btn.addEventListener('mousedown', (e) => {
+                const direction = e.target.dataset.direction;
+                if (direction) {
+                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
+                }
+            });
+            
+            btn.addEventListener('mouseup', (e) => {
+                const direction = e.target.dataset.direction;
+                if (direction) {
+                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = false;
+                }
+            });
+            
+            btn.addEventListener('mouseleave', (e) => {
+                const direction = e.target.dataset.direction;
+                if (direction) {
+                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = false;
+                }
+            });
+        });
+        
+        // Prevent zoom on mobile
+        document.addEventListener('touchmove', (e) => {
+            if (e.scale !== 1) { e.preventDefault(); }
+        }, { passive: false });
+        
+        // Prevent context menu on long press
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+        
+        // Disable double-tap zoom on mobile
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', (e) => {
+            const now = (new Date()).getTime();
+            if (now - lastTouchEnd <= 300) {
+                e.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
+        
+        // Start game
+        init();
+    </script>
+</body>
+</html>
