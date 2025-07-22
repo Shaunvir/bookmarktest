@@ -56,6 +56,7 @@
             background: #000011;
             box-shadow: 0 0 20px #00ff0050;
             image-rendering: pixelated;
+            cursor: pointer;
         }
         
         .controls {
@@ -205,6 +206,7 @@
             asteroidHits: 0,
             gameRunning: false,
             gameStarted: false,
+            showingStartScreen: true,
             keys: {}
         };
         
@@ -222,10 +224,19 @@
             }
         }
         
-        // Initialize game
-        function init() {
-            createStars();
-            gameLoop();
+        // Start the actual game
+        function startActualGame() {
+            gameState.gameStarted = true;
+            gameState.gameRunning = true;
+            gameState.showingStartScreen = false;
+            
+            // Spawn initial objects
+            setTimeout(() => {
+                spawnNebula();
+                spawnNebula();
+                spawnAsteroid();
+                spawnAsteroid();
+            }, 500);
         }
         
         // Spawn nebula
@@ -403,7 +414,7 @@
             // Start instruction
             ctx.font = '16px "Press Start 2P"';
             ctx.fillStyle = '#00ff00';
-            const startText = isMobile ? 'TAP ANY ARROW TO START' : 'PRESS ANY ARROW KEY TO START';
+            const startText = 'CLICK HERE TO START';
             ctx.fillText(startText, canvas.width/2, 480);
             
             // Blinking effect
@@ -413,6 +424,8 @@
                 ctx.fillText(startText, canvas.width/2, 480);
             }
         }
+        
+        // Draw pixelated monster
         function drawMonster(x, y, size) {
             const pixelSize = size / 8;
             
@@ -526,18 +539,7 @@
         
         // Update game
         function update() {
-            if (!gameState.gameRunning) return;
-            
-            // Check for game start
-            if (!gameState.gameStarted) {
-                const arrowKeys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'];
-                if (arrowKeys.some(key => gameState.keys[key])) {
-                    startGame();
-                    return;
-                }
-            }
-            
-            if (!gameState.gameStarted) return;
+            if (!gameState.gameRunning || gameState.showingStartScreen) return;
             
             // Move player
             if (gameState.keys['ArrowLeft'] && gameState.player.x > gameState.player.size/2) {
@@ -614,8 +616,8 @@
                 ctx.fillRect(x, y, 1, 1);
             }
             
-            // Show start screen if game hasn't started
-            if (!gameState.gameStarted) {
+            // Show start screen if needed
+            if (gameState.showingStartScreen) {
                 drawStartScreen();
                 return;
             }
@@ -659,8 +661,9 @@
                 score: 0,
                 nebulaCount: 0,
                 asteroidHits: 0,
-                gameRunning: true,
+                gameRunning: false,
                 gameStarted: false,
+                showingStartScreen: true,
                 keys: {}
             };
             
@@ -670,73 +673,80 @@
         
         // Sound effects (8-bit style using Web Audio API)
         function playEatSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
-            
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.1);
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(440, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(880, audioContext.currentTime + 0.1);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                // Silent fail if audio context not available
+            }
         }
         
         function playHitSound() {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
-            
-            oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.2);
-            
-            gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-            
-            oscillator.start(audioContext.currentTime);
-            oscillator.stop(audioContext.currentTime + 0.2);
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.2);
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (e) {
+                // Silent fail if audio context not available
+            }
         }
         
         // Event listeners
         document.addEventListener('keydown', (e) => {
             gameState.keys[e.code] = true;
+            
+            // Start game on any key press
+            if (gameState.showingStartScreen) {
+                startActualGame();
+            }
         });
         
         document.addEventListener('keyup', (e) => {
             gameState.keys[e.code] = false;
         });
         
-        // Mobile controls
-        document.getElementById('mobileControls').addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            const direction = e.target.dataset.direction;
-            if (direction) {
-                gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
+        // Canvas click to start
+        canvas.addEventListener('click', (e) => {
+            if (gameState.showingStartScreen) {
+                startActualGame();
             }
         });
         
-        document.getElementById('mobileControls').addEventListener('touchend', (e) => {
-            e.preventDefault();
-            Object.keys(gameState.keys).forEach(key => {
-                if (key.startsWith('Arrow')) {
-                    gameState.keys[key] = false;
-                }
-            });
-        });
-        
-        // Also handle individual button events for better mobile responsiveness
+        // Mobile control button handlers
         document.querySelectorAll('.control-btn').forEach(btn => {
             btn.addEventListener('touchstart', (e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                
+                if (gameState.showingStartScreen) {
+                    startActualGame();
+                }
+                
                 const direction = e.target.dataset.direction;
                 if (direction) {
                     gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
@@ -752,8 +762,11 @@
                 }
             });
             
-            // Also add mouse events for desktop testing of mobile controls
             btn.addEventListener('mousedown', (e) => {
+                if (gameState.showingStartScreen) {
+                    startActualGame();
+                }
+                
                 const direction = e.target.dataset.direction;
                 if (direction) {
                     gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
@@ -775,12 +788,11 @@
             });
         });
         
-        // Prevent zoom on mobile
+        // Prevent mobile zoom and context menu
         document.addEventListener('touchmove', (e) => {
             if (e.scale !== 1) { e.preventDefault(); }
         }, { passive: false });
         
-        // Prevent context menu on long press
         document.addEventListener('contextmenu', (e) => {
             e.preventDefault();
         });
@@ -795,8 +807,9 @@
             lastTouchEnd = now;
         }, false);
         
-        // Start game
-        init();
+        // Initialize everything
+        createStars();
+        gameLoop();
     </script>
 </body>
 </html>
