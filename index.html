@@ -553,6 +553,45 @@
                 1px 1px 0px #000;
         }
 
+        /* Instagram button styling for Gas Gulper */
+        .instagram-button {
+            font-family: 'Press Start 2P', monospace;
+            font-size: 14px;
+            background: linear-gradient(135deg, #ff8800, #ff4400);
+            border: 4px solid #ff8800;
+            color: #ffffff;
+            padding: 16px 24px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #884400,
+                0 0 20px rgba(255, 136, 0, 0.8);
+            transition: all 0.2s ease;
+            text-shadow: 
+                2px 2px 0px #884400,
+                -1px -1px 0px #000,
+                1px -1px 0px #000,
+                -1px 1px 0px #000,
+                1px 1px 0px #000;
+            margin: 5px;
+        }
+
+        .instagram-button:hover {
+            background: linear-gradient(135deg, #ffaa44, #ff6622);
+            box-shadow: 
+                0 0 0 3px #000,
+                0 0 0 7px #aa5500,
+                0 0 30px rgba(255, 170, 68, 1);
+            transform: scale(1.05);
+        }
+
+        .instagram-button:active {
+            transform: scale(0.95);
+            background: linear-gradient(135deg, #cc6600, #cc3300);
+        }
+
         .game-button:hover, .learn-more-button:hover {
             background: linear-gradient(135deg, #ff00aa, #ff44ff);
             box-shadow: 
@@ -752,7 +791,7 @@
                 letter-spacing: 1px;
             }
 
-            .game-button, .learn-more-button {
+            .game-button, .learn-more-button, .instagram-button {
                 font-size: 12px;
                 padding: 14px 20px;
                 letter-spacing: 1px;
@@ -851,7 +890,7 @@
                 padding: 8px 10px;
             }
 
-            .game-button, .learn-more-button {
+            .game-button, .learn-more-button, .instagram-button {
                 font-size: 10px;
                 padding: 12px 16px;
             }
@@ -1014,6 +1053,11 @@
             <button class="learn-more-button" id="learn-more-button" onclick="showCharacterInfo()">
                 BONUS STORY
             </button>
+
+            <!-- Instagram button - only shown for Gas Gulper -->
+            <button class="instagram-button" id="instagram-button" style="display: none;" onclick="openInstagram()">
+                ROCKETS AND ROBOTS!
+            </button>
         </div>
         
         <div class="exit-hint">CLICK TO EXIT</div>
@@ -1077,7 +1121,7 @@
             
             'GENERAL COSMOS!!!!': '"BEING SUPREME COMMANDER SURE IS TOUGH, MAN..." GENERAL COSMOS SIGHED. "SO HOW DO YOU BLOW OFF STEAM?" ONE OF HIS OFFICERS ASKED. "EASY, I SMASH BOULDERS." THE GENERAL REPLIED. "AND IF THERE ARE NO BOULDERS?" THE OFFICER ASKED. "THEN I SMASH INDUSTRIALIST SHIPS!" THE GENERAL SAID WITH A LAUGH.',
             
-            'THE LIVING DREADNOUGHT': 'LIVING INSIDE A MASSIVE ALLIGATOR SPACESHIP HAD ITS PERKS, PERCY THOUGHT. THE LIVING DREADNOUGHT WOULD OFTEN SIT IN THE SAME SPOT FOR DAYS... WHICH FOR THE PILOTS, MEANT SEVERAL DAYS OFF. "PERCY, YOU COMING FOR DINNER?" THE OFFICERS DINING HALL HAD FANTASTIC FOOD, ENOUGH TO SERVE THE SEVERAL THOUSAND CREW ON BOARD... THERE WAS JUST ONE PROBLEM: SEAFOOD FEATURED HEAVILY, EVERY NIGHT. ',
+            'THE LIVING DREADNAUGHT': 'LIVING INSIDE A MASSIVE ALLIGATOR SPACESHIP HAD ITS PERKS, PERCY THOUGHT. THE LIVING DREADNAUGHT WOULD OFTEN SIT IN THE SAME SPOT FOR DAYS... WHICH FOR THE PILOTS, MEANT SEVERAL DAYS OFF. "PERCY, YOU COMING FOR DINNER?" THE OFFICERS DINING HALL HAD FANTASTIC FOOD, ENOUGH TO SERVE THE SEVERAL THOUSAND CREW ON BOARD... THERE WAS JUST ONE PROBLEM: SEAFOOD FEATURED HEAVILY, EVERY NIGHT. ',
             
             'RICK THE SUPER SPORE': 'TINY BUT MIGHTY, RICK CAME TO LIFE AFTER RADIATION POISONING HIT A MUSHROOM PATCH. THE RESULT IS A MINI FUNGUS OF DESTRUCTION. RICK CAN COMMUNICATE VIA THE MYCELIAL NETWORK--UNDERGROUND MUSHROOMS. HE CAN COMMAND THE SAME NETWORK TO EXPLODE... HE IS STILL GETTING THE HANG OF CONTROLLING THAT, THOUGH!',
             
@@ -1112,7 +1156,7 @@
             '990210': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Dreadnaught.png', title: 'THE LIVING DREADNAUGHT', hasGame: true, gameFile: 'AlligatorGame.html' },
             '349023': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Rick.png', title: 'RICK THE SUPER SPORE', hasGame: true, gameFile: 'RickGame.html' },
             '000000': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Xaltor.png', title: 'PRINCE XALTOR, THE GILDED ONE',hasGame: true, gameFile: 'XaltorGame.html'},
-            '324902': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Gulper.png', title: 'THE GALACTIC SCALE GAS GULPER',hasGame: true, gameFile: 'GulperGame.html'},
+            '324902': { image: 'https://storage.googleapis.com/heroicbookmarkspixel/Gulper.png', title: 'THE GALACTIC SCALE GAS GULPER',hasGame: true, gameFile: 'GulperGame.html', hasInstagram: true},
         };
 
         // Get input elements
@@ -1122,6 +1166,7 @@
         const fullscreenTitle = document.getElementById('fullscreen-title');
         const gameButton = document.getElementById('game-button');
         const learnMoreButton = document.getElementById('learn-more-button');
+        const instagramButton = document.getElementById('instagram-button');
         const errorMessage = document.getElementById('error-message');
         const characterInfoPanel = document.getElementById('character-info');
         const infoTitle = document.getElementById('info-title');
@@ -1136,6 +1181,11 @@
         // Store current game file and character info
         let currentGameFile = '';
         let currentCharacterTitle = '';
+
+        // Function to open Instagram link
+        function openInstagram() {
+            window.open('https://www.instagram.com/rockets_and_robots_rpg/', '_blank');
+        }
 
         // EMAIL FUNCTIONALITY
         function showEmailPopup() {
@@ -1279,6 +1329,13 @@
                     currentGameFile = '';
                 }
                 
+                // Show Instagram button only for Gas Gulper
+                if (bookmark.hasInstagram) {
+                    instagramButton.style.display = 'block';
+                } else {
+                    instagramButton.style.display = 'none';
+                }
+                
                 // Always show learn more button
                 learnMoreButton.style.display = 'block';
                 
@@ -1315,6 +1372,7 @@
             fullscreenOverlay.classList.remove('show');
             gameButton.style.display = 'none';
             learnMoreButton.style.display = 'none';
+            instagramButton.style.display = 'none';
             currentGameFile = '';
             currentCharacterTitle = '';
             // Reset input styling
