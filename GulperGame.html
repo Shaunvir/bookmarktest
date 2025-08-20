@@ -57,6 +57,7 @@
             box-shadow: 0 0 20px #00ff0050;
             image-rendering: pixelated;
             cursor: pointer;
+            touch-action: none;
         }
         
         .controls {
@@ -65,40 +66,6 @@
             font-size: 10px;
             line-height: 1.5;
         }
-        
-        .mobile-controls {
-            display: none;
-            margin-top: 10px;
-            grid-template-columns: 1fr 1fr 1fr;
-            grid-template-rows: 1fr 1fr 1fr;
-            gap: 10px;
-            width: 150px;
-            height: 150px;
-        }
-        
-        .control-btn {
-            background: #00ff0030;
-            border: 2px solid #00ff00;
-            color: #00ff00;
-            font-family: 'Press Start 2P', monospace;
-            font-size: 16px;
-            cursor: pointer;
-            user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.1s;
-        }
-        
-        .control-btn:active {
-            background: #00ff0060;
-            transform: scale(0.95);
-        }
-        
-        .control-btn.up { grid-column: 2; grid-row: 1; }
-        .control-btn.left { grid-column: 1; grid-row: 2; }
-        .control-btn.right { grid-column: 3; grid-row: 2; }
-        .control-btn.down { grid-column: 2; grid-row: 3; }
         
         .game-over {
             position: fixed;
@@ -130,10 +97,8 @@
         }
         
         @media (max-width: 768px) {
-            .mobile-controls { display: grid; }
             .title { font-size: 18px; }
             .hud { font-size: 10px; }
-            .controls { display: none; }
         }
         
         .stars {
@@ -174,15 +139,8 @@
         <canvas id="gameCanvas" class="game-canvas" width="800" height="600"></canvas>
         
         <div class="controls">
-            PC: Use ARROW KEYS to move the green monster<br>
+            CLICK AND DRAG the green monster to move it around!<br>
             Eat the blue nebulas! Avoid the brown asteroids!
-        </div>
-        
-        <div class="mobile-controls" id="mobileControls">
-            <button class="control-btn up" data-direction="up">↑</button>
-            <button class="control-btn left" data-direction="left">←</button>
-            <button class="control-btn right" data-direction="right">→</button>
-            <button class="control-btn down" data-direction="down">↓</button>
         </div>
     </div>
     
@@ -207,7 +165,8 @@
             gameRunning: false,
             gameStarted: false,
             showingStartScreen: true,
-            keys: {}
+            isDragging: false,
+            dragOffset: { x: 0, y: 0 }
         };
         
         // Create starfield background
@@ -222,6 +181,26 @@
                 star.style.animationDelay = Math.random() * 3 + 's';
                 starsContainer.appendChild(star);
             }
+        }
+        
+        // Get mouse/touch position relative to canvas
+        function getEventPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0] ? e.touches[0].clientX : 0);
+            const clientY = e.clientY || (e.touches && e.touches[0] ? e.touches[0].clientY : 0);
+            
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+        
+        // Check if point is inside player
+        function isPointInPlayer(x, y) {
+            const dx = x - gameState.player.x;
+            const dy = y - gameState.player.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            return distance <= gameState.player.size / 2;
         }
         
         // Start the actual game
@@ -388,7 +367,7 @@
             
             ctx.fillStyle = '#00ff00';
             ctx.textAlign = 'left';
-            ctx.fillText('EAT NEBULAS', nebulaX - 60, 320);
+            ctx.fillText('EAT SPACE DUSTBALLS', nebulaX - 60, 320);
             ctx.fillText('+100 POINTS', nebulaX - 60, 340);
             
             ctx.fillStyle = '#ff0000';
@@ -402,14 +381,7 @@
             
             ctx.font = '10px "Press Start 2P"';
             ctx.fillStyle = '#ffff00';
-            
-            // Check if mobile
-            const isMobile = window.innerWidth <= 768;
-            if (isMobile) {
-                ctx.fillText('USE TOUCH BUTTONS BELOW TO MOVE', canvas.width/2, 420);
-            } else {
-                ctx.fillText('USE ARROW KEYS TO MOVE YOUR GREEN MONSTER', canvas.width/2, 420);
-            }
+            ctx.fillText('CLICK AND DRAG THE GREEN MONSTER TO MOVE', canvas.width/2, 420);
             
             // Start instruction
             ctx.font = '16px "Press Start 2P"';
@@ -441,6 +413,12 @@
                 "01000010"
             ];
             
+            // Add slight glow if being dragged
+            if (gameState.isDragging) {
+                ctx.shadowColor = '#00ff00';
+                ctx.shadowBlur = 10;
+            }
+            
             ctx.fillStyle = '#00ff00';
             
             for (let row = 0; row < pattern.length; row++) {
@@ -460,6 +438,9 @@
             ctx.fillStyle = '#ff0000';
             ctx.fillRect(x - size/4, y - size/4, pixelSize, pixelSize);
             ctx.fillRect(x + size/8, y - size/4, pixelSize, pixelSize);
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
         }
         
         // Draw nebula
@@ -541,19 +522,10 @@
         function update() {
             if (!gameState.gameRunning || gameState.showingStartScreen) return;
             
-            // Move player
-            if (gameState.keys['ArrowLeft'] && gameState.player.x > gameState.player.size/2) {
-                gameState.player.x -= gameState.player.speed;
-            }
-            if (gameState.keys['ArrowRight'] && gameState.player.x < canvas.width - gameState.player.size/2) {
-                gameState.player.x += gameState.player.speed;
-            }
-            if (gameState.keys['ArrowUp'] && gameState.player.y > gameState.player.size/2) {
-                gameState.player.y -= gameState.player.speed;
-            }
-            if (gameState.keys['ArrowDown'] && gameState.player.y < canvas.height - gameState.player.size/2) {
-                gameState.player.y += gameState.player.speed;
-            }
+            // Keep player within bounds
+            const halfSize = gameState.player.size / 2;
+            gameState.player.x = Math.max(halfSize, Math.min(canvas.width - halfSize, gameState.player.x));
+            gameState.player.y = Math.max(halfSize, Math.min(canvas.height - halfSize, gameState.player.y));
             
             // Update nebulas
             gameState.nebulas.forEach((nebula, index) => {
@@ -649,6 +621,7 @@
         // Game over
         function gameOver() {
             gameState.gameRunning = false;
+            gameState.isDragging = false;
             document.getElementById('gameOver').style.display = 'block';
         }
         
@@ -664,7 +637,8 @@
                 gameRunning: false,
                 gameStarted: false,
                 showingStartScreen: true,
-                keys: {}
+                isDragging: false,
+                dragOffset: { x: 0, y: 0 }
             };
             
             document.getElementById('gameOver').style.display = 'none';
@@ -716,86 +690,62 @@
             }
         }
         
-        // Event listeners
-        document.addEventListener('keydown', (e) => {
-            gameState.keys[e.code] = true;
+        // Mouse and touch event handlers
+        function handleStart(e) {
+            e.preventDefault();
+            const pos = getEventPos(e);
             
-            // Start game on any key press
             if (gameState.showingStartScreen) {
                 startActualGame();
+                return;
             }
-        });
-        
-        document.addEventListener('keyup', (e) => {
-            gameState.keys[e.code] = false;
-        });
-        
-        // Canvas click to start
-        canvas.addEventListener('click', (e) => {
-            if (gameState.showingStartScreen) {
-                startActualGame();
+            
+            if (!gameState.gameRunning) return;
+            
+            if (isPointInPlayer(pos.x, pos.y)) {
+                gameState.isDragging = true;
+                gameState.dragOffset.x = pos.x - gameState.player.x;
+                gameState.dragOffset.y = pos.y - gameState.player.y;
+                canvas.style.cursor = 'grabbing';
             }
+        }
+        
+        function handleMove(e) {
+            e.preventDefault();
+            if (!gameState.isDragging || !gameState.gameRunning) return;
+            
+            const pos = getEventPos(e);
+            gameState.player.x = pos.x - gameState.dragOffset.x;
+            gameState.player.y = pos.y - gameState.dragOffset.y;
+        }
+        
+        function handleEnd(e) {
+            e.preventDefault();
+            gameState.isDragging = false;
+            canvas.style.cursor = 'pointer';
+        }
+        
+        // Mouse events
+        canvas.addEventListener('mousedown', handleStart);
+        canvas.addEventListener('mousemove', handleMove);
+        canvas.addEventListener('mouseup', handleEnd);
+        canvas.addEventListener('mouseleave', handleEnd);
+        
+        // Touch events
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        canvas.addEventListener('touchmove', handleMove, { passive: false });
+        canvas.addEventListener('touchend', handleEnd, { passive: false });
+        canvas.addEventListener('touchcancel', handleEnd, { passive: false });
+        
+        // Prevent context menu
+        canvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
         });
         
-        // Mobile control button handlers
-        document.querySelectorAll('.control-btn').forEach(btn => {
-            btn.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                
-                if (gameState.showingStartScreen) {
-                    startActualGame();
-                }
-                
-                const direction = e.target.dataset.direction;
-                if (direction) {
-                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
-                }
-            });
-            
-            btn.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                const direction = e.target.dataset.direction;
-                if (direction) {
-                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = false;
-                }
-            });
-            
-            btn.addEventListener('mousedown', (e) => {
-                if (gameState.showingStartScreen) {
-                    startActualGame();
-                }
-                
-                const direction = e.target.dataset.direction;
-                if (direction) {
-                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = true;
-                }
-            });
-            
-            btn.addEventListener('mouseup', (e) => {
-                const direction = e.target.dataset.direction;
-                if (direction) {
-                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = false;
-                }
-            });
-            
-            btn.addEventListener('mouseleave', (e) => {
-                const direction = e.target.dataset.direction;
-                if (direction) {
-                    gameState.keys[`Arrow${direction.charAt(0).toUpperCase() + direction.slice(1)}`] = false;
-                }
-            });
-        });
-        
-        // Prevent mobile zoom and context menu
+        // Prevent mobile zoom and other gestures
         document.addEventListener('touchmove', (e) => {
             if (e.scale !== 1) { e.preventDefault(); }
         }, { passive: false });
-        
-        document.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
-        });
         
         // Disable double-tap zoom on mobile
         let lastTouchEnd = 0;
