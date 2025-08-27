@@ -155,7 +155,7 @@
         </div>
         
         <div id="instructions">
-            HOLD SPACE or CLICK to blast steam • Navigate the steam caverns • Don't overheat!
+            HOLD SPACE or CLICK to blast steam • ARROW KEYS or DRAG to steer • Avoid obstacles!
         </div>
         
         <div id="gameOver">
@@ -178,32 +178,43 @@
                     x: 80,
                     y: this.canvas.height / 2,
                     velocityY: 0,
+                    velocityX: 0,
+                    targetX: 80,
                     width: 40,
                     height: 30,
                     isBlasting: false,
                     heat: 0,
                     maxHeat: 100,
-                    cooldownRate: 1.2, // Faster cooling
-                    heatRate: 1.0 // Slower heating
+                    cooldownRate: 1.2,
+                    heatRate: 1.0
                 };
                 
                 this.terrain = {
                     top: [],
                     bottom: [],
-                    gapHeight: 300, // Even larger starting gap
-                    minGapHeight: 280, // Super forgiving minimum gap
+                    gapHeight: 300,
+                    minGapHeight: 280,
                     maxGapHeight: 400
                 };
                 
                 this.gears = [];
+                this.obstacles = [];
                 this.particles = [];
                 this.distance = 0;
                 this.gearsCollected = 0;
                 this.gameRunning = true;
-                this.scrollSpeed = 1.5; // Super slow start
+                this.scrollSpeed = 1.5;
                 this.lastGearDistance = 0;
+                this.lastObstacleDistance = 0;
+                this.gameStartTime = Date.now();
                 
                 this.keys = {};
+                this.mouse = {
+                    x: 0,
+                    y: 0,
+                    isDragging: false
+                };
+                
                 this.setupControls();
                 this.generateInitialTerrain();
                 this.gameLoop();
@@ -216,31 +227,78 @@
                         e.preventDefault();
                         this.keys.space = true;
                     }
+                    if (e.code === 'ArrowUp') {
+                        e.preventDefault();
+                        this.keys.up = true;
+                    }
+                    if (e.code === 'ArrowDown') {
+                        e.preventDefault();
+                        this.keys.down = true;
+                    }
+                    if (e.code === 'ArrowLeft') {
+                        e.preventDefault();
+                        this.keys.left = true;
+                    }
+                    if (e.code === 'ArrowRight') {
+                        e.preventDefault();
+                        this.keys.right = true;
+                    }
                 });
                 
                 document.addEventListener('keyup', (e) => {
                     if (e.code === 'Space') {
                         this.keys.space = false;
                     }
+                    if (e.code === 'ArrowUp') {
+                        this.keys.up = false;
+                    }
+                    if (e.code === 'ArrowDown') {
+                        this.keys.down = false;
+                    }
+                    if (e.code === 'ArrowLeft') {
+                        this.keys.left = false;
+                    }
+                    if (e.code === 'ArrowRight') {
+                        this.keys.right = false;
+                    }
                 });
                 
                 // Mouse/touch controls
-                this.canvas.addEventListener('mousedown', () => {
+                this.canvas.addEventListener('mousedown', (e) => {
                     this.keys.space = true;
+                    this.mouse.isDragging = true;
+                    this.updateMousePosition(e);
+                });
+                
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (this.mouse.isDragging) {
+                        this.updateMousePosition(e);
+                    }
                 });
                 
                 this.canvas.addEventListener('mouseup', () => {
                     this.keys.space = false;
+                    this.mouse.isDragging = false;
                 });
                 
                 this.canvas.addEventListener('touchstart', (e) => {
                     e.preventDefault();
                     this.keys.space = true;
+                    this.mouse.isDragging = true;
+                    this.updateTouchPosition(e);
+                });
+                
+                this.canvas.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    if (this.mouse.isDragging) {
+                        this.updateTouchPosition(e);
+                    }
                 });
                 
                 this.canvas.addEventListener('touchend', (e) => {
                     e.preventDefault();
                     this.keys.space = false;
+                    this.mouse.isDragging = false;
                 });
                 
                 // Restart button
@@ -256,46 +314,52 @@
                 });
             }
             
+            updateMousePosition(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.mouse.x = e.clientX - rect.left;
+                this.mouse.y = e.clientY - rect.top;
+            }
+            
+            updateTouchPosition(e) {
+                const rect = this.canvas.getBoundingClientRect();
+                this.mouse.x = e.touches[0].clientX - rect.left;
+                this.mouse.y = e.touches[0].clientY - rect.top;
+            }
+            
             generateInitialTerrain() {
                 this.terrain.top = [];
                 this.terrain.bottom = [];
                 
-                let topHeight = this.canvas.height * 0.2; // More space at top
-                let bottomHeight = this.canvas.height * 0.8; // More space at bottom
+                let topHeight = this.canvas.height * 0.2;
+                let bottomHeight = this.canvas.height * 0.8;
                 
                 for (let x = 0; x <= this.canvas.width + 200; x += 10) {
-                    // Progressive terrain variation based on time - much more dramatic
                     const gameTimeSeconds = (Date.now() - this.gameStartTime) / 1000;
                     let terrainVariation = 0;
                     
                     if (gameTimeSeconds > 15) {
-                        // After 15 seconds, rapidly introduce significant variation
-                        terrainVariation = Math.min(12, (gameTimeSeconds - 15) / 3); // Much faster increase to max 12
+                        terrainVariation = Math.min(12, (gameTimeSeconds - 15) / 3);
                     }
                     
-                    // Much more dramatic terrain changes that ramp up quickly
                     topHeight += (Math.random() - 0.5) * terrainVariation;
                     bottomHeight += (Math.random() - 0.5) * terrainVariation;
                     
-                    // Keep minimum gap - super forgiving
                     if (bottomHeight - topHeight < this.terrain.minGapHeight) {
                         if (topHeight > this.canvas.height * 0.3) {
-                            topHeight -= 2; // Tiny adjustment
+                            topHeight -= 2;
                         } else {
                             bottomHeight += 2;
                         }
                     }
                     
-                    // Keep maximum gap
                     if (bottomHeight - topHeight > this.terrain.maxGapHeight) {
                         if (Math.random() > 0.5) {
-                            topHeight += 1; // Tiny adjustment
+                            topHeight += 1;
                         } else {
                             bottomHeight -= 1;
                         }
                     }
                     
-                    // Keep within screen bounds - more generous
                     topHeight = Math.max(30, Math.min(this.canvas.height * 0.5, topHeight));
                     bottomHeight = Math.max(this.canvas.height * 0.5, Math.min(this.canvas.height - 30, bottomHeight));
                     
@@ -307,10 +371,36 @@
             update() {
                 if (!this.gameRunning) return;
                 
-                // Princess physics - super gentle and forgiving
+                // Handle steering input
+                if (this.keys.up || this.keys.down || this.keys.left || this.keys.right) {
+                    if (this.keys.up) this.princess.velocityY -= 0.08;
+                    if (this.keys.down) this.princess.velocityY += 0.08;
+                    if (this.keys.left) this.princess.velocityX -= 0.15;
+                    if (this.keys.right) this.princess.velocityX += 0.15;
+                }
+                
+                // Mouse/touch steering
+                if (this.mouse.isDragging) {
+                    const targetY = this.mouse.y - this.princess.height / 2;
+                    const targetX = Math.max(40, Math.min(this.canvas.width * 0.3, this.mouse.x - this.princess.width / 2));
+                    
+                    const deltaY = targetY - this.princess.y;
+                    const deltaX = targetX - this.princess.x;
+                    
+                    this.princess.velocityY += deltaY * 0.008;
+                    this.princess.velocityX += deltaX * 0.01;
+                }
+                
+                // Limit horizontal movement
+                this.princess.velocityX = Math.max(-1.5, Math.min(1.5, this.princess.velocityX));
+                
+                // Apply horizontal friction
+                this.princess.velocityX *= 0.95;
+                
+                // Princess physics
                 if (this.keys.space && this.princess.heat < this.princess.maxHeat) {
                     this.princess.isBlasting = true;
-                    this.princess.velocityY -= 0.15; // Much gentler lift force
+                    this.princess.velocityY -= 0.15;
                     this.princess.heat += this.princess.heatRate;
                     this.createSteamParticles();
                 } else {
@@ -318,16 +408,20 @@
                     this.princess.heat = Math.max(0, this.princess.heat - this.princess.cooldownRate);
                 }
                 
-                // Gravity - very light downward force
+                // Gravity
                 this.princess.velocityY += 0.06;
                 
-                // Very low terminal velocity for super easy control
+                // Terminal velocity
                 this.princess.velocityY = Math.max(-2, Math.min(2, this.princess.velocityY));
                 
                 // Apply velocity
                 this.princess.y += this.princess.velocityY;
+                this.princess.x += this.princess.velocityX;
                 
-                // Move terrain (helicopter-style horizontal scrolling)
+                // Keep princess within reasonable horizontal bounds
+                this.princess.x = Math.max(20, Math.min(this.canvas.width * 0.4, this.princess.x));
+                
+                // Move terrain
                 this.terrain.top.forEach(point => point.x -= this.scrollSpeed);
                 this.terrain.bottom.forEach(point => point.x -= this.scrollSpeed);
                 
@@ -339,19 +433,16 @@
                     const lastTop = this.terrain.top[this.terrain.top.length - 1];
                     const lastBottom = this.terrain.bottom[this.terrain.bottom.length - 1];
                     
-                    // Progressive terrain variation for new terrain generation
                     const gameTimeSeconds = (Date.now() - this.gameStartTime) / 1000;
                     let terrainVariation = 0;
                     
                     if (gameTimeSeconds > 15) {
-                        // After 15 seconds, start introducing gentle variation
-                        terrainVariation = Math.min(6, (gameTimeSeconds - 15) / 8); // Gradually increase to max 6
+                        terrainVariation = Math.min(6, (gameTimeSeconds - 15) / 8);
                     }
                     
                     let newTopY = lastTop.y + (Math.random() - 0.5) * terrainVariation;
                     let newBottomY = lastBottom.y + (Math.random() - 0.5) * terrainVariation;
                     
-                    // Maintain gap constraints - super forgiving
                     if (newBottomY - newTopY < this.terrain.minGapHeight) {
                         if (newTopY > this.canvas.height * 0.3) {
                             newTopY -= 3;
@@ -368,7 +459,6 @@
                         }
                     }
                     
-                    // Keep within screen bounds - very generous
                     newTopY = Math.max(20, Math.min(this.canvas.height * 0.45, newTopY));
                     newBottomY = Math.max(this.canvas.height * 0.55, Math.min(this.canvas.height - 20, newBottomY));
                     
@@ -380,6 +470,35 @@
                 if (this.checkTerrainCollision()) {
                     this.gameOver();
                 }
+                
+                // Spawn obstacles
+                if (this.distance - this.lastObstacleDistance > 200 + Math.random() * 300) {
+                    this.spawnObstacle();
+                    this.lastObstacleDistance = this.distance;
+                }
+                
+                // Update obstacles
+                this.obstacles = this.obstacles.filter(obstacle => {
+                    obstacle.x -= this.scrollSpeed;
+                    
+                    // Different movement patterns
+                    if (obstacle.type === 'spinner') {
+                        obstacle.rotation += 0.1;
+                    } else if (obstacle.type === 'oscillator') {
+                        obstacle.oscillation += 0.08;
+                        obstacle.y = obstacle.baseY + Math.sin(obstacle.oscillation) * obstacle.amplitude;
+                    } else if (obstacle.type === 'seeker') {
+                        // Slowly home in on princess
+                        const deltaY = this.princess.y - obstacle.y;
+                        obstacle.y += deltaY * 0.005;
+                    }
+                    
+                    if (this.checkCollision(this.princess, obstacle)) {
+                        this.gameOver();
+                        return false;
+                    }
+                    return obstacle.x + obstacle.width > -50;
+                });
                 
                 // Spawn gears occasionally
                 if (this.distance - this.lastGearDistance > 150 + Math.random() * 200) {
@@ -412,17 +531,15 @@
                 // Increase distance
                 this.distance += this.scrollSpeed;
                 
-                // Progressive difficulty increase based on time
+                // Progressive difficulty
                 const gameTimeSeconds = (Date.now() - this.gameStartTime) / 1000;
                 
-                // Speed increases more aggressively after 15 seconds
                 if (gameTimeSeconds > 15) {
-                    this.scrollSpeed = Math.min(4.5, 1.5 + (gameTimeSeconds - 15) / 15); // Much faster speed increase after 15s
+                    this.scrollSpeed = Math.min(4.5, 1.5 + (gameTimeSeconds - 15) / 15);
                 }
                 
-                // Gap shrinks much more dramatically after 15 seconds
                 if (gameTimeSeconds > 15) {
-                    this.terrain.minGapHeight = Math.max(80, 280 - (gameTimeSeconds - 15) * 6); // Aggressive gap reduction - 6px per second!
+                    this.terrain.minGapHeight = Math.max(80, 280 - (gameTimeSeconds - 15) * 6);
                 }
                 
                 // Update UI
@@ -431,13 +548,57 @@
                 document.getElementById('heatBar').style.width = `${(this.princess.heat / this.princess.maxHeat) * 100}%`;
             }
             
+            spawnObstacle() {
+                const gameTimeSeconds = (Date.now() - this.gameStartTime) / 1000;
+                
+                // Don't spawn obstacles too early
+                if (gameTimeSeconds < 10) return;
+                
+                // Find safe spawn area between terrain
+                let topY = this.canvas.height * 0.3;
+                let bottomY = this.canvas.height * 0.7;
+                
+                for (let i = 0; i < this.terrain.top.length; i++) {
+                    const topPoint = this.terrain.top[i];
+                    const bottomPoint = this.terrain.bottom[i];
+                    
+                    if (topPoint.x > this.canvas.width - 200) {
+                        topY = topPoint.y + 50;
+                        bottomY = bottomPoint.y - 50;
+                        break;
+                    }
+                }
+                
+                const obstacleTypes = ['spinner', 'oscillator', 'seeker'];
+                const type = obstacleTypes[Math.floor(Math.random() * obstacleTypes.length)];
+                
+                const obstacle = {
+                    x: this.canvas.width + 100,
+                    y: topY + Math.random() * (bottomY - topY - 40),
+                    width: 30,
+                    height: 30,
+                    type: type,
+                    rotation: 0
+                };
+                
+                if (type === 'oscillator') {
+                    obstacle.baseY = obstacle.y;
+                    obstacle.oscillation = 0;
+                    obstacle.amplitude = 30 + Math.random() * 40;
+                } else if (type === 'seeker') {
+                    obstacle.width = 25;
+                    obstacle.height = 25;
+                }
+                
+                this.obstacles.push(obstacle);
+            }
+            
             checkTerrainCollision() {
                 const princessLeft = this.princess.x;
                 const princessRight = this.princess.x + this.princess.width;
                 const princessTop = this.princess.y;
                 const princessBottom = this.princess.y + this.princess.height;
                 
-                // Find terrain points near princess
                 for (let i = 0; i < this.terrain.top.length - 1; i++) {
                     const topPoint = this.terrain.top[i];
                     const bottomPoint = this.terrain.bottom[i];
@@ -453,7 +614,6 @@
             }
             
             spawnGear() {
-                // Find a safe spot between terrain
                 let safeY = this.canvas.height / 2;
                 for (let i = 0; i < this.terrain.top.length; i++) {
                     const topPoint = this.terrain.top[i];
@@ -512,11 +672,83 @@
                     this.ctx.restore();
                 });
                 
+                // Draw obstacles
+                this.obstacles.forEach(obstacle => this.drawObstacle(obstacle));
+                
                 // Draw princess
                 this.drawPrincess();
                 
                 // Draw gears
                 this.gears.forEach(gear => this.drawGear(gear));
+            }
+            
+            drawObstacle(obstacle) {
+                this.ctx.save();
+                this.ctx.translate(obstacle.x + obstacle.width/2, obstacle.y + obstacle.height/2);
+                
+                if (obstacle.type === 'spinner') {
+                    this.ctx.rotate(obstacle.rotation);
+                    this.ctx.fillStyle = '#8b0000';
+                    this.ctx.strokeStyle = '#ff4500';
+                    this.ctx.lineWidth = 3;
+                    
+                    // Draw spinning blade
+                    this.ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i * Math.PI) / 3;
+                        const x1 = Math.cos(angle) * 5;
+                        const y1 = Math.sin(angle) * 5;
+                        const x2 = Math.cos(angle) * 20;
+                        const y2 = Math.sin(angle) * 20;
+                        this.ctx.moveTo(x1, y1);
+                        this.ctx.lineTo(x2, y2);
+                    }
+                    this.ctx.stroke();
+                    
+                    // Center circle
+                    this.ctx.fillStyle = '#8b0000';
+                    this.ctx.beginPath();
+                    this.ctx.arc(0, 0, 8, 0, Math.PI * 2);
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                    
+                } else if (obstacle.type === 'oscillator') {
+                    this.ctx.fillStyle = '#4b0082';
+                    this.ctx.strokeStyle = '#9370db';
+                    this.ctx.lineWidth = 2;
+                    
+                    // Draw pulsating diamond
+                    const size = 12 + Math.sin(obstacle.oscillation * 2) * 3;
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(0, -size);
+                    this.ctx.lineTo(size, 0);
+                    this.ctx.lineTo(0, size);
+                    this.ctx.lineTo(-size, 0);
+                    this.ctx.closePath();
+                    this.ctx.fill();
+                    this.ctx.stroke();
+                    
+                } else if (obstacle.type === 'seeker') {
+                    this.ctx.fillStyle = '#8b4513';
+                    this.ctx.strokeStyle = '#daa520';
+                    this.ctx.lineWidth = 2;
+                    
+                    // Draw seeking missile
+                    this.ctx.fillRect(-12, -8, 24, 16);
+                    this.ctx.strokeRect(-12, -8, 24, 16);
+                    
+                    // Add fins
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(-12, -8);
+                    this.ctx.lineTo(-18, -12);
+                    this.ctx.lineTo(-12, -4);
+                    this.ctx.moveTo(-12, 8);
+                    this.ctx.lineTo(-18, 12);
+                    this.ctx.lineTo(-12, 4);
+                    this.ctx.stroke();
+                }
+                
+                this.ctx.restore();
             }
             
             drawTerrain() {
@@ -642,15 +874,18 @@
                 this.princess.x = 80;
                 this.princess.y = this.canvas.height / 2;
                 this.princess.velocityY = 0;
+                this.princess.velocityX = 0;
                 this.princess.heat = 0;
                 this.gears = [];
+                this.obstacles = [];
                 this.particles = [];
                 this.distance = 0;
                 this.gearsCollected = 0;
                 this.scrollSpeed = 1.5;
                 this.lastGearDistance = 0;
+                this.lastObstacleDistance = 0;
                 this.gameRunning = true;
-                this.gameStartTime = Date.now(); // Reset game start time
+                this.gameStartTime = Date.now();
                 this.generateInitialTerrain();
             }
             
