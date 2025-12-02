@@ -2,418 +2,1145 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Fire and Lee's Cave Adventure</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Spectral:wght@400;600&display=swap" rel="stylesheet">
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            background: #1a1a2e;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            touch-action: manipulation;
+        }
+        
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background: #0a0505;
+        }
+        
+        body {
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            font-family: 'Courier New', monospace;
-            overflow: hidden;
+            font-family: 'Spectral', Georgia, serif;
+        }
+        
+        #gameWrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            max-width: 500px;
+            max-height: 800px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         
         #gameContainer {
             position: relative;
-            width: 400px;
-            height: 600px;
-            background: linear-gradient(180deg, #2d1810 0%, #1a0f08 100%);
-            border: 4px solid #8b4513;
-            border-radius: 8px;
+            width: 100%;
+            height: 100%;
+            background: #1a0a08;
             overflow: hidden;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            box-shadow: 
+                0 0 60px rgba(255, 100, 50, 0.15),
+                inset 0 0 100px rgba(0, 0, 0, 0.5);
         }
         
         #gameCanvas {
             width: 100%;
             height: 100%;
             display: block;
-            cursor: pointer;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
         }
         
         #ui {
             position: absolute;
             top: 20px;
             left: 20px;
-            color: #ffaa00;
-            font-size: 20px;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            right: 20px;
+            display: flex;
+            justify-content: space-between;
             z-index: 10;
+            pointer-events: none;
         }
         
-        #gameOver {
+        .score-box {
+            background: linear-gradient(135deg, rgba(30, 15, 10, 0.9), rgba(50, 25, 15, 0.85));
+            border: 2px solid #8b4513;
+            border-radius: 8px;
+            padding: 10px 16px;
+            box-shadow: 
+                0 4px 12px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 200, 100, 0.1);
+        }
+        
+        .score-label {
+            font-family: 'Spectral', serif;
+            font-size: 11px;
+            color: #a08060;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 2px;
+        }
+        
+        .score-value {
+            font-family: 'Cinzel', serif;
+            font-size: 24px;
+            color: #ffcc66;
+            text-shadow: 0 0 10px rgba(255, 150, 50, 0.5);
+        }
+        
+        #overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8);
-            color: #ffaa00;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            display: none;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(ellipse at center, rgba(20, 10, 5, 0.85) 0%, rgba(10, 5, 2, 0.95) 100%);
             z-index: 20;
+            opacity: 1;
+            transition: opacity 0.5s ease;
         }
         
-        #startScreen {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            color: #ffaa00;
-            padding: 30px;
-            border-radius: 10px;
-            text-align: center;
-            z-index: 20;
+        #overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
         }
         
-        .button {
-            background: #8b4513;
-            color: #ffaa00;
-            border: none;
-            padding: 10px 20px;
+        .overlay-content {
+            text-align: center;
+            padding: 30px;
+            max-width: 380px;
+        }
+        
+        .game-title {
+            font-family: 'Cinzel', serif;
+            font-size: clamp(24px, 6vw, 36px);
+            color: #ff8844;
+            text-shadow: 
+                0 0 20px rgba(255, 100, 50, 0.6),
+                0 4px 8px rgba(0, 0, 0, 0.5);
+            margin-bottom: 8px;
+            letter-spacing: 2px;
+        }
+        
+        .game-subtitle {
+            font-family: 'Spectral', serif;
+            font-size: clamp(14px, 3.5vw, 18px);
+            color: #cc9966;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        
+        .dragon-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .instructions {
+            font-size: clamp(13px, 3vw, 15px);
+            color: #aa8866;
+            line-height: 1.8;
+            margin-bottom: 30px;
+        }
+        
+        .instructions strong {
+            color: #ffaa66;
+        }
+        
+        .game-button {
+            font-family: 'Cinzel', serif;
             font-size: 18px;
-            border-radius: 5px;
+            color: #ffdd99;
+            background: linear-gradient(180deg, #8b4513 0%, #5c2d0a 100%);
+            border: 2px solid #aa6633;
+            border-radius: 8px;
+            padding: 14px 40px;
             cursor: pointer;
-            margin: 10px;
-            font-family: 'Courier New', monospace;
-            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            box-shadow: 
+                0 6px 20px rgba(0, 0, 0, 0.4),
+                inset 0 1px 0 rgba(255, 200, 150, 0.2);
+            transition: all 0.2s ease;
         }
         
-        .button:hover {
-            background: #a0522d;
-            transform: scale(1.1);
+        .game-button:hover {
+            background: linear-gradient(180deg, #a05518 0%, #6b350c 100%);
+            transform: translateY(-2px);
+            box-shadow: 
+                0 8px 25px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 200, 150, 0.3);
         }
         
-        #instructions {
+        .game-button:active {
+            transform: translateY(1px);
+        }
+        
+        .final-score {
+            font-family: 'Cinzel', serif;
+            font-size: 48px;
+            color: #ffcc66;
+            text-shadow: 0 0 20px rgba(255, 150, 50, 0.5);
+            margin: 10px 0 30px;
+        }
+        
+        .game-over-title {
+            font-family: 'Cinzel', serif;
+            font-size: 28px;
+            color: #cc6644;
+            margin-bottom: 10px;
+        }
+        
+        #touchHint {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            color: #ffaa00;
-            text-align: center;
-            font-size: 14px;
+            font-size: 13px;
+            color: rgba(200, 160, 120, 0.6);
             z-index: 5;
+            pointer-events: none;
+            text-align: center;
+        }
+        
+        .difficulty-badge {
+            display: inline-block;
+            background: rgba(255, 100, 50, 0.2);
+            border: 1px solid rgba(255, 100, 50, 0.4);
+            border-radius: 4px;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: #ff8855;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="400" height="600"></canvas>
-        
-        <div id="ui">
-            <div>Score: <span id="score">0</span></div>
-            <div>Best: <span id="bestScore">0</span></div>
-        </div>
-        
-        <div id="startScreen">
-            <h1 style="color: #ff6b35; margin-bottom: 20px;">🔥 Fire and Lee's Cave Adventure 🔥</h1>
-            <p style="margin-bottom: 20px;">Help Fire and Lee Navigate the Cave!<br>Tap the screen or hit space bar to control Fire!</p>
-            <button class="button" onclick="startGame()">Start Adventure</button>
-        </div>
-        
-        <div id="gameOver">
-            <h2 style="color: #ff6b35;">Game Over!</h2>
-            <p>Final Score: <span id="finalScore">0</span></p>
-            <button class="button" onclick="restartGame()">Try Again</button>
-        </div>
-        
-        <div id="instructions">
-            <div>🐉 Tap Screen or Press SPACE to fly 🐉</div>
+    <div id="gameWrapper">
+        <div id="gameContainer">
+            <canvas id="gameCanvas"></canvas>
+            
+            <div id="ui">
+                <div class="score-box">
+                    <div class="score-label">Score</div>
+                    <div class="score-value" id="score">0</div>
+                </div>
+                <div class="score-box">
+                    <div class="score-label">Best</div>
+                    <div class="score-value" id="bestScore">0</div>
+                </div>
+            </div>
+            
+            <div id="overlay" data-screen="start">
+                <div class="overlay-content" id="startContent">
+                    <div class="dragon-icon">🐉</div>
+                    <h1 class="game-title">Fire & Lee</h1>
+                    <p class="game-subtitle">A Cave Adventure</p>
+                    <p class="instructions">
+                        Guide <strong>Fire the Dragon</strong> and rider <strong>Lee</strong> through the treacherous caverns.<br><br>
+                        <strong>Tap</strong> or press <strong>Space</strong> to fly upward.
+                    </p>
+                    <button class="game-button" id="startBtn">Begin Journey</button>
+                </div>
+                
+                <div class="overlay-content" id="gameOverContent" style="display: none;">
+                    <div class="game-over-title">Journey's End</div>
+                    <div class="score-label">Caverns Passed</div>
+                    <div class="final-score" id="finalScore">0</div>
+                    <button class="game-button" id="restartBtn">Try Again</button>
+                    <div class="difficulty-badge" id="difficultyBadge">Novice Explorer</div>
+                </div>
+            </div>
+            
+            <div id="touchHint">Tap anywhere to fly</div>
         </div>
     </div>
 
     <script>
+        // ============================================
+        // GAME CONFIGURATION
+        // ============================================
+        const CONFIG = {
+            // Physics (units per second)
+            GRAVITY: 1800,
+            JUMP_VELOCITY: -480,
+            MAX_FALL_VELOCITY: 600,
+            
+            // Gameplay
+            BASE_GAME_SPEED: 180,
+            OBSTACLE_GAP_START: 220,
+            OBSTACLE_GAP_MIN: 140,
+            OBSTACLE_WIDTH: 70,
+            SPAWN_DISTANCE: 280,
+            
+            // Difficulty scaling
+            SPEED_INCREASE_RATE: 0.015,
+            GAP_DECREASE_RATE: 0.3,
+            
+            // Dragon dimensions
+            DRAGON_WIDTH: 70,
+            DRAGON_HEIGHT: 45,
+            DRAGON_X_POSITION: 0.18,
+            
+            // Visual
+            TARGET_FPS: 60,
+            PARTICLE_COUNT_JUMP: 8,
+            PARTICLE_COUNT_TRAIL: 2,
+        };
+
+        // ============================================
+        // CANVAS SETUP
+        // ============================================
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Game state
-        let gameState = 'start'; // 'start', 'playing', 'gameOver'
+        let canvasWidth = 400, canvasHeight = 700, scale = 1;
+        
+        function resizeCanvas() {
+            const container = document.getElementById('gameContainer');
+            const rect = container.getBoundingClientRect();
+            
+            // Use device pixel ratio for crisp rendering
+            const dpr = Math.min(window.devicePixelRatio || 1, 2);
+            
+            canvasWidth = rect.width;
+            canvasHeight = rect.height;
+            
+            canvas.width = canvasWidth * dpr;
+            canvas.height = canvasHeight * dpr;
+            canvas.style.width = canvasWidth + 'px';
+            canvas.style.height = canvasHeight + 'px';
+            
+            ctx.scale(dpr, dpr);
+            
+            // Calculate scale factor for consistent sizing
+            scale = Math.min(canvasWidth / 400, canvasHeight / 700);
+            
+        }
+        
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            // Update dragon position if game exists
+            if (typeof dragon !== 'undefined' && dragon) {
+                dragon.x = canvasWidth * CONFIG.DRAGON_X_POSITION;
+            }
+        });
+        // Initial resize call moved to init() function
+
+        // ============================================
+        // GAME STATE
+        // ============================================
+        let gameState = 'start';
         let score = 0;
-        let bestScore = localStorage.getItem('bestScore') || 0;
+        let bestScore = parseInt(localStorage.getItem('fireLeesBest') || '0');
         document.getElementById('bestScore').textContent = bestScore;
         
-        // Game objects
+        let lastTime = 0;
+        let accumulator = 0;
+        const FIXED_TIMESTEP = 1 / 60;
+
+        // ============================================
+        // GAME OBJECTS
+        // ============================================
         const dragon = {
-            x: 80,
-            y: 300,
-            width: 60,
-            height: 40,
+            x: 0,
+            y: 0,
+            width: CONFIG.DRAGON_WIDTH,
+            height: CONFIG.DRAGON_HEIGHT,
             velocity: 0,
-            gravity: 0.15,
-            jumpPower: -6,
-            rotation: 0
+            rotation: 0,
+            wingPhase: 0,
+            breathTimer: 0
         };
         
         const obstacles = [];
         const particles = [];
-        let obstacleTimer = 0;
-        let obstacleInterval = 140; // More time between obstacles
-        let gameSpeed = 2;
-        let difficultyTimer = 0;
+        const backgroundLayers = [];
         
-        // Colors and gradients
-        const caveColors = ['#8b4513', '#a0522d', '#654321', '#2f1b14'];
+        let gameSpeed = CONFIG.BASE_GAME_SPEED;
+        let currentGap = CONFIG.OBSTACLE_GAP_START;
+        let distanceTraveled = 0;
+        let nextObstacleDistance = CONFIG.SPAWN_DISTANCE;
         
-        // Input handling
-        let isPressed = false;
+        // Parallax background state
+        let bgOffset1 = 0;
+        let bgOffset2 = 0;
+        let bgOffset3 = 0;
+
+        // ============================================
+        // COLORS & PALETTES
+        // ============================================
+        const COLORS = {
+            caveDark: '#1a0a06',
+            caveMid: '#2d1810',
+            caveLight: '#3d2218',
+            rockDark: '#4a2a1a',
+            rockMid: '#5c3825',
+            rockLight: '#6e4530',
+            rockHighlight: '#8b5a3a',
+            
+            dragonBody: '#cc2222',
+            dragonDark: '#881111',
+            dragonLight: '#ee4444',
+            dragonBelly: '#dd6644',
+            
+            fireCore: '#ffff88',
+            fireMid: '#ffaa33',
+            fireOuter: '#ff5500',
+            fireGlow: 'rgba(255, 150, 50, 0.3)',
+            
+            leesSkin: '#e8c4a0',
+            leesHair: '#2a1a10',
+            leesCloak: '#3366aa',
+            leesCloakDark: '#224488'
+        };
+
+        // ============================================
+        // INPUT HANDLING
+        // ============================================
+        let inputCooldown = false;
         
-        canvas.addEventListener('click', handleInput);
-        canvas.addEventListener('touchstart', handleInput);
+        function handleInput(e) {
+            if (e) e.preventDefault();
+            
+            if (gameState === 'playing' && !inputCooldown) {
+                jump();
+                inputCooldown = true;
+                setTimeout(() => inputCooldown = false, 80);
+            }
+        }
+        
+        function jump() {
+            dragon.velocity = CONFIG.JUMP_VELOCITY * scale;
+            dragon.breathTimer = 0.3;
+            
+            // Create jump particles
+            for (let i = 0; i < CONFIG.PARTICLE_COUNT_JUMP; i++) {
+                createFireParticle(
+                    dragon.x - 5 * scale,
+                    dragon.y + dragon.height * scale * 0.5,
+                    true
+                );
+            }
+        }
+        
+        // Touch events
+        canvas.addEventListener('touchstart', handleInput, { passive: false });
+        canvas.addEventListener('mousedown', handleInput);
+        
+        // Keyboard
         document.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
+            if (e.code === 'Space' || e.key === ' ') {
                 e.preventDefault();
                 handleInput();
             }
         });
         
-        function handleInput() {
-            if (gameState === 'playing' && !isPressed) {
-                dragon.velocity = dragon.jumpPower;
-                dragon.rotation = -0.2;
-                isPressed = true;
-                
-                // Add flame particles
-                for (let i = 0; i < 5; i++) {
-                    particles.push({
-                        x: dragon.x - 10,
-                        y: dragon.y + dragon.height/2 + Math.random() * 10 - 5,
-                        vx: -3 - Math.random() * 2,
-                        vy: Math.random() * 4 - 2,
-                        size: Math.random() * 8 + 4,
-                        color: Math.random() > 0.5 ? '#ff6b35' : '#ffaa00',
-                        life: 1
-                    });
-                }
-                
-                setTimeout(() => isPressed = false, 100);
-            }
+        // Button handlers - set up when DOM is ready
+        function setupButtons() {
+            document.getElementById('startBtn').addEventListener('click', startGame);
+            document.getElementById('restartBtn').addEventListener('click', startGame);
         }
-        
+
+        // ============================================
+        // GAME LIFECYCLE
+        // ============================================
         function startGame() {
             gameState = 'playing';
-            document.getElementById('startScreen').style.display = 'none';
-            resetGame();
-        }
-        
-        function restartGame() {
-            gameState = 'playing';
-            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('overlay').classList.add('hidden');
+            document.getElementById('touchHint').style.opacity = '1';
+            
+            setTimeout(() => {
+                document.getElementById('touchHint').style.transition = 'opacity 2s';
+                document.getElementById('touchHint').style.opacity = '0';
+            }, 3000);
+            
             resetGame();
         }
         
         function resetGame() {
-            dragon.y = 300;
+            dragon.x = canvasWidth * CONFIG.DRAGON_X_POSITION;
+            dragon.y = canvasHeight * 0.45;
             dragon.velocity = 0;
             dragon.rotation = 0;
+            dragon.wingPhase = 0;
+            dragon.breathTimer = 0;
+            
             obstacles.length = 0;
             particles.length = 0;
+            
             score = 0;
-            obstacleTimer = 0;
-            obstacleInterval = 140;
-            gameSpeed = 2;
-            difficultyTimer = 0;
-            updateScore();
+            gameSpeed = CONFIG.BASE_GAME_SPEED;
+            currentGap = CONFIG.OBSTACLE_GAP_START;
+            distanceTraveled = 0;
+            nextObstacleDistance = CONFIG.SPAWN_DISTANCE * 0.5;
+            
+            updateScoreDisplay();
         }
         
-        function updateScore() {
-            document.getElementById('score').textContent = score;
+        function gameOver() {
+            gameState = 'gameOver';
+            
+            // Update best score
             if (score > bestScore) {
                 bestScore = score;
-                localStorage.setItem('bestScore', bestScore);
+                localStorage.setItem('fireLeesBest', bestScore);
                 document.getElementById('bestScore').textContent = bestScore;
             }
+            
+            // Show game over screen
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('startContent').style.display = 'none';
+            document.getElementById('gameOverContent').style.display = 'block';
+            document.getElementById('overlay').classList.remove('hidden');
+            
+            // Set difficulty badge
+            const badge = document.getElementById('difficultyBadge');
+            if (score < 5) badge.textContent = 'Novice Explorer';
+            else if (score < 15) badge.textContent = 'Cave Wanderer';
+            else if (score < 30) badge.textContent = 'Cavern Master';
+            else if (score < 50) badge.textContent = 'Dragon Rider';
+            else badge.textContent = 'Legendary Aviator';
         }
         
-        function drawDragon() {
+        function updateScoreDisplay() {
+            document.getElementById('score').textContent = score;
+        }
+
+        // ============================================
+        // PARTICLE SYSTEM
+        // ============================================
+        function createFireParticle(x, y, isJump = false) {
+            const angle = isJump ? (Math.PI + (Math.random() - 0.5) * 0.8) : (Math.PI + (Math.random() - 0.5) * 0.3);
+            const speed = isJump ? (150 + Math.random() * 100) : (80 + Math.random() * 60);
+            
+            particles.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * speed * scale,
+                vy: Math.sin(angle) * speed * scale + (isJump ? -50 : 0),
+                size: (isJump ? (6 + Math.random() * 6) : (3 + Math.random() * 4)) * scale,
+                life: 1,
+                decay: isJump ? (1.5 + Math.random() * 0.5) : (2 + Math.random()),
+                type: 'fire'
+            });
+        }
+        
+        function createDustParticle(x, y) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 40 * scale,
+                vy: (Math.random() - 0.5) * 40 * scale,
+                size: (2 + Math.random() * 3) * scale,
+                life: 1,
+                decay: 0.8 + Math.random() * 0.4,
+                type: 'dust'
+            });
+        }
+        
+        function updateParticles(dt) {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= p.decay * dt;
+                p.size *= Math.pow(0.95, dt * 60);
+                
+                if (p.type === 'fire') {
+                    p.vy -= 100 * dt * scale; // Fire rises
+                }
+                
+                if (p.life <= 0 || p.size < 0.5) {
+                    particles.splice(i, 1);
+                }
+            }
+        }
+
+        // ============================================
+        // OBSTACLE MANAGEMENT
+        // ============================================
+        function spawnObstacle() {
+            const minTop = 60 * scale;
+            const maxTop = canvasHeight - currentGap * scale - 60 * scale;
+            const topHeight = minTop + Math.random() * (maxTop - minTop);
+            
+            // Create rocky formations
+            const segments = 4 + Math.floor(Math.random() * 3);
+            const topSegments = [];
+            const bottomSegments = [];
+            
+            for (let i = 0; i < segments; i++) {
+                topSegments.push({
+                    offset: (Math.random() - 0.5) * 15 * scale,
+                    width: (0.7 + Math.random() * 0.6)
+                });
+                bottomSegments.push({
+                    offset: (Math.random() - 0.5) * 15 * scale,
+                    width: (0.7 + Math.random() * 0.6)
+                });
+            }
+            
+            obstacles.push({
+                x: canvasWidth + 20,
+                width: CONFIG.OBSTACLE_WIDTH * scale,
+                topHeight: topHeight,
+                bottomY: topHeight + currentGap * scale,
+                passed: false,
+                topSegments: topSegments,
+                bottomSegments: bottomSegments,
+                crystals: Math.random() > 0.6 ? Math.floor(Math.random() * 3) + 1 : 0
+            });
+        }
+        
+        function updateObstacles(dt) {
+            const moveAmount = gameSpeed * scale * dt;
+            distanceTraveled += moveAmount;
+            
+            // Spawn new obstacles
+            if (distanceTraveled >= nextObstacleDistance) {
+                spawnObstacle();
+                nextObstacleDistance = distanceTraveled + CONFIG.SPAWN_DISTANCE * scale;
+            }
+            
+            // Update obstacles
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.x -= moveAmount;
+                
+                // Score when passed
+                if (!obs.passed && obs.x + obs.width < dragon.x) {
+                    obs.passed = true;
+                    score++;
+                    updateScoreDisplay();
+                    
+                    // Increase difficulty
+                    gameSpeed += CONFIG.BASE_GAME_SPEED * CONFIG.SPEED_INCREASE_RATE;
+                    currentGap = Math.max(CONFIG.OBSTACLE_GAP_MIN, currentGap - CONFIG.GAP_DECREASE_RATE);
+                }
+                
+                // Remove off-screen
+                if (obs.x + obs.width < -50) {
+                    obstacles.splice(i, 1);
+                }
+            }
+        }
+
+        // ============================================
+        // COLLISION DETECTION
+        // ============================================
+        function checkCollisions() {
+            const dragonScale = scale;
+            const hitboxPadding = 8 * dragonScale;
+            
+            const dx = dragon.x + hitboxPadding;
+            const dy = dragon.y + hitboxPadding;
+            const dw = dragon.width * dragonScale - hitboxPadding * 2;
+            const dh = dragon.height * dragonScale - hitboxPadding * 2;
+            
+            // Ceiling/floor
+            if (dy < 0 || dy + dh > canvasHeight) {
+                return true;
+            }
+            
+            // Obstacles
+            for (const obs of obstacles) {
+                if (dx + dw > obs.x && dx < obs.x + obs.width) {
+                    if (dy < obs.topHeight || dy + dh > obs.bottomY) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+
+        // ============================================
+        // UPDATE LOGIC (FIXED TIMESTEP)
+        // ============================================
+        function update(dt) {
+            if (gameState !== 'playing') return;
+            
+            // Update dragon physics
+            dragon.velocity += CONFIG.GRAVITY * scale * dt;
+            dragon.velocity = Math.min(dragon.velocity, CONFIG.MAX_FALL_VELOCITY * scale);
+            dragon.y += dragon.velocity * dt;
+            
+            // Update rotation based on velocity
+            const targetRotation = Math.max(-0.4, Math.min(0.6, dragon.velocity / (400 * scale)));
+            dragon.rotation += (targetRotation - dragon.rotation) * 8 * dt;
+            
+            // Wing animation
+            dragon.wingPhase += dt * 12;
+            
+            // Breath timer
+            if (dragon.breathTimer > 0) {
+                dragon.breathTimer -= dt;
+            }
+            
+            // Trail particles
+            if (Math.random() < 0.3) {
+                createFireParticle(
+                    dragon.x - 5 * scale,
+                    dragon.y + dragon.height * scale * 0.5 + (Math.random() - 0.5) * 10 * scale,
+                    false
+                );
+            }
+            
+            // Update obstacles
+            updateObstacles(dt);
+            
+            // Update particles
+            updateParticles(dt);
+            
+            // Update parallax backgrounds
+            bgOffset1 += gameSpeed * scale * dt * 0.1;
+            bgOffset2 += gameSpeed * scale * dt * 0.3;
+            bgOffset3 += gameSpeed * scale * dt * 0.5;
+            
+            // Check collisions
+            if (checkCollisions()) {
+                gameOver();
+            }
+        }
+
+        // ============================================
+        // DRAWING FUNCTIONS
+        // ============================================
+        function drawBackground() {
+            // Base cave gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvasHeight);
+            gradient.addColorStop(0, COLORS.caveDark);
+            gradient.addColorStop(0.3, COLORS.caveMid);
+            gradient.addColorStop(0.7, COLORS.caveMid);
+            gradient.addColorStop(1, COLORS.caveDark);
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+            
+            // Far background layer (slow)
+            ctx.fillStyle = 'rgba(60, 35, 25, 0.15)';
+            const spacing1 = 200 * scale;
+            for (let x = -bgOffset1 % spacing1 - spacing1; x < canvasWidth + spacing1; x += spacing1) {
+                drawStalactite(x, 0, 30 * scale, 80 * scale, 0.3);
+                drawStalagmite(x + spacing1/2, canvasHeight, 35 * scale, 70 * scale, 0.3);
+            }
+            
+            // Mid background layer
+            ctx.fillStyle = 'rgba(70, 40, 28, 0.25)';
+            const spacing2 = 150 * scale;
+            for (let x = -bgOffset2 % spacing2 - spacing2; x < canvasWidth + spacing2; x += spacing2) {
+                drawStalactite(x, 0, 25 * scale, 60 * scale, 0.5);
+                drawStalagmite(x + spacing2/2, canvasHeight, 28 * scale, 55 * scale, 0.5);
+            }
+            
+            // Ambient glow from lava below
+            const glowGradient = ctx.createRadialGradient(
+                canvasWidth * 0.5, canvasHeight + 100, 0,
+                canvasWidth * 0.5, canvasHeight + 100, canvasHeight * 0.8
+            );
+            glowGradient.addColorStop(0, 'rgba(255, 80, 30, 0.15)');
+            glowGradient.addColorStop(1, 'rgba(255, 80, 30, 0)');
+            ctx.fillStyle = glowGradient;
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+        }
+        
+        function drawStalactite(x, y, width, height, alpha) {
             ctx.save();
-            ctx.translate(dragon.x + dragon.width/2, dragon.y + dragon.height/2);
-            ctx.rotate(dragon.rotation);
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = COLORS.rockDark;
             
-            // Dragon body
-            ctx.fillStyle = '#cc0000';
-            ctx.fillRect(-dragon.width/2, -dragon.height/2, dragon.width, dragon.height);
+            ctx.beginPath();
+            ctx.moveTo(x - width/2, y);
+            ctx.lineTo(x + width/2, y);
+            ctx.lineTo(x + width/4, y + height * 0.6);
+            ctx.lineTo(x, y + height);
+            ctx.lineTo(x - width/4, y + height * 0.6);
+            ctx.closePath();
+            ctx.fill();
             
-            // Dragon head
-            ctx.fillStyle = '#ff0000';
-            ctx.fillRect(dragon.width/2 - 10, -dragon.height/2 - 5, 20, 15);
+            ctx.restore();
+        }
+        
+        function drawStalagmite(x, y, width, height, alpha) {
+            ctx.save();
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = COLORS.rockDark;
             
-            // Dragon wings
-            ctx.fillStyle = '#990000';
-            ctx.fillRect(-dragon.width/2 - 10, -dragon.height/2 - 5, 15, 25);
-            ctx.fillRect(-dragon.width/2 - 5, -dragon.height/2 + 15, 10, 20);
-            
-            // Lee (the rider)
-            ctx.fillStyle = '#ffdbac';
-            ctx.fillRect(-5, -dragon.height/2 - 15, 10, 12);
-            
-            // Lee's hair
-            ctx.fillStyle = '#2d1810';
-            ctx.fillRect(-7, -dragon.height/2 - 20, 14, 10);
-            
-            // Lee's outfit
-            ctx.fillStyle = '#4a90e2';
-            ctx.fillRect(-6, -dragon.height/2 - 3, 12, 8);
+            ctx.beginPath();
+            ctx.moveTo(x - width/2, y);
+            ctx.lineTo(x + width/2, y);
+            ctx.lineTo(x + width/4, y - height * 0.6);
+            ctx.lineTo(x, y - height);
+            ctx.lineTo(x - width/4, y - height * 0.6);
+            ctx.closePath();
+            ctx.fill();
             
             ctx.restore();
         }
         
         function drawObstacles() {
-            obstacles.forEach(obstacle => {
-                // Stalactites (top)
-                ctx.fillStyle = caveColors[Math.floor(obstacle.x / 100) % caveColors.length];
-                ctx.fillRect(obstacle.x, 0, obstacle.width, obstacle.topHeight);
+            obstacles.forEach(obs => {
+                // Top stalactite formation
+                drawRockFormation(obs.x, 0, obs.width, obs.topHeight, obs.topSegments, true);
                 
-                // Add rocky texture
-                ctx.fillStyle = '#654321';
-                for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(obstacle.x + i * 15, obstacle.topHeight - 20, 8, 8);
-                }
+                // Bottom stalagmite formation
+                drawRockFormation(obs.x, obs.bottomY, obs.width, canvasHeight - obs.bottomY, obs.bottomSegments, false);
                 
-                // Stalagmites (bottom)
-                ctx.fillStyle = caveColors[(Math.floor(obstacle.x / 100) + 1) % caveColors.length];
-                ctx.fillRect(obstacle.x, obstacle.bottomY, obstacle.width, canvas.height - obstacle.bottomY);
-                
-                // Add rocky texture
-                ctx.fillStyle = '#654321';
-                for (let i = 0; i < 3; i++) {
-                    ctx.fillRect(obstacle.x + i * 15, obstacle.bottomY + 10, 8, 8);
+                // Crystals
+                if (obs.crystals > 0) {
+                    drawCrystals(obs.x + obs.width/2, obs.topHeight, obs.crystals, true);
+                    drawCrystals(obs.x + obs.width/2, obs.bottomY, obs.crystals, false);
                 }
             });
         }
         
+        function drawRockFormation(x, y, width, height, segments, isTop) {
+            const baseColor = COLORS.rockMid;
+            const darkColor = COLORS.rockDark;
+            const lightColor = COLORS.rockLight;
+            
+            // Main body
+            ctx.fillStyle = baseColor;
+            ctx.fillRect(x, y, width, height);
+            
+            // Darker edge
+            ctx.fillStyle = darkColor;
+            ctx.fillRect(x, y, width * 0.15, height);
+            
+            // Lighter edge
+            ctx.fillStyle = lightColor;
+            ctx.fillRect(x + width * 0.85, y, width * 0.15, height);
+            
+            // Rocky texture
+            ctx.fillStyle = darkColor;
+            segments.forEach((seg, i) => {
+                const segY = isTop ? y + height - (i + 1) * (height / segments.length) : y + i * (height / segments.length);
+                const segWidth = width * seg.width;
+                const segX = x + (width - segWidth) / 2 + seg.offset;
+                ctx.fillRect(segX, segY, segWidth, height / segments.length + 2);
+            });
+            
+            // Pointy tip
+            const tipHeight = 30 * scale;
+            ctx.fillStyle = baseColor;
+            ctx.beginPath();
+            if (isTop) {
+                ctx.moveTo(x, y + height);
+                ctx.lineTo(x + width/2, y + height + tipHeight);
+                ctx.lineTo(x + width, y + height);
+            } else {
+                ctx.moveTo(x, y);
+                ctx.lineTo(x + width/2, y - tipHeight);
+                ctx.lineTo(x + width, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+            
+            // Highlight on tip
+            ctx.fillStyle = lightColor;
+            ctx.beginPath();
+            if (isTop) {
+                ctx.moveTo(x + width * 0.6, y + height);
+                ctx.lineTo(x + width/2, y + height + tipHeight);
+                ctx.lineTo(x + width * 0.8, y + height);
+            } else {
+                ctx.moveTo(x + width * 0.6, y);
+                ctx.lineTo(x + width/2, y - tipHeight);
+                ctx.lineTo(x + width * 0.8, y);
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+        
+        function drawCrystals(x, y, count, isTop) {
+            const crystalColors = ['#88aaff', '#aaccff', '#66ddff'];
+            
+            for (let i = 0; i < count; i++) {
+                const cx = x + (i - count/2) * 12 * scale;
+                const cy = isTop ? y + 10 * scale : y - 10 * scale;
+                const size = (4 + Math.random() * 4) * scale;
+                
+                ctx.fillStyle = crystalColors[i % crystalColors.length];
+                ctx.globalAlpha = 0.7;
+                
+                ctx.beginPath();
+                if (isTop) {
+                    ctx.moveTo(cx - size/2, cy);
+                    ctx.lineTo(cx, cy + size * 2);
+                    ctx.lineTo(cx + size/2, cy);
+                } else {
+                    ctx.moveTo(cx - size/2, cy);
+                    ctx.lineTo(cx, cy - size * 2);
+                    ctx.lineTo(cx + size/2, cy);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                // Glow
+                ctx.shadowColor = crystalColors[i % crystalColors.length];
+                ctx.shadowBlur = 10;
+                ctx.fill();
+                ctx.shadowBlur = 0;
+                
+                ctx.globalAlpha = 1;
+            }
+        }
+        
         function drawParticles() {
-            particles.forEach(particle => {
+            particles.forEach(p => {
                 ctx.save();
-                ctx.globalAlpha = particle.life;
-                ctx.fillStyle = particle.color;
-                ctx.fillRect(particle.x, particle.y, particle.size, particle.size);
+                ctx.globalAlpha = p.life;
+                
+                if (p.type === 'fire') {
+                    // Fire gradient based on life
+                    if (p.life > 0.7) {
+                        ctx.fillStyle = COLORS.fireCore;
+                    } else if (p.life > 0.4) {
+                        ctx.fillStyle = COLORS.fireMid;
+                    } else {
+                        ctx.fillStyle = COLORS.fireOuter;
+                    }
+                    
+                    // Glow effect
+                    ctx.shadowColor = COLORS.fireMid;
+                    ctx.shadowBlur = p.size * 2;
+                } else {
+                    ctx.fillStyle = '#8b7355';
+                }
+                
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                
                 ctx.restore();
             });
         }
         
-        function drawBackground() {
-            // Cave walls with gradient
-            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-            gradient.addColorStop(0, '#2d1810');
-            gradient.addColorStop(1, '#1a0f08');
+        function drawDragon() {
+            const s = scale;
+            const dx = dragon.x;
+            const dy = dragon.y;
+            const dw = dragon.width * s;
+            const dh = dragon.height * s;
+            
+            ctx.save();
+            ctx.translate(dx + dw/2, dy + dh/2);
+            ctx.rotate(dragon.rotation);
+            
+            // Wing animation
+            const wingFlap = Math.sin(dragon.wingPhase) * 0.3;
+            
+            // Back wing (behind body)
+            ctx.save();
+            ctx.translate(-dw * 0.2, -dh * 0.1);
+            ctx.rotate(-0.3 + wingFlap);
+            ctx.fillStyle = COLORS.dragonDark;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, dw * 0.4, dh * 0.5, -0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // Tail
+            ctx.fillStyle = COLORS.dragonBody;
+            ctx.beginPath();
+            ctx.moveTo(-dw * 0.4, dh * 0.1);
+            ctx.quadraticCurveTo(-dw * 0.7, dh * 0.3, -dw * 0.6, dh * 0.05);
+            ctx.quadraticCurveTo(-dw * 0.5, -dh * 0.1, -dw * 0.35, dh * 0.05);
+            ctx.fill();
+            
+            // Body
+            ctx.fillStyle = COLORS.dragonBody;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, dw * 0.4, dh * 0.35, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Belly
+            ctx.fillStyle = COLORS.dragonBelly;
+            ctx.beginPath();
+            ctx.ellipse(dw * 0.05, dh * 0.1, dw * 0.25, dh * 0.2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Front wing
+            ctx.save();
+            ctx.translate(-dw * 0.1, -dh * 0.2);
+            ctx.rotate(-0.2 + wingFlap * 1.2);
+            ctx.fillStyle = COLORS.dragonLight;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, dw * 0.35, dh * 0.45, -0.4, 0, Math.PI * 2);
+            ctx.fill();
+            // Wing membrane
+            ctx.fillStyle = COLORS.dragonBody;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, dw * 0.25, dh * 0.3, -0.4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // Head
+            ctx.fillStyle = COLORS.dragonBody;
+            ctx.beginPath();
+            ctx.ellipse(dw * 0.35, -dh * 0.1, dw * 0.2, dh * 0.25, 0.3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Snout
+            ctx.fillStyle = COLORS.dragonLight;
+            ctx.beginPath();
+            ctx.ellipse(dw * 0.5, -dh * 0.05, dw * 0.12, dh * 0.12, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Eye
+            ctx.fillStyle = '#ffff00';
+            ctx.beginPath();
+            ctx.arc(dw * 0.38, -dh * 0.18, dw * 0.04, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(dw * 0.39, -dh * 0.18, dw * 0.02, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Fire breath
+            if (dragon.breathTimer > 0) {
+                const breathIntensity = dragon.breathTimer / 0.3;
+                ctx.save();
+                ctx.translate(dw * 0.55, -dh * 0.05);
+                
+                // Fire glow
+                const fireGradient = ctx.createRadialGradient(0, 0, 0, 0, 0, dw * 0.4 * breathIntensity);
+                fireGradient.addColorStop(0, 'rgba(255, 255, 200, 0.8)');
+                fireGradient.addColorStop(0.3, 'rgba(255, 150, 50, 0.6)');
+                fireGradient.addColorStop(1, 'rgba(255, 50, 0, 0)');
+                ctx.fillStyle = fireGradient;
+                ctx.beginPath();
+                ctx.arc(dw * 0.15, 0, dw * 0.4 * breathIntensity, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            // LEE THE RIDER
+            const lx = -dw * 0.05;
+            const ly = -dh * 0.35;
+            
+            // Body/Cloak
+            ctx.fillStyle = COLORS.leesCloak;
+            ctx.fillRect(lx - 6 * s, ly, 12 * s, 14 * s);
+            
+            // Cloak detail
+            ctx.fillStyle = COLORS.leesCloakDark;
+            ctx.fillRect(lx - 6 * s, ly, 3 * s, 14 * s);
+            
+            // Head
+            ctx.fillStyle = COLORS.leesSkin;
+            ctx.beginPath();
+            ctx.arc(lx, ly - 3 * s, 6 * s, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Hair
+            ctx.fillStyle = COLORS.leesHair;
+            ctx.beginPath();
+            ctx.arc(lx, ly - 5 * s, 6 * s, Math.PI, Math.PI * 2);
+            ctx.fill();
+            ctx.fillRect(lx - 6 * s, ly - 5 * s, 3 * s, 6 * s);
+            
+            // Arm holding reins
+            ctx.fillStyle = COLORS.leesSkin;
+            ctx.fillRect(lx + 4 * s, ly + 2 * s, 8 * s, 3 * s);
+            
+            ctx.restore();
+        }
+        
+        function drawVignette() {
+            const gradient = ctx.createRadialGradient(
+                canvasWidth / 2, canvasHeight / 2, canvasHeight * 0.3,
+                canvasWidth / 2, canvasHeight / 2, canvasHeight * 0.8
+            );
+            gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+            gradient.addColorStop(1, 'rgba(0, 0, 0, 0.4)');
             ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-            // Add some cave details
-            ctx.fillStyle = 'rgba(139, 69, 19, 0.3)';
-            for (let i = 0; i < 10; i++) {
-                ctx.fillRect(i * 50, 0, 20, 30);
-                ctx.fillRect(i * 50 + 10, canvas.height - 30, 25, 30);
-            }
+            ctx.fillRect(0, 0, canvasWidth, canvasHeight);
         }
-        
-        function updateGame() {
-            if (gameState !== 'playing') return;
+
+        // ============================================
+        // MAIN GAME LOOP (DELTA TIME)
+        // ============================================
+        function gameLoop(currentTime) {
+            // Convert to seconds
+            currentTime *= 0.001;
             
-            // Update dragon physics
-            dragon.velocity += dragon.gravity;
-            dragon.y += dragon.velocity;
-            
-            // Rotate dragon based on velocity
-            dragon.rotation = Math.max(-0.3, Math.min(0.5, dragon.velocity * 0.05));
-            
-            // Update obstacles
-            obstacleTimer++;
-            if (obstacleTimer >= obstacleInterval) {
-                const gapSize = 280 - Math.floor(score / 30) * 2; // Even larger gap, even slower difficulty increase
-                const gapPosition = Math.random() * (canvas.height - gapSize - 150) + 75;
-                
-                obstacles.push({
-                    x: canvas.width,
-                    width: 60,
-                    topHeight: gapPosition,
-                    bottomY: gapPosition + gapSize,
-                    passed: false
-                });
-                
-                obstacleTimer = 0;
+            // Calculate delta time
+            if (lastTime === 0) {
+                lastTime = currentTime;
             }
             
-            // Move obstacles
-            obstacles.forEach(obstacle => {
-                obstacle.x -= gameSpeed;
-                
-                // Check if dragon passed obstacle
-                if (!obstacle.passed && obstacle.x + obstacle.width < dragon.x) {
-                    obstacle.passed = true;
-                    score++;
-                    updateScore();
-                }
-            });
+            let deltaTime = currentTime - lastTime;
+            lastTime = currentTime;
             
-            // Remove off-screen obstacles
-            obstacles.splice(0, obstacles.length, ...obstacles.filter(o => o.x > -o.width));
+            // Clamp delta time to prevent spiral of death
+            deltaTime = Math.min(deltaTime, 0.1);
             
-            // Update particles
-            particles.forEach(particle => {
-                particle.x += particle.vx;
-                particle.y += particle.vy;
-                particle.life -= 0.02;
-                particle.size *= 0.98;
-            });
+            // Accumulate time for fixed timestep
+            accumulator += deltaTime;
             
-            // Remove dead particles
-            particles.splice(0, particles.length, ...particles.filter(p => p.life > 0));
-            
-            // Increase difficulty over time
-            difficultyTimer++;
-            if (difficultyTimer >= 900) { // Every 15 seconds at 60fps (slower difficulty increase)
-                gameSpeed += 0.1; // Slower speed increase
-                obstacleInterval = Math.max(80, obstacleInterval - 3); // Gentler obstacle frequency increase
-                difficultyTimer = 0;
+            // Update with fixed timestep
+            while (accumulator >= FIXED_TIMESTEP) {
+                update(FIXED_TIMESTEP);
+                accumulator -= FIXED_TIMESTEP;
             }
             
-            // Check collisions
-            if (dragon.y < 0 || dragon.y + dragon.height > canvas.height) {
-                gameOver();
-                return;
-            }
-            
-            // Check obstacle collisions
-            obstacles.forEach(obstacle => {
-                if (dragon.x + dragon.width > obstacle.x && 
-                    dragon.x < obstacle.x + obstacle.width) {
-                    if (dragon.y < obstacle.topHeight || 
-                        dragon.y + dragon.height > obstacle.bottomY) {
-                        gameOver();
-                    }
-                }
-            });
-        }
-        
-        function gameOver() {
-            gameState = 'gameOver';
-            document.getElementById('finalScore').textContent = score;
-            document.getElementById('gameOver').style.display = 'block';
-        }
-        
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            
+            // Render
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
             drawBackground();
             drawObstacles();
             drawParticles();
             drawDragon();
-            
-            updateGame();
+            drawVignette();
             
             requestAnimationFrame(gameLoop);
         }
         
-        // Start the game loop
-        gameLoop();
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        function init() {
+            resizeCanvas();
+            setupButtons();
+            dragon.x = canvasWidth * CONFIG.DRAGON_X_POSITION;
+            dragon.y = canvasHeight * 0.45;
+            
+            // Initial render
+            ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+            drawBackground();
+            drawDragon();
+            drawVignette();
+            
+            // Start game loop
+            requestAnimationFrame(gameLoop);
+        }
+        
+        // Start when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
     </script>
 </body>
 </html>
