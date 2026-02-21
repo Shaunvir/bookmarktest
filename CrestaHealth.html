@@ -90,32 +90,62 @@
             position: absolute;
             inset: 0;
         }
-        .hero-media img {
+        /* Video background */
+        .hero-media video {
             width: 100%;
             height: 100%;
             object-fit: cover;
             object-position: center 30%;
         }
+        /* Fallback image (shown while video loads) */
+        .hero-media .hero-fallback {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center 30%;
+            z-index: 1;
+            transition: opacity 1.2s ease;
+        }
+        .hero-media .hero-fallback.loaded {
+            opacity: 0;
+            pointer-events: none;
+        }
+        /* Gradient overlays on top of video */
         .hero-media::after {
             content: '';
             position: absolute;
             inset: 0;
+            z-index: 2;
             background:
                 linear-gradient(180deg,
-                    rgba(6,15,11,0.3) 0%,
-                    rgba(6,15,11,0.1) 30%,
-                    rgba(6,15,11,0.4) 65%,
+                    rgba(6,15,11,0.45) 0%,
+                    rgba(6,15,11,0.15) 25%,
+                    rgba(6,15,11,0.25) 50%,
+                    rgba(6,15,11,0.65) 75%,
                     rgba(6,15,11,0.95) 90%,
                     var(--bg) 100%
                 ),
                 linear-gradient(90deg,
-                    rgba(6,15,11,0.5) 0%,
-                    transparent 50%
+                    rgba(6,15,11,0.55) 0%,
+                    transparent 55%
                 );
+            pointer-events: none;
         }
+        /* Extra vignette for text legibility */
+        .hero-media::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            background: radial-gradient(ellipse at 70% 30%, transparent 40%, rgba(6,15,11,0.35) 100%);
+            pointer-events: none;
+        }
+
         .hero-content {
             position: relative;
-            z-index: 2;
+            z-index: 3;
             padding: 0 6vw 8vh;
             max-width: 800px;
         }
@@ -137,6 +167,7 @@
             margin-bottom: 2rem;
             opacity: 0;
             animation: fadeSlide 1s 0.5s ease-out forwards;
+            text-shadow: 0 2px 40px rgba(6,15,11,0.5);
         }
         .hero h1 b { font-weight: 800; }
         .hero-line {
@@ -155,6 +186,7 @@
             letter-spacing: 0.03em;
             opacity: 0;
             animation: fadeSlide 1s 0.9s ease-out forwards;
+            text-shadow: 0 1px 20px rgba(6,15,11,0.6);
         }
 
         @keyframes fadeSlide {
@@ -655,7 +687,23 @@
 <!-- HERO -->
 <section class="hero">
     <div class="hero-media">
-        <img src="https://images.unsplash.com/photo-1519999482648-25049ddd37b1?w=1920&q=85" alt="Panama City skyline at golden hour over the Pacific Ocean">
+        <!-- Fallback poster image shown while video loads -->
+        <img class="hero-fallback" src="https://images.unsplash.com/photo-1519999482648-25049ddd37b1?w=1920&q=85" alt="Panama City skyline at golden hour over the Pacific Ocean">
+        <!-- Pexels video: Thick Fogs on a Mountain Valley (ID 2941521) -->
+        <video
+            id="heroVideo"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="auto"
+            poster="https://images.unsplash.com/photo-1519999482648-25049ddd37b1?w=1920&q=85"
+        >
+            <!-- HD version (primary) -->
+            <source src="https://videos.pexels.com/video-files/2941521/2941521-hd_1920_1080_24fps.mp4" type="video/mp4">
+            <!-- SD fallback -->
+            <source src="https://videos.pexels.com/video-files/2941521/2941521-sd_960_540_24fps.mp4" type="video/mp4">
+        </video>
     </div>
     <div class="hero-content">
         <div class="hero-eyebrow">Private Medicine · Panama City</div>
@@ -833,6 +881,34 @@ const obs = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); obs.unobserve(e.target); }});
 }, { threshold: 0.12 });
 document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Hero video: fade out fallback image once video is playing
+const heroVideo = document.getElementById('heroVideo');
+const heroFallback = document.querySelector('.hero-fallback');
+
+function onVideoReady() {
+    if (heroFallback) {
+        heroFallback.classList.add('loaded');
+    }
+}
+
+// Try multiple events to catch when video is actually rendering frames
+heroVideo.addEventListener('playing', onVideoReady);
+heroVideo.addEventListener('canplaythrough', function() {
+    // Small delay to ensure at least one frame has rendered
+    setTimeout(onVideoReady, 200);
+});
+
+// If video is already playing (cached), trigger immediately
+if (heroVideo.readyState >= 3) {
+    onVideoReady();
+}
+
+// Ensure video plays (some browsers block autoplay)
+heroVideo.play().catch(function() {
+    // Autoplay blocked — keep fallback image visible
+    console.log('Autoplay blocked, showing fallback image');
+});
 
 // Format card
 document.getElementById('card').addEventListener('input', function(e) {
