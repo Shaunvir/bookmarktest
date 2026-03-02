@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quest Log — SNES RPG Productivity</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Press Start 2P', monospace;
+  background: #0f0f1b;
+  color: #f0f0f8;
+  image-rendering: pixelated;
+  -webkit-font-smoothing: none;
+}
+
+/* Scanlines */
+body::after {
+  content: '';
+  position: fixed; inset: 0; z-index: 9000; pointer-events: none;
+  background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 4px);
+}
+
+/* Vignette */
+body::before {
+  content: '';
+  position: fixed; inset: 0; z-index: 9001; pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.45) 100%);
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: #0f0f1b; }
+::-webkit-scrollbar-thumb { background: #2b2b5a; }
+
+input, select, button { font-family: 'Press Start 2P', monospace; image-rendering: pixelated; }
+canvas { image-rendering: pixelated; }
+
+/* ── Animations ── */
+@keyframes battleShake { 0%,100%{transform:translate(0)} 20%{transform:translate(-8px,4px)} 40%{transform:translate(8px,-4px)} 60%{transform:translate(-4px,8px)} 80%{transform:translate(4px,-2px)} }
+@keyframes dmgFloat { 0%{opacity:1;transform:translateY(0) scale(1)} 40%{opacity:1;transform:translateY(-40px) scale(1.2)} 100%{opacity:0;transform:translateY(-90px) scale(.8)} }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+@keyframes scaleInBounce { from{opacity:0;transform:scale(.2)} to{opacity:1;transform:scale(1)} }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.15} }
+@keyframes twinkle { from{opacity:.15} to{opacity:.85} }
+@keyframes lvlParticle { 0%{transform:translateY(0);opacity:1} 100%{transform:translateY(-500px);opacity:0} }
+@keyframes sparkle { 0%{opacity:1;transform:scale(1) rotate(0)} 100%{opacity:0;transform:scale(0) rotate(180deg) translate(20px,-20px)} }
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.08)} }
+@keyframes slideIn { from{opacity:0;transform:translateX(-16px)} to{opacity:1;transform:translateX(0)} }
+@keyframes floatParticle { 0%{transform:translateY(0) translateX(0);opacity:.6} 50%{transform:translateY(-100px) translateX(15px);opacity:.3} 100%{transform:translateY(-200px) translateX(-10px);opacity:0} }
+@keyframes breathe { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-3px)} }
+
+/* ── Screens ── */
+.screen { display: none; min-height: 100vh; flex-direction: column; align-items: center; justify-content: center; padding: 24px; position: relative; }
+.screen.active { display: flex; }
+
+.screen-select { background: radial-gradient(ellipse at 50% 30%, #1a0533 0%, #0f0f1b 70%); }
+.screen-name { background: radial-gradient(ellipse at 50% 30%, #1a0533 0%, #0f0f1b 70%); }
+.screen-game { background: linear-gradient(180deg, #0f0f1b 0%, #1a1a2e 100%); align-items: stretch; justify-content: flex-start; overflow-y: auto; padding: 12px; }
+.screen-gameover { background: radial-gradient(ellipse at 50% 50%, #2a0810 0%, #0a0a0a 70%); }
+
+.title { color: #e8b830; font-size: 18px; letter-spacing: 6px; text-shadow: 3px 3px 0 #c03030, 0 0 30px #e8b83040, -1px -1px 0 #0f0f1b; margin-bottom: 2px; }
+.subtitle { color: #a0a8b8; font-size: 7px; letter-spacing: 3px; margin-bottom: 48px; }
+
+/* ── Boxes ── */
+.box {
+  background: rgba(10,10,20,0.85);
+  border: 3px solid #e8b830;
+  box-shadow: inset 0 0 12px #e8b83008, 4px 4px 0 rgba(0,0,0,0.4);
+}
+.box-dim { border-color: #2b2b5a; box-shadow: inset 0 0 12px transparent, 4px 4px 0 rgba(0,0,0,0.4); }
+
+/* ── Class cards ── */
+.class-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; max-width: 440px; width: 100%; }
+.class-card {
+  cursor: pointer; padding: 24px 16px; text-align: center;
+  background: rgba(10,10,20,0.85);
+  border: 3px solid transparent;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.4);
+  transition: all 0.2s;
+}
+.class-card:hover { transform: translateY(-4px); }
+.class-card .sprite-wrap { display: inline-block; }
+.class-card:hover .sprite-wrap { animation: breathe 1.5s ease-in-out infinite; }
+
+/* ── HP / XP bars ── */
+.bar-track {
+  flex: 1; height: 10px; background: #0f0f1b;
+  border: 2px solid #2b2b5a;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  overflow: hidden;
+}
+.bar-fill { height: 100%; transition: width 0.5s ease; }
+.bar-xp .bar-track { height: 7px; }
+
+/* ── Quest items ── */
+.quest-item {
+  background: rgba(10,10,20,0.85);
+  border: 3px solid;
+  box-shadow: 4px 4px 0 rgba(0,0,0,0.4);
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  animation: slideIn 0.2s ease-out both;
+}
+.quest-item canvas { flex-shrink: 0; }
+
+/* ── Battle overlay ── */
+#battle-overlay {
+  display: none; position: fixed; inset: 0; z-index: 5000;
+  flex-direction: column; font-family: 'Press Start 2P', monospace;
+  overflow: hidden;
+}
+#battle-overlay.active { display: flex; }
+#battle-overlay.shaking { animation: battleShake 0.18s linear; }
+
+.battle-bg { position: absolute; inset: 0; z-index: 0; overflow: hidden; }
+.battle-hud { position: relative; z-index: 10; padding: 10px 12px; display: flex; justify-content: space-between; gap: 8; }
+.battle-field { flex: 1; position: relative; z-index: 5; display: flex; align-items: flex-end; justify-content: space-around; padding-bottom: 12%; }
+.battle-msg-area { position: relative; z-index: 10; padding: 0 12px 12px; }
+
+.battle-hud-box {
+  background: rgba(10,10,20,0.88);
+  padding: 8px 12px;
+  min-width: 150px;
+  box-shadow: inset 0 0 10px rgba(0,0,0,0.2), 4px 4px 0 rgba(0,0,0,0.4);
+}
+.battle-hud-box.player { border: 3px solid #e8b830; }
+.battle-hud-box.enemy { border: 3px solid #c03030; }
+
+.battle-msgbox {
+  background: rgba(10,10,20,0.92);
+  border: 3px solid #e8b830;
+  padding: 14px 18px;
+  margin-bottom: 8px;
+  min-height: 50px;
+  box-shadow: inset 0 0 15px #e8b83005, 4px 4px 0 rgba(0,0,0,0.4);
+}
+
+.battle-btn {
+  flex: 1; padding: 12px 8px;
+  background: rgba(10,10,20,0.9);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px; cursor: pointer; letter-spacing: 1px;
+  transition: all 0.12s;
+}
+.battle-btn:hover { color: #f0f0f8 !important; }
+
+.dmg-popup {
+  position: absolute; font-weight: 900;
+  font-family: 'Press Start 2P', monospace;
+  animation: dmgFloat 1.3s ease-out forwards;
+  z-index: 100; pointer-events: none;
+}
+.hit-sparkle {
+  position: absolute; z-index: 99; pointer-events: none;
+  animation: sparkle 0.7s ease-out forwards;
+}
+.sprite-shadow {
+  position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%);
+  background: radial-gradient(ellipse, rgba(0,0,0,0.4) 0%, transparent 70%);
+  border-radius: 50%;
+}
+
+/* ── Overlays (level up / loot) ── */
+.overlay {
+  display: none; position: fixed; inset: 0; z-index: 8000;
+  flex-direction: column; align-items: center; justify-content: center;
+  font-family: 'Press Start 2P', monospace;
+}
+.overlay.active { display: flex; }
+
+.overlay-lvl { background: radial-gradient(ellipse at center, #1a0533 0%, #0a0a1a 80%); }
+.overlay-loot { background: rgba(10,10,20,0.92); backdrop-filter: blur(4px); }
+
+/* ── Inventory ── */
+.inv-panel { display: none; animation: fadeInUp 0.2s ease-out; }
+.inv-panel.active { display: block; }
+.equip-slot {
+  padding: 5px 10px; font-size: 7px; display: inline-block; margin: 2px;
+}
+.bag-item {
+  padding: 5px 10px; font-size: 7px; display: inline-block; margin: 2px;
+  cursor: pointer; transition: all 0.15s;
+}
+
+/* ── Log ── */
+.log-entry { font-size: 6px; color: #3a3a5a; margin-bottom: 3px; line-height: 1.8; }
+.log-entry .time { color: #2b2b4a; margin-right: 4px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════ SELECT SCREEN ═══════════════════════════ -->
+<div id="screen-select" class="screen screen-select active">
+  <h1 class="title">QUEST LOG</h1>
+  <div class="subtitle">CHOOSE YOUR CLASS</div>
+  <div class="class-grid" id="class-grid"></div>
+</div>
+
+<!-- ═══════════════════════════ NAME SCREEN ═══════════════════════════ -->
+<div id="screen-name" class="screen screen-name">
+  <div id="name-sprite" style="animation:breathe 2s ease-in-out infinite;display:inline-block"></div>
+  <div id="name-classname" style="font-size:11px;margin-top:20px;letter-spacing:2px"></div>
+  <div style="color:#a0a8b8;font-size:7px;margin-top:4px;margin-bottom:28px;letter-spacing:1px">ENTER YOUR NAME, HERO</div>
+  <input id="name-input" maxlength="12" style="padding:10px 16px;font-size:11px;background:rgba(10,10,20,0.85);border:3px solid #e8b830;color:#f0f0f8;text-align:center;outline:none;width:280px;letter-spacing:2px;box-shadow:4px 4px 0 rgba(0,0,0,0.4)">
+  <div style="display:flex;gap:12px;margin-top:24px">
+    <button id="btn-back" style="padding:8px 16px;background:rgba(10,10,20,0.85);border:3px solid #586880;color:#a0a8b8;cursor:pointer;font-size:7px;letter-spacing:1px;box-shadow:4px 4px 0 rgba(0,0,0,0.4)">BACK</button>
+    <button id="btn-start" style="padding:8px 24px;border:3px solid #e8b830;color:#f0f0f8;cursor:pointer;font-size:7px;letter-spacing:1px;box-shadow:4px 4px 0 rgba(0,0,0,0.4)">START</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ GAME SCREEN ═══════════════════════════ -->
+<div id="screen-game" class="screen screen-game">
+  <div style="max-width:680px;margin:0 auto;width:100%;position:relative;z-index:1">
+
+    <!-- Character HUD -->
+    <div id="char-hud" class="box" style="padding:14px;margin-bottom:10px;display:flex;gap:14px;align-items:center">
+      <div id="hud-sprite" style="animation:breathe 3s ease-in-out infinite;display:inline-block;flex-shrink:0"></div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;flex-wrap:wrap;gap:4px">
+          <div><span id="hud-name" style="color:#e8b830;font-size:9px"></span><span id="hud-title" style="color:#a0a8b8;margin-left:8px;font-size:7px"></span></div>
+          <div style="display:flex;gap:8px;align-items:center"><span id="hud-streak" style="color:#c03030;font-size:7px;display:none"></span><span id="hud-gear" style="color:#e8b830;font-size:6px;display:none"></span></div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px">
+          <span style="color:#c03030;font-size:7px;width:18px">HP</span>
+          <div class="bar-track"><div id="hp-fill" class="bar-fill"></div></div>
+          <span id="hp-text" style="font-size:7px;color:#a0a8b8;width:64px;text-align:right"></span>
+        </div>
+        <div class="bar-xp" style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+          <span style="color:#3068c8;font-size:7px;width:18px">XP</span>
+          <div class="bar-track"><div id="xp-fill" class="bar-fill" style="background:linear-gradient(180deg,#5888e8,#3068c8)"></div></div>
+          <span id="xp-text" style="font-size:7px;color:#a0a8b8;width:64px;text-align:right"></span>
+        </div>
+        <div id="daily-dots" style="display:flex;gap:4px;align-items:center"></div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div style="display:flex;gap:6px;margin-bottom:10px">
+      <button id="btn-inv" class="box box-dim" style="padding:6px 12px;color:#a0a8b8;cursor:pointer;font-size:7px;letter-spacing:1px">BAG(0)</button>
+      <button id="btn-newday" class="box box-dim" style="padding:6px 12px;color:#a0a8b8;cursor:pointer;font-size:7px;letter-spacing:1px">NEW DAY</button>
+    </div>
+
+    <!-- Inventory -->
+    <div id="inv-panel" class="inv-panel box" style="padding:14px;margin-bottom:10px">
+      <div style="color:#e8b830;font-size:8px;margin-bottom:10px;letter-spacing:2px">EQUIPMENT</div>
+      <div id="equip-slots" style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:14px"></div>
+      <div style="color:#a0a8b8;font-size:7px;margin-bottom:8px;letter-spacing:1px">BAG</div>
+      <div id="bag-items"></div>
+    </div>
+
+    <!-- Add Quest -->
+    <div class="box box-dim" style="padding:10px;margin-bottom:10px;display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+      <input id="quest-input" placeholder="New quest..." style="flex:1;min-width:130px;padding:7px 10px;font-size:8px;background:rgba(10,10,20,0.85);border:3px solid #2b2b5a;color:#f0f0f8;outline:none;box-shadow:4px 4px 0 rgba(0,0,0,0.4)">
+      <select id="quest-diff" style="padding:7px 6px;background:rgba(10,10,20,0.85);border:3px solid #2b2b5a;color:#e8b830;font-size:7px;outline:none;box-shadow:4px 4px 0 rgba(0,0,0,0.4)">
+        <option value="easy" style="color:#30a040">Easy 15XP</option>
+        <option value="medium" selected style="color:#e8b830">Medium 30XP</option>
+        <option value="hard" style="color:#c03030">Hard 55XP</option>
+        <option value="boss" style="color:#8a40c0">BOSS 100XP</option>
+      </select>
+      <button id="btn-add" style="padding:7px 14px;border:3px solid #e8b830;background:#e8b830;color:#f0f0f8;font-size:7px;cursor:pointer;letter-spacing:1px;box-shadow:4px 4px 0 rgba(0,0,0,0.4)">ADD</button>
+    </div>
+
+    <!-- Active Quests -->
+    <div style="margin-bottom:10px">
+      <div id="active-header" style="color:#e8b830;font-size:8px;margin-bottom:8px;letter-spacing:2px">⚔ ACTIVE QUESTS (0)</div>
+      <div id="active-quests"></div>
+    </div>
+
+    <!-- Completed -->
+    <div id="done-section" style="margin-bottom:10px;display:none">
+      <div id="done-header" style="color:#30a040;font-size:7px;margin-bottom:6px;letter-spacing:2px"></div>
+      <div id="done-quests"></div>
+    </div>
+
+    <!-- Log -->
+    <div class="box" style="border-color:#1a1a2e;padding:12px;max-height:150px;overflow-y:auto">
+      <div style="color:#586880;font-size:7px;margin-bottom:6px;letter-spacing:2px">BATTLE LOG</div>
+      <div id="battle-log"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ GAME OVER ═══════════════════════════ -->
+<div id="screen-gameover" class="screen screen-gameover">
+  <div id="go-sprite"></div>
+  <div style="color:#c03030;font-size:16px;letter-spacing:6px;margin-top:28px;text-shadow:0 0 30px #c0303060,2px 2px 0 #0f0f1b">GAME OVER</div>
+  <div id="go-info" style="color:#a0a8b8;font-size:7px;margin-top:12px"></div>
+  <div id="go-title" style="color:#586880;font-size:7px;margin-top:4px"></div>
+  <button id="btn-rise" style="margin-top:36px;padding:10px 28px;background:rgba(192,48,48,0.2);border:3px solid #c03030;color:#c03030;font-size:8px;cursor:pointer;letter-spacing:2px;box-shadow:4px 4px 0 rgba(0,0,0,0.4)">RISE AGAIN</button>
+</div>
+
+<!-- ═══════════════════════════ BATTLE OVERLAY ═══════════════════════════ -->
+<div id="battle-overlay">
+  <div class="battle-bg" id="battle-bg"></div>
+  <div class="battle-hud">
+    <div class="battle-hud-box player">
+      <div id="b-player-name" style="color:#e8b830;font-size:8px;margin-bottom:4px;letter-spacing:1px"></div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span style="color:#c03030;font-size:7px">HP</span>
+        <div class="bar-track" style="height:8px"><div id="b-player-hp" class="bar-fill"></div></div>
+        <span id="b-player-hp-text" style="color:#d0d0e0;font-size:7px;min-width:28px;text-align:right"></span>
+      </div>
+    </div>
+    <div class="battle-hud-box enemy">
+      <div id="b-enemy-name" style="color:#c03030;font-size:8px;margin-bottom:4px;letter-spacing:1px"></div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <span style="color:#c03030;font-size:7px">HP</span>
+        <div class="bar-track" style="height:8px"><div id="b-enemy-hp" class="bar-fill" style="background:linear-gradient(180deg,#e04040,#c03030)"></div></div>
+        <span id="b-enemy-hp-text" style="color:#d0d0e0;font-size:7px;min-width:28px;text-align:right"></span>
+      </div>
+    </div>
+  </div>
+  <div class="battle-field" id="battle-field">
+    <div id="b-player-wrap" style="position:relative">
+      <div class="sprite-shadow" style="width:60px;height:10px"></div>
+    </div>
+    <div id="b-enemy-wrap" style="position:relative">
+      <div class="sprite-shadow" style="width:70px;height:12px"></div>
+    </div>
+  </div>
+  <div class="battle-msg-area">
+    <div class="battle-msgbox"><div id="b-msg" style="color:#f0f0f8;font-size:9px;line-height:2;letter-spacing:.5px"></div></div>
+    <div id="b-actions" style="display:none;gap:8px">
+      <button id="b-attack" class="battle-btn" style="border:3px solid #c03030;color:#c03030;box-shadow:inset 0 0 10px #c0303015,3px 3px 0 rgba(0,0,0,0.4)">⚔ ATTACK</button>
+      <button id="b-defend" class="battle-btn" style="border:3px solid #3068c8;color:#3068c8;box-shadow:inset 0 0 10px #3068c815,3px 3px 0 rgba(0,0,0,0.4)">🛡 DEFEND</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ LEVEL UP OVERLAY ═══════════════════════════ -->
+<div id="overlay-lvl" class="overlay overlay-lvl">
+  <div id="lvl-particles" style="position:absolute;inset:0;overflow:hidden"></div>
+  <div style="position:absolute;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(240,232,72,0.15) 0%,transparent 70%);animation:pulse 2s ease-in-out infinite"></div>
+  <div style="position:relative;z-index:2;text-align:center">
+    <div id="lvl-text" style="font-size:12px;color:#e8b830;letter-spacing:6px;text-shadow:0 0 20px #e8b83060;animation:fadeInUp .5s ease-out;display:none">LEVEL UP!</div>
+    <div id="lvl-sprite" style="margin-top:16px;display:none;animation:scaleInBounce .5s cubic-bezier(.34,1.56,.64,1)"></div>
+    <div id="lvl-num" style="margin-top:28px;display:none;animation:fadeInUp .5s ease-out">
+      <div id="lvl-number" style="font-size:28px;color:#f0e848;text-shadow:0 0 30px #f0e84850,2px 2px 0 #0f0f1b"></div>
+      <div id="lvl-title" style="font-size:8px;color:#d0d0e0;letter-spacing:3px;margin-top:4px"></div>
+    </div>
+    <div id="lvl-continue" style="margin-top:36px;font-size:7px;color:#a0a8b8;animation:blink 1s infinite;display:none;cursor:pointer">PRESS TO CONTINUE</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ LOOT OVERLAY ═══════════════════════════ -->
+<div id="overlay-loot" class="overlay overlay-loot" style="cursor:pointer">
+  <div style="text-align:center">
+    <div id="loot-chest"></div>
+    <div id="loot-reveal" style="display:none;animation:scaleInBounce .5s cubic-bezier(.34,1.56,.64,1);margin-top:20px">
+      <div style="font-size:10px;color:#e8b830;letter-spacing:4px;margin-bottom:16px;text-shadow:0 0 10px #e8b83040">TREASURE!</div>
+      <div id="loot-card" style="background:rgba(10,10,20,0.95);padding:20px 28px;display:inline-block"></div>
+      <div style="margin-top:24px;font-size:7px;color:#a0a8b8;animation:blink 1s infinite">PRESS TO CONTINUE</div>
+    </div>
+  </div>
+</div>
+
+
+<script>
+/* ═══════════════════════════════════════════════════════════════
+   QUEST LOG — SNES RPG ENGINE (Vanilla JS)
+   ═══════════════════════════════════════════════════════════════ */
+
+// ─── PALETTE ───
+const P = {
+  black:"#0f0f1b",dkblue:"#1b1b3a",navy:"#2b2b5a",purple:"#5a2b7a",
+  magenta:"#8a2b5a",red:"#c03030",orange:"#d07020",gold:"#e8b830",
+  yellow:"#f0e848",green:"#30a040",teal:"#20a0a0",blue:"#3068c8",
+  ltblue:"#60a0e8",silver:"#a0a8b8",ltgray:"#d0d0e0",white:"#f0f0f8",
+  skin1:"#f8d0a0",skin2:"#e0a868",brown:"#604020",leather:"#806040",
+  steel:"#8898b0",dksteel:"#586880",crimson:"#a01830",dkgreen:"#186028",
+  flame2:"#f88030",trans:"transparent"
+};
+
+// ─── SPRITE DATA ───
+const SPRITES = {
+  warrior: {
+    idle: [
+      ["......BBBB......",".....BBBBBB.....","....BBsBsBB.....","....BBsssBB.....","....BBBBBB......",".....s11s2......",".....s11s2......","....LsLLsL......","....LLLLLL......","...LLLLLLL.GGG..","...dLLLLdG.GGG..","....LLLL..GGG...","....s..s........","...NN..NN.......","...NN..NN.......","...BB..BB......."],
+    ],
+    attack: [
+      ["......BBBB......",".....BBBBBB.....","....BBsBsBB.....","....BBsssBB.....","....BBBBBB......",".....s11s2......",".....s11s2......","....LsLLsLGGG...","....LLLLLLGGG...","...LLLLLLLGGG...","...dLLLLd..GGG..","....LLLL....GG..","....s..s.....G..","..NN...NN.......","..NN...NN.......","..BB...BB......."],
+    ],
+    pal:{B:P.dksteel,s:P.skin1,"1":"#2040a0","2":P.skin2,L:P.steel,d:P.dksteel,G:P.silver,N:"#3050a0",".":P.trans}
+  },
+  mage: {
+    idle: [
+      [".....PPPP.......","....PPPPPP......","....PPsPPP......","....PsssP.......",".....sPPs.......",".....s11s.......",".....s11s.......","....RsRRsR......","....RRRRRR......","...RRRRRRRR.....","...RRRRRRRR.....","....RRRRRR......",".....RR.RR......","....NN..NN......","....NN..NN......","....BB..BB......"],
+    ],
+    attack: [
+      [".....PPPP...FFF.","....PPPPPP..FFF.","....PPsPPP.FFFF.","....PsssP..FFF..",".....sPPs..FF...",".....s11sRRF....",".....s11sRRR....","....RsRRsRRR....","....RRRRRR......","...RRRRRRRR.....","...RRRRRRRR.....","....RRRRRR......",".....RR.RR......","...NN...NN......","...NN...NN......","...BB...BB......"],
+    ],
+    pal:{P:P.purple,s:P.skin1,"1":"#2040a0",R:"#4020a0",N:"#3020a0",B:P.brown,F:P.flame2,".":P.trans}
+  },
+  ranger: {
+    idle: [
+      [".....GGGG.......","....GGGGGG......","....GGsGGG......","....GsssGG......",".....ssss.......",".....s11s.......",".....s11s2......","....gsggsg......","....gggggg......","...ggggggg......","...dggggdg......","....gggg........","....s..s........","...bb..bb.......","...bb..bb.......","...BB..BB......."],
+    ],
+    attack: [
+      [".....GGGG.......","....GGGGGG......","....GGsGGG......","....GsssGG......",".....ssss.......",".....s11s.......",".....s11s2.AAAA.","....gsggsgAAAA..","....ggggggA.....","...ggggggg......","...dggggdg......","....gggg........","...s...s........","..bb...bb.......","..bb...bb.......","..BB...BB......."],
+    ],
+    pal:{G:P.dkgreen,s:P.skin1,"1":"#2040a0","2":P.skin2,g:P.green,d:P.dkgreen,b:P.leather,B:P.brown,A:"#d8c080",".":P.trans}
+  },
+  paladin: {
+    idle: [
+      [".....YYYY.......","....YYYYYY......","....YYsYYY......","....YsssYY......",".....ssss.......",".....s11s.......",".....s11s.......","....WsWWsW......","....WWWWWW.SS...","...WWWWWWW.SS...","...dWWWWdW.SS...","....WWWW..SS....","....s..s........","...YY..YY.......","...YY..YY.......","...WW..WW......."],
+    ],
+    attack: [
+      [".....YYYY.......","....YYYYYY......","....YYsYYY......","....YsssYY......",".....ssss.......",".....s11s..SS...",".....s11sWWSS...","....WsWWsWWSS...","....WWWWWW.SS...","...WWWWWWW..S...","...dWWWWdW......","....WWWW........","...s...s........","..YY...YY.......","..YY...YY.......","..WW...WW......."],
+    ],
+    pal:{Y:P.gold,s:P.skin1,"1":"#2040a0",W:P.white,d:P.silver,S:P.gold,".":P.trans}
+  },
+  slime: {
+    idle: [
+      ["................","................","......3333......","....33333333....","...3333333333...","..333G333G333...","..333033303333..","..333333333333..","..333300333333..","...3333333333...","....33333333.....",".....333333.....","......3333......","................","................","................"],
+      ["................","................","................",".....333333.....",  "....33333333....","...333G33G333...","...3330330333...","...333333333....","...3333003333...","...3333333333...","..333333333333..","..333333333333..","...3333333333...",".....333333.....","................","................"],
+    ],
+    attack: [
+      ["................",".....3333.......","...3333333......","..33333333333...",".333G333G33333..",".33303330333333.",".3333333333333..",".333300333333...","..3333333333....","...33333333.....",  "....333333......","................","................","................","................","................"],
+    ],
+    pal:{"3":"#40c858",G:"#90f8a0","0":P.black,".":P.trans}
+  },
+  skeleton: {
+    idle: [
+      ["....WWWWWW......","...WWWWWWWW.....","...WW0WW0WW.....","...W00WW00W.....","...WWWWWWWW.....","....W0000W......","....WWWWWW......",".....WWWW.......","....WWWWWW......","...WWWWWWWW.....","...WW.WWWWW.....","....W..WWWW.....","....WW.WW.......","...WW...WW......","...WW...WW......","...WW...WW......"],
+    ],
+    attack: [
+      ["....WWWWWW......","...WWWWWWWW.....","...WW0WW0WW.....","...W00WW00W.....","...WWWWWWWW.....","....W0000W......","....WWWWWW......",".....WWWW.......","...WWWWWWWW.....","..WWWWWWWWWW....","..WW.WWWWWWW....","...W..WWWWWW....","....WW.WW.......","..WW....WW......","..WW....WW......","..WW....WW......"],
+    ],
+    pal:{W:P.ltgray,"0":P.black,".":P.trans}
+  },
+  dragon: {
+    idle: [
+      ["..RR..........RR",".RRRR........RRR","..RRRR......RRR.","...RRRRRRRRRRR..","...RRRRRRRRRR...","..RRRYRRYRRR....","..RR0RR0RRRR....","..RRRRRRRRRR....","..RRRR00RRRR....","...RRRRRRRR.....","..RRRRRRRRRR....",".RRRRRRRRRRRR...",".RR.RRRRRR.RR...",".RR..RRRR..RR...",".RR..RRRR..RR...","..R...RR...R...."],
+      ["..RR..........RR",".RRRR........RRR","..RRRR......RRR.","...RRRRRRRRRRR..","...RRRRRRRRRR...","..RRRYRRYRRR....","..RR0RR0RRRR....","..RRRRRRRRRR....","..RRRR00RRRR....","...RRRRRRRR.....","..RRRRRRRRRR....",".RRRRRRRRRRRR...",".RR.RRRRRR.RR...",".RR..RRRR..RR...","..R..RRRR..R....","..R...RR...R...."],
+    ],
+    attack: [
+      ["..RR..........RR",".RRRR........RRR","..RRRR......RRR.","...RRRRRRRRRRR..","...RRRRRRRRRR...","..RRRYRRYRRR....","..RR0RR0RRRR....","..RRRRRRRRRFFFFF","..RRRR00RRRFFFF.","...RRRRRRRFFF...","..RRRRRRRRRR....",".RRRRRRRRRRRR...",".RR.RRRRRR.RR...","RR...RRRR..RR...","RR...RRRR..RR...",".R....RR...R...."],
+    ],
+    pal:{R:P.crimson,Y:P.gold,"0":P.black,F:P.flame2,".":P.trans}
+  },
+  chest: {
+    idle: [
+      ["................","................","................","...EEEEEEEE....","..EEbbbbbbEE....","..EbEEEEEEbE....","..EbEEYYEEbE....","..EbEEYYEEbE....","..EEEEEEEEEE....","..EbbbbbbbbE....","..EbEEEEEEbE....","..EbEEEEEEbE....","..EbbbbbbbbE....","..EEEEEEEEEE....","................","................"],
+    ],
+    pal:{E:P.brown,b:P.leather,Y:P.gold,".":P.trans}
+  }
+};
+
+// ─── RENDER SPRITE TO CANVAS ───
+function renderSprite(spriteKey, animType, frame, scale, opts = {}) {
+  const info = SPRITES[spriteKey];
+  if (!info) return document.createElement('canvas');
+  const frames = info[animType] || info.idle;
+  const data = frames[frame % frames.length];
+  const pal = info.pal;
+  const canvas = document.createElement('canvas');
+  const rows = data.length, cols = data[0].length;
+  canvas.width = cols * scale;
+  canvas.height = rows * scale;
+  canvas.style.imageRendering = 'pixelated';
+  const ctx = canvas.getContext('2d');
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      const ch = data[r][c];
+      const color = pal[ch];
+      if (!color || color === P.trans) continue;
+      ctx.fillStyle = opts.flash ? '#fff' : opts.hurt ? '#ff4444' : color;
+      ctx.fillRect(c * scale, r * scale, scale, scale);
+      if (!opts.flash && !opts.hurt) {
+        ctx.fillStyle = 'rgba(0,0,0,0.15)';
+        ctx.fillRect(c * scale + scale - 1, r * scale + 1, 1, scale - 1);
+        ctx.fillRect(c * scale + 1, r * scale + scale - 1, scale - 1, 1);
+      }
+    }
+  }
+  if (opts.dead) { canvas.style.transform = 'rotate(90deg) translateY(30px) scaleY(0.8)'; canvas.style.opacity = '0.35'; }
+  canvas.style.filter = opts.flash ? 'brightness(3) drop-shadow(0 0 8px #fff)' : opts.hurt ? 'brightness(1.6) drop-shadow(0 0 6px #f44)' : 'drop-shadow(2px 4px 3px rgba(0,0,0,0.5))';
+  canvas.style.transition = 'transform 0.18s cubic-bezier(0.2,0,0.3,1), opacity 0.4s, filter 0.18s';
+  return canvas;
+}
+
+function placeSprite(container, spriteKey, scale, animType = 'idle') {
+  container.innerHTML = '';
+  const c = renderSprite(spriteKey, animType, 0, scale);
+  container.appendChild(c);
+  // Animate idle
+  const info = SPRITES[spriteKey];
+  const frameCount = (info[animType] || info.idle).length;
+  if (frameCount > 1) {
+    let f = 0;
+    const iv = setInterval(() => {
+      f = (f + 1) % frameCount;
+      const nc = renderSprite(spriteKey, animType, f, scale);
+      container.innerHTML = '';
+      container.appendChild(nc);
+    }, 600);
+    container._anim = iv;
+  }
+  return c;
+}
+
+function clearAnim(container) { if (container._anim) clearInterval(container._anim); }
+
+// ─── GAME STATE ───
+const CLASSES = [
+  {id:"warrior",name:"Warrior",color:"#c03030",stat:"STR",desc:"Iron will, heavy blade"},
+  {id:"mage",name:"Mage",color:"#8a40c0",stat:"INT",desc:"Arcane devastation"},
+  {id:"ranger",name:"Ranger",color:"#30a040",stat:"DEX",desc:"Swift and deadly"},
+  {id:"paladin",name:"Paladin",color:"#e8b830",stat:"WIS",desc:"Holy radiance"},
+];
+const DIFF = {
+  easy:{xp:15,label:"Easy",color:"#30a040",monster:"slime",monsterName:"Slime",monsterHp:30},
+  medium:{xp:30,label:"Medium",color:"#e8b830",monster:"skeleton",monsterName:"Skeleton",monsterHp:60},
+  hard:{xp:55,label:"Hard",color:"#c03030",monster:"skeleton",monsterName:"Dark Knight",monsterHp:100},
+  boss:{xp:100,label:"BOSS",color:"#8a40c0",monster:"dragon",monsterName:"Elder Dragon",monsterHp:180},
+};
+const GEAR = [
+  {name:"Iron Helm",slot:"head",bonus:2,rarity:"common",icon:"🪖"},
+  {name:"Mithril Crown",slot:"head",bonus:5,rarity:"rare",icon:"👑"},
+  {name:"Leather Boots",slot:"feet",bonus:2,rarity:"common",icon:"🥾"},
+  {name:"Winged Sandals",slot:"feet",bonus:5,rarity:"rare",icon:"👟"},
+  {name:"Steel Gauntlets",slot:"hands",bonus:3,rarity:"common",icon:"🧤"},
+  {name:"Dragon Claws",slot:"hands",bonus:6,rarity:"rare",icon:"🐲"},
+  {name:"Wooden Shield",slot:"offhand",bonus:2,rarity:"common",icon:"🛡️"},
+  {name:"Arcane Orb",slot:"offhand",bonus:5,rarity:"rare",icon:"🔮"},
+  {name:"Phoenix Mantle",slot:"back",bonus:7,rarity:"epic",icon:"🔥"},
+  {name:"Amulet of Focus",slot:"neck",bonus:4,rarity:"rare",icon:"📿"},
+  {name:"Pendant of Time",slot:"neck",bonus:8,rarity:"epic",icon:"⏳"},
+  {name:"Ring of Haste",slot:"ring",bonus:3,rarity:"common",icon:"💍"},
+  {name:"Excalibur",slot:"weapon",bonus:10,rarity:"legendary",icon:"⚡"},
+  {name:"Rusty Sword",slot:"weapon",bonus:2,rarity:"common",icon:"🗡️"},
+  {name:"Flame Blade",slot:"weapon",bonus:7,rarity:"epic",icon:"🔥"},
+];
+const TITLES = [{l:1,t:"Novice"},{l:3,t:"Apprentice"},{l:5,t:"Journeyman"},{l:8,t:"Adept"},{l:10,t:"Veteran"},{l:13,t:"Elite"},{l:15,t:"Champion"},{l:18,t:"Hero"},{l:20,t:"Legend"}];
+const RC = {common:"#a0a8b8",rare:"#60a0e8",epic:"#b060e0",legendary:"#f0e848"};
+function xpFor(l){return Math.floor(60*Math.pow(1.15,l-1))}
+function titleFor(l){let t="Novice";TITLES.forEach(e=>{if(l>=e.l)t=e.t});return t}
+
+let state = {
+  screen: 'select', cls: null, name: '', level: 1, xp: 0, hp: 100, maxHp: 100,
+  tasks: [], gear: {}, inventory: [], log: [], streak: 0, dailyDone: 0, dailyGoal: 6,
+  showInv: false,
+};
+
+// ─── SCREEN MANAGEMENT ───
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  state.screen = id;
+  if (id === 'game') document.getElementById('screen-game').style.overflow = 'auto';
+}
+
+// ─── LOG ───
+function addLog(msg) {
+  const t = new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  state.log.unshift({msg, t});
+  if (state.log.length > 40) state.log.pop();
+  renderLog();
+}
+function renderLog() {
+  const el = document.getElementById('battle-log');
+  el.innerHTML = state.log.map(e => `<div class="log-entry"><span class="time">${e.t}</span>${e.msg}</div>`).join('');
+}
+
+// ─── GEAR DROPS ───
+function rollGear() {
+  const r = Math.random();
+  if (r < 0.4) return null;
+  const pool = r < 0.7 ? 'common' : r < 0.88 ? 'rare' : r < 0.97 ? 'epic' : 'legendary';
+  const items = GEAR.filter(g => g.rarity === pool);
+  return items[Math.floor(Math.random() * items.length)];
+}
+function gearBonus() { return Object.values(state.gear).reduce((s,g) => s + (g?.bonus||0), 0); }
+
+// ─── CLASS SELECT ───
+function initClassSelect() {
+  const grid = document.getElementById('class-grid');
+  grid.innerHTML = '';
+  CLASSES.forEach(cls => {
+    const card = document.createElement('div');
+    card.className = 'class-card';
+    card.style.borderColor = cls.color + '44';
+    card.innerHTML = `<div class="sprite-wrap" id="cls-sprite-${cls.id}"></div>
+      <div style="color:${cls.color};font-size:9px;margin-top:12px;letter-spacing:1px">${cls.name}</div>
+      <div style="color:#a0a8b8;font-size:6px;margin-top:4px">${cls.desc}</div>
+      <div style="color:${cls.color}88;font-size:6px;margin-top:6px">${cls.stat}</div>`;
+    card.addEventListener('mouseenter', () => { card.style.borderColor = cls.color; card.style.boxShadow = `0 0 25px ${cls.color}30, inset 0 0 15px ${cls.color}10, 4px 4px 0 rgba(0,0,0,0.4)`; });
+    card.addEventListener('mouseleave', () => { card.style.borderColor = cls.color + '44'; card.style.boxShadow = '4px 4px 0 rgba(0,0,0,0.4)'; });
+    card.addEventListener('click', () => { state.cls = cls; initNameScreen(); showScreen('name'); });
+    grid.appendChild(card);
+    placeSprite(document.getElementById('cls-sprite-' + cls.id), cls.id, 4);
+  });
+}
+
+// ─── NAME SCREEN ───
+function initNameScreen() {
+  const cls = state.cls;
+  document.getElementById('name-classname').textContent = cls.name;
+  document.getElementById('name-classname').style.color = cls.color;
+  clearAnim(document.getElementById('name-sprite'));
+  placeSprite(document.getElementById('name-sprite'), cls.id, 7);
+  document.getElementById('name-input').value = '';
+  document.getElementById('name-input').style.borderColor = cls.color;
+  document.getElementById('btn-start').style.borderColor = cls.color;
+  document.getElementById('btn-start').style.background = cls.color;
+  setTimeout(() => document.getElementById('name-input').focus(), 100);
+}
+
+document.getElementById('btn-back').addEventListener('click', () => showScreen('select'));
+document.getElementById('btn-start').addEventListener('click', startGame);
+document.getElementById('name-input').addEventListener('keydown', e => { if (e.key === 'Enter') startGame(); });
+
+function startGame() {
+  const name = document.getElementById('name-input').value.trim();
+  if (!name) return;
+  state.name = name; state.level = 1; state.xp = 0; state.hp = 100; state.maxHp = 100;
+  state.tasks = []; state.gear = {}; state.inventory = []; state.log = [];
+  state.streak = 0; state.dailyDone = 0; state.showInv = false;
+  addLog(`${name} the ${state.cls.name} begins their quest!`);
+  showScreen('game');
+  renderGame();
+}
+
+// ─── RENDER GAME ───
+function renderGame() {
+  const cls = state.cls;
+  // HUD sprite
+  clearAnim(document.getElementById('hud-sprite'));
+  placeSprite(document.getElementById('hud-sprite'), cls.id, 3.5);
+  document.getElementById('hud-name').textContent = state.name;
+  document.getElementById('hud-title').textContent = `Lv${state.level} ${titleFor(state.level)}`;
+  // Streak / gear
+  const sk = document.getElementById('hud-streak');
+  if (state.streak > 0) { sk.style.display = ''; sk.textContent = '🔥' + state.streak; } else sk.style.display = 'none';
+  const gb = gearBonus();
+  const ge = document.getElementById('hud-gear');
+  if (gb > 0) { ge.style.display = ''; ge.textContent = '+' + gb; } else ge.style.display = 'none';
+  // HP
+  const hpPct = (state.hp / state.maxHp) * 100;
+  const hpFill = document.getElementById('hp-fill');
+  hpFill.style.width = hpPct + '%';
+  hpFill.style.background = hpPct > 50 ? 'linear-gradient(180deg,#48d860,#30a040)' : hpPct > 25 ? 'linear-gradient(180deg,#f0c848,#d0a020)' : 'linear-gradient(180deg,#e04848,#c03030)';
+  hpFill.style.boxShadow = hpPct <= 25 ? '0 0 8px #c0303060' : 'none';
+  document.getElementById('hp-text').textContent = state.hp + '/' + state.maxHp;
+  // XP
+  const xpNeed = xpFor(state.level);
+  document.getElementById('xp-fill').style.width = ((state.xp / xpNeed) * 100) + '%';
+  document.getElementById('xp-text').textContent = state.xp + '/' + xpNeed;
+  // Daily dots
+  const dd = document.getElementById('daily-dots');
+  dd.innerHTML = '<span style="color:#586880;font-size:6px">DAY</span>';
+  for (let i = 0; i < state.dailyGoal; i++) {
+    const d = document.createElement('div');
+    d.style.cssText = `width:8px;height:8px;border:2px solid ${i < state.dailyDone ? '#e8b830' : '#2b2b5a'};background:${i < state.dailyDone ? '#e8b830' : '#1a1a2e'};${i < state.dailyDone ? 'box-shadow:0 0 4px #e8b83060;' : ''}transition:all .3s`;
+    dd.appendChild(d);
+  }
+  // Inv button
+  document.getElementById('btn-inv').textContent = `BAG(${state.inventory.length})`;
+  document.getElementById('btn-add').style.borderColor = cls.color;
+  document.getElementById('btn-add').style.background = cls.color;
+  renderInv();
+  renderQuests();
+  renderLog();
+}
+
+// ─── INVENTORY ───
+function renderInv() {
+  const panel = document.getElementById('inv-panel');
+  panel.className = 'inv-panel box' + (state.showInv ? ' active' : '');
+  const slots = document.getElementById('equip-slots');
+  slots.innerHTML = '';
+  ['head','neck','back','weapon','offhand','hands','ring','feet'].forEach(slot => {
+    const g = state.gear[slot];
+    const d = document.createElement('div');
+    d.className = 'equip-slot';
+    d.style.background = g ? RC[g.rarity] + '12' : 'rgba(15,15,27,0.6)';
+    d.style.border = `2px solid ${g ? RC[g.rarity] : '#1a1a2e'}`;
+    d.style.color = g ? RC[g.rarity] : '#2b2b5a';
+    if (g) d.style.boxShadow = `0 0 6px ${RC[g.rarity]}20`;
+    d.textContent = g ? g.icon + g.name : `[${slot}]`;
+    slots.appendChild(d);
+  });
+  const bag = document.getElementById('bag-items');
+  if (state.inventory.length === 0) {
+    bag.innerHTML = '<div style="color:#2b2b5a;font-size:7px">Empty — slay monsters for loot!</div>';
+  } else {
+    bag.innerHTML = '';
+    state.inventory.forEach((item, i) => {
+      const d = document.createElement('div');
+      d.className = 'bag-item';
+      d.style.background = RC[item.rarity] + '10';
+      d.style.border = `2px solid ${RC[item.rarity]}44`;
+      d.style.color = RC[item.rarity];
+      d.textContent = item.icon + item.name + ' +' + item.bonus;
+      d.addEventListener('mouseenter', () => { d.style.borderColor = RC[item.rarity]; d.style.boxShadow = `0 0 8px ${RC[item.rarity]}30`; });
+      d.addEventListener('mouseleave', () => { d.style.borderColor = RC[item.rarity] + '44'; d.style.boxShadow = 'none'; });
+      d.addEventListener('click', () => equipItem(i));
+      bag.appendChild(d);
+    });
+  }
+}
+function equipItem(idx) {
+  const item = state.inventory[idx];
+  const old = state.gear[item.slot];
+  state.gear[item.slot] = item;
+  state.inventory.splice(idx, 1);
+  if (old) state.inventory.push(old);
+  addLog(`Equipped ${item.icon} ${item.name}`);
+  renderGame();
+}
+
+document.getElementById('btn-inv').addEventListener('click', () => { state.showInv = !state.showInv; renderInv(); document.getElementById('btn-inv').style.borderColor = state.showInv ? '#e8b830' : '#2b2b5a'; document.getElementById('btn-inv').style.color = state.showInv ? '#e8b830' : '#a0a8b8'; });
+document.getElementById('btn-newday').addEventListener('click', () => { state.tasks = []; state.dailyDone = 0; addLog('🌅 New day!'); renderGame(); });
+
+// ─── QUESTS ───
+document.getElementById('btn-add').addEventListener('click', addQuest);
+document.getElementById('quest-input').addEventListener('keydown', e => { if (e.key === 'Enter') addQuest(); });
+
+function addQuest() {
+  const input = document.getElementById('quest-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const diff = document.getElementById('quest-diff').value;
+  state.tasks.push({ id: Date.now(), text, difficulty: diff, done: false, failed: false });
+  addLog(`📜 New quest: ${text} [${DIFF[diff].label}]`);
+  input.value = '';
+  renderQuests();
+}
+
+function renderQuests() {
+  const active = state.tasks.filter(t => !t.done && !t.failed);
+  const done = state.tasks.filter(t => t.done);
+  document.getElementById('active-header').textContent = `⚔ ACTIVE QUESTS (${active.length})`;
+  const aq = document.getElementById('active-quests');
+  aq.innerHTML = '';
+  if (active.length === 0) {
+    aq.innerHTML = '<div style="color:#2b2b5a;font-size:7px;padding:20px 0;text-align:center">Add quests to begin your adventure!</div>';
+  }
+  active.forEach((task, i) => {
+    const d = DIFF[task.difficulty];
+    const el = document.createElement('div');
+    el.className = 'quest-item';
+    el.style.borderColor = d.color + '44';
+    el.style.animationDelay = (i * 0.05) + 's';
+    const spriteWrap = document.createElement('div');
+    spriteWrap.style.flexShrink = '0';
+    placeSprite(spriteWrap, d.monster, 2);
+    el.appendChild(spriteWrap);
+    const info = document.createElement('div');
+    info.style.flex = '1';
+    info.innerHTML = `<div style="font-size:8px;margin-bottom:4px;color:#f0f0f8">${task.text}</div>
+      <div style="display:flex;gap:8px"><span style="font-size:6px;color:${d.color}">${d.label}</span><span style="font-size:6px;color:#586880">+${d.xp}XP</span><span style="font-size:6px;color:#586880">vs ${d.monsterName}</span></div>`;
+    el.appendChild(info);
+    const fightBtn = document.createElement('button');
+    fightBtn.textContent = 'FIGHT';
+    fightBtn.style.cssText = `padding:6px 10px;background:rgba(10,10,20,0.85);border:3px solid #30a040;color:#30a040;font-size:7px;cursor:pointer;font-family:'Press Start 2P',monospace;box-shadow:4px 4px 0 rgba(0,0,0,0.4)`;
+    fightBtn.addEventListener('mouseenter', () => { fightBtn.style.background = '#30a040'; fightBtn.style.color = '#f0f0f8'; });
+    fightBtn.addEventListener('mouseleave', () => { fightBtn.style.background = 'rgba(10,10,20,0.85)'; fightBtn.style.color = '#30a040'; });
+    fightBtn.addEventListener('click', () => startBattle(task.id));
+    el.appendChild(fightBtn);
+    const fleeBtn = document.createElement('button');
+    fleeBtn.textContent = 'FLEE';
+    fleeBtn.style.cssText = `padding:6px 8px;background:rgba(10,10,20,0.85);border:3px solid #c0303044;color:#c03030;font-size:7px;cursor:pointer;opacity:.6;font-family:'Press Start 2P',monospace;box-shadow:4px 4px 0 rgba(0,0,0,0.4)`;
+    fleeBtn.addEventListener('click', () => fleeQuest(task.id));
+    el.appendChild(fleeBtn);
+    aq.appendChild(el);
+  });
+  // Done
+  const ds = document.getElementById('done-section');
+  if (done.length > 0) {
+    ds.style.display = '';
+    document.getElementById('done-header').textContent = `✓ VANQUISHED (${done.length})`;
+    const dq = document.getElementById('done-quests');
+    dq.innerHTML = '';
+    done.slice(0, 4).forEach(t => {
+      const d = document.createElement('div');
+      d.style.cssText = 'padding:6px 10px;margin-bottom:3px;font-size:7px;color:#586880;background:rgba(48,160,64,0.04);border:1px solid rgba(48,160,64,0.1);text-decoration:line-through';
+      d.textContent = t.text;
+      dq.appendChild(d);
+    });
+  } else ds.style.display = 'none';
+}
+
+function fleeQuest(id) {
+  const task = state.tasks.find(t => t.id === id);
+  if (!task || task.done || task.failed) return;
+  const dmg = {easy:8,medium:15,hard:25,boss:40}[task.difficulty];
+  task.failed = true;
+  state.streak = 0;
+  state.hp = Math.max(0, state.hp - dmg);
+  addLog(`💀 Quest abandoned: ${task.text} (-${dmg} HP)`);
+  if (state.hp <= 0) { gameOver(); return; }
+  renderGame();
+}
+
+function gameOver() {
+  showScreen('gameover');
+  const goSprite = document.getElementById('go-sprite');
+  clearAnim(goSprite);
+  const c = renderSprite(state.cls.id, 'idle', 0, 7, { dead: true });
+  goSprite.innerHTML = '';
+  goSprite.appendChild(c);
+  document.getElementById('go-info').textContent = `${state.name} fell at Level ${state.level}`;
+  document.getElementById('go-title').textContent = titleFor(state.level);
+}
+document.getElementById('btn-rise').addEventListener('click', () => { showScreen('select'); initClassSelect(); });
+
+// ─── BATTLE SYSTEM ───
+let battleState = {};
+
+function startBattle(taskId) {
+  const task = state.tasks.find(t => t.id === taskId);
+  if (!task) return;
+  const d = DIFF[task.difficulty];
+  battleState = { task, diff: d, monsterHp: d.monsterHp, maxMonsterHp: d.monsterHp, playerHp: state.hp, phase: 'intro' };
+
+  const overlay = document.getElementById('battle-overlay');
+  overlay.classList.add('active');
+  document.getElementById('b-actions').style.display = 'none';
+
+  // Build background
+  buildBattleBG(task.difficulty);
+  // Player sprite
+  const pw = document.getElementById('b-player-wrap');
+  clearAnim(pw);
+  placeSprite(pw, state.cls.id, 5);
+  // Enemy sprite
+  const ew = document.getElementById('b-enemy-wrap');
+  clearAnim(ew);
+  placeSprite(ew, d.monster, 5);
+  // HUD
+  document.getElementById('b-player-name').textContent = state.name;
+  document.getElementById('b-enemy-name').textContent = d.monsterName;
+  updateBattleHUD();
+
+  setMsg(`A wild ${d.monsterName} blocks your path!`);
+  setTimeout(() => { battleState.phase = 'playerTurn'; setMsg('What will you do?'); showActions(); }, 1800);
+}
+
+function buildBattleBG(diff) {
+  const isBoss = diff === 'boss', isHard = diff === 'hard';
+  const bg = document.getElementById('battle-bg');
+  const skyTop = isBoss ? '#1a0020' : isHard ? '#0a0820' : '#0a1028';
+  const skyBot = isBoss ? '#3a0040' : isHard ? '#182050' : '#102840';
+  const gTop = isBoss ? '#2a1020' : '#102010';
+  const gBot = isBoss ? '#1a0810' : '#0a180a';
+
+  let html = `<div style="position:absolute;inset:0;background:linear-gradient(180deg,${skyTop} 0%,${skyBot} 55%,${gTop} 65%,${gBot} 100%)"></div>`;
+  // Moon
+  const moonBg = isBoss ? 'radial-gradient(circle,#a03050 0%,#60102080 70%,transparent 100%)' : 'radial-gradient(circle,#f0e8d0 0%,#f0d89060 50%,transparent 100%)';
+  html += `<div style="position:absolute;top:8%;right:15%;width:48px;height:48px;border-radius:50%;background:${moonBg};box-shadow:${isBoss ? '0 0 40px #a0305060' : '0 0 30px #f0d89050'}"></div>`;
+  // Stars
+  for (let i = 0; i < 40; i++) {
+    const sz = i % 5 === 0 ? 3 : 2;
+    const c = i % 7 === 0 ? '#f0e848' : '#d0d0e0';
+    html += `<div style="position:absolute;width:${sz}px;height:${sz}px;background:${c};left:${(i*41+17)%100}%;top:${(i*29+3)%50}%;opacity:${0.2+(i%4)*0.2};animation:twinkle ${2+(i%3)}s ${(i*.3)%2}s infinite alternate;${i%5===0?'border-radius:50%':''}"></div>`;
+  }
+  // Ground
+  html += `<div style="position:absolute;bottom:0;left:0;right:0;height:34%;background:repeating-linear-gradient(90deg,${gBot} 0px,${gBot} 31px,${isBoss?'#200c14':'#0c1c0c'} 31px,${isBoss?'#200c14':'#0c1c0c'} 32px),repeating-linear-gradient(0deg,${gBot} 0px,${gBot} 31px,${isBoss?'#200c14':'#0c1c0c'} 31px,${isBoss?'#200c14':'#0c1c0c'} 32px)"><div style="height:4px;background:linear-gradient(90deg,transparent,${isBoss?'#3a102040':'#18301840'},transparent)"></div></div>`;
+  // Particles
+  for (let i = 0; i < 12; i++) {
+    const pc = isBoss ? 'rgba(160,48,80,0.4)' : 'rgba(48,160,64,0.25)';
+    html += `<div style="position:absolute;width:3px;height:3px;border-radius:50%;background:${pc};left:${(i*37+5)%100}%;bottom:${10+(i%4)*8}%;animation:floatParticle ${4+(i%3)*2}s ${i*0.5}s linear infinite"></div>`;
+  }
+  // Mountains SVG
+  const mFill1 = isBoss ? '#2a102080' : '#10281560';
+  const mFill2 = isBoss ? '#1a081060' : '#0a180a40';
+  html += `<svg style="position:absolute;bottom:34%;left:0;right:0" width="100%" height="80" viewBox="0 0 400 80" preserveAspectRatio="none"><polygon points="0,80 20,30 50,55 80,15 120,50 160,10 200,45 240,20 280,50 320,25 360,55 400,35 400,80" fill="${mFill1}"/><polygon points="0,80 30,45 70,60 110,30 150,55 190,25 230,50 270,35 310,55 350,30 400,50 400,80" fill="${mFill2}"/></svg>`;
+  bg.innerHTML = html;
+}
+
+function updateBattleHUD() {
+  const bs = battleState;
+  const phpct = (bs.playerHp / state.maxHp) * 100;
+  const mhpct = (bs.monsterHp / bs.maxMonsterHp) * 100;
+  const phpFill = document.getElementById('b-player-hp');
+  phpFill.style.width = phpct + '%';
+  phpFill.style.background = phpct > 50 ? 'linear-gradient(180deg,#50c060,#30a040)' : phpct > 25 ? 'linear-gradient(180deg,#f0c040,#d0a020)' : 'linear-gradient(180deg,#e04040,#c03030)';
+  phpFill.style.boxShadow = phpct <= 25 ? '0 0 6px #c0303080' : 'none';
+  document.getElementById('b-player-hp-text').textContent = bs.playerHp;
+  document.getElementById('b-enemy-hp').style.width = mhpct + '%';
+  document.getElementById('b-enemy-hp-text').textContent = bs.monsterHp;
+}
+
+function setMsg(t) { document.getElementById('b-msg').textContent = t; }
+function showActions() { document.getElementById('b-actions').style.display = 'flex'; }
+function hideActions() { document.getElementById('b-actions').style.display = 'none'; }
+
+function addDmgPopup(text, side, color) {
+  const field = document.getElementById('battle-field');
+  const el = document.createElement('div');
+  el.className = 'dmg-popup';
+  const isCrit = text.includes('CRIT');
+  el.style.cssText = `left:${side==='enemy'?62+Math.random()*10:18+Math.random()*10}%;top:${25+Math.random()*10}%;color:${color};font-size:${isCrit?14:12}px;text-shadow:0 0 10px ${color},2px 2px 0 #000,-1px -1px 0 #000`;
+  el.textContent = text;
+  field.appendChild(el);
+  setTimeout(() => el.remove(), 1400);
+}
+function addSparkles(side, color, count) {
+  const field = document.getElementById('battle-field');
+  const bx = side === 'enemy' ? 65 : 25;
+  for (let i = 0; i < count; i++) {
+    const el = document.createElement('div');
+    el.className = 'hit-sparkle';
+    const sz = 2 + Math.random() * 4;
+    el.style.cssText = `left:${bx+(Math.random()-.5)*20}%;top:${30+(Math.random()-.5)*20}%;width:${sz}px;height:${sz}px;background:${color};transform:rotate(${Math.random()*360}deg);box-shadow:0 0 ${sz*2}px ${color}`;
+    field.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
+}
+function shake() {
+  const ov = document.getElementById('battle-overlay');
+  ov.classList.add('shaking');
+  setTimeout(() => ov.classList.remove('shaking'), 200);
+}
+
+function flashSprite(wrap, spriteKey, scale, type) {
+  clearAnim(wrap);
+  const c = renderSprite(spriteKey, 'idle', 0, scale, type === 'flash' ? {flash:true} : {hurt:true});
+  wrap.innerHTML = '';
+  wrap.appendChild(c);
+  setTimeout(() => { clearAnim(wrap); placeSprite(wrap, spriteKey, scale); }, 250);
+}
+
+// Battle buttons
+document.getElementById('b-attack').addEventListener('click', doPlayerAttack);
+document.getElementById('b-defend').addEventListener('click', doDefend);
+document.getElementById('b-attack').addEventListener('mouseenter', function(){ this.style.background='#c03030'; });
+document.getElementById('b-attack').addEventListener('mouseleave', function(){ this.style.background='rgba(10,10,20,0.9)'; });
+document.getElementById('b-defend').addEventListener('mouseenter', function(){ this.style.background='#3068c8'; });
+document.getElementById('b-defend').addEventListener('mouseleave', function(){ this.style.background='rgba(10,10,20,0.9)'; });
+
+function doPlayerAttack() {
+  if (battleState.phase !== 'playerTurn') return;
+  battleState.phase = 'playerAttack';
+  hideActions();
+  // Show attack animation
+  const pw = document.getElementById('b-player-wrap');
+  clearAnim(pw);
+  const ac = renderSprite(state.cls.id, 'attack', 0, 5);
+  ac.style.transform = 'translateX(-24px) scaleX(1.05)';
+  pw.innerHTML = ''; pw.appendChild(ac);
+  setMsg(`${state.name} attacks!`);
+
+  setTimeout(() => {
+    placeSprite(pw, state.cls.id, 5);
+    const baseDmg = 15 + Math.floor(Math.random() * 15) + state.level * 2;
+    const crit = Math.random() < 0.15;
+    const dmg = crit ? baseDmg * 2 : baseDmg;
+    const ew = document.getElementById('b-enemy-wrap');
+    flashSprite(ew, battleState.diff.monster, 5, 'flash');
+    shake();
+    addDmgPopup(crit ? dmg + ' CRIT!' : '' + dmg, 'enemy', crit ? '#f0e848' : '#f0f0f8');
+    addSparkles('enemy', crit ? '#f0e848' : '#f08030', crit ? 14 : 8);
+    setMsg(crit ? `💥 CRITICAL HIT! ${dmg} damage!` : `${dmg} damage to ${battleState.diff.monsterName}!`);
+    battleState.monsterHp = Math.max(0, battleState.monsterHp - dmg);
+    updateBattleHUD();
+
+    setTimeout(() => {
+      if (battleState.monsterHp <= 0) {
+        // Enemy death
+        clearAnim(ew);
+        const dc = renderSprite(battleState.diff.monster, 'idle', 0, 5, { dead: true });
+        ew.innerHTML = ''; ew.appendChild(dc);
+        addSparkles('enemy', '#f0e848', 20);
+        setMsg(`🎉 ${battleState.diff.monsterName} vanquished! Victory!`);
+        setTimeout(() => battleVictory(), 2200);
+      } else {
+        setMsg(`${battleState.diff.monsterName} readies an attack...`);
+        setTimeout(() => doEnemyAttack(), 1000);
+      }
+    }, 700);
+  }, 450);
+}
+
+function doDefend() {
+  if (battleState.phase !== 'playerTurn') return;
+  battleState.phase = 'enemyTurn';
+  hideActions();
+  const heal = 8 + state.level * 2;
+  battleState.playerHp = Math.min(state.maxHp, battleState.playerHp + heal);
+  updateBattleHUD();
+  addDmgPopup('+' + heal, 'player', '#30a040');
+  addSparkles('player', '#30a040', 6);
+  setMsg(`${state.name} focuses and recovers ${heal} HP!`);
+  setTimeout(() => doEnemyAttack(), 1300);
+}
+
+function doEnemyAttack() {
+  battleState.phase = 'enemyAttack';
+  const ew = document.getElementById('b-enemy-wrap');
+  clearAnim(ew);
+  const ac = renderSprite(battleState.diff.monster, 'attack', 0, 5);
+  ew.innerHTML = ''; ew.appendChild(ac);
+  setMsg(`${battleState.diff.monsterName} strikes!`);
+
+  setTimeout(() => {
+    placeSprite(ew, battleState.diff.monster, 5);
+    const baseDmg = 5 + Math.floor(Math.random() * 10) + (battleState.task.difficulty === 'boss' ? 12 : battleState.task.difficulty === 'hard' ? 6 : 0);
+    const pw = document.getElementById('b-player-wrap');
+    flashSprite(pw, state.cls.id, 5, 'hurt');
+    shake();
+    addDmgPopup('' + baseDmg, 'player', '#c03030');
+    addSparkles('player', '#c03030', 6);
+    setMsg(`${battleState.diff.monsterName} deals ${baseDmg} damage!`);
+    battleState.playerHp = Math.max(0, battleState.playerHp - baseDmg);
+    updateBattleHUD();
+
+    setTimeout(() => {
+      if (battleState.playerHp <= 0) {
+        setMsg('You have fallen in battle...');
+        setTimeout(() => battleDefeat(baseDmg), 2200);
+      } else {
+        battleState.phase = 'playerTurn';
+        setMsg('What will you do?');
+        showActions();
+      }
+    }, 900);
+  }, 550);
+}
+
+function battleVictory() {
+  document.getElementById('battle-overlay').classList.remove('active');
+  const task = battleState.task;
+  const d = DIFF[task.difficulty];
+  const xpGain = d.xp + Math.floor(d.xp * state.streak * 0.1);
+  task.done = true;
+  state.hp = battleState.playerHp;
+
+  let didLvl = false, newLvl = state.level;
+  state.xp += xpGain;
+  let need = xpFor(state.level);
+  while (state.xp >= need) { state.xp -= need; state.level++; need = xpFor(state.level); didLvl = true; }
+  newLvl = state.level;
+  state.maxHp = 100 + (state.level - 1) * 10;
+  state.hp = Math.min(state.hp + 5, state.maxHp);
+  state.dailyDone++;
+  if (state.dailyDone >= state.dailyGoal) state.streak++;
+  addLog(`⚔ Victory! ${task.text} (+${xpGain} XP)`);
+
+  if (didLvl) {
+    addLog(`🎉 LEVEL UP → ${newLvl} ${titleFor(newLvl)}`);
+    setTimeout(() => showLevelUp(newLvl), 400);
+  } else {
+    const drop = rollGear();
+    if (drop) { state.inventory.push(drop); addLog(`✨ ${drop.icon} ${drop.name}`); setTimeout(() => showLoot(drop), 400); }
+    else renderGame();
+  }
+  renderGame();
+}
+
+function battleDefeat(dmg) {
+  document.getElementById('battle-overlay').classList.remove('active');
+  battleState.task.failed = true;
+  state.streak = 0;
+  state.hp = Math.max(0, state.hp - dmg);
+  addLog(`💀 Defeated by ${battleState.diff.monsterName}!`);
+  if (state.hp <= 0) { gameOver(); return; }
+  renderGame();
+}
+
+// ─── LEVEL UP OVERLAY ───
+function showLevelUp(lvl) {
+  const ov = document.getElementById('overlay-lvl');
+  ov.classList.add('active');
+  document.getElementById('lvl-text').style.display = 'none';
+  document.getElementById('lvl-sprite').style.display = 'none';
+  document.getElementById('lvl-num').style.display = 'none';
+  document.getElementById('lvl-continue').style.display = 'none';
+  // Particles
+  const pc = document.getElementById('lvl-particles');
+  pc.innerHTML = '';
+  const cols = ['#f0e848','#e8b830','#c03030','#60a0e8','#b060e0'];
+  for (let i = 0; i < 40; i++) {
+    const sz = i % 3 === 0 ? 4 : 3;
+    pc.innerHTML += `<div style="position:absolute;left:${(i*31+10)%100}%;bottom:0;width:${sz}px;height:${sz}px;background:${cols[i%5]};animation:lvlParticle ${1.5+(i%4)*.5}s ease-out ${i*.06}s infinite;box-shadow:0 0 6px ${cols[i%5]}80"></div>`;
+  }
+  setTimeout(() => { document.getElementById('lvl-text').style.display = ''; }, 500);
+  setTimeout(() => {
+    document.getElementById('lvl-sprite').style.display = '';
+    clearAnim(document.getElementById('lvl-sprite'));
+    placeSprite(document.getElementById('lvl-sprite'), state.cls.id, 8);
+  }, 1500);
+  setTimeout(() => {
+    document.getElementById('lvl-num').style.display = '';
+    document.getElementById('lvl-number').textContent = lvl;
+    document.getElementById('lvl-title').textContent = titleFor(lvl);
+  }, 2500);
+  setTimeout(() => {
+    document.getElementById('lvl-continue').style.display = '';
+    ov.onclick = () => {
+      ov.classList.remove('active');
+      ov.onclick = null;
+      const drop = rollGear();
+      if (drop) { state.inventory.push(drop); addLog(`✨ ${drop.icon} ${drop.name}`); showLoot(drop); }
+      renderGame();
+    };
+  }, 3000);
+}
+
+// ─── LOOT OVERLAY ───
+function showLoot(item) {
+  const ov = document.getElementById('overlay-loot');
+  ov.classList.add('active');
+  const ch = document.getElementById('loot-chest');
+  clearAnim(ch);
+  placeSprite(ch, 'chest', 6);
+  ch.style.animation = 'pulse 0.5s ease-in-out infinite';
+  document.getElementById('loot-reveal').style.display = 'none';
+  setTimeout(() => {
+    ch.style.animation = 'none';
+    document.getElementById('loot-reveal').style.display = '';
+    const card = document.getElementById('loot-card');
+    card.style.border = `3px solid ${RC[item.rarity]}`;
+    card.style.boxShadow = `0 0 20px ${RC[item.rarity]}30, inset 0 0 15px ${RC[item.rarity]}10, 4px 4px 0 rgba(0,0,0,0.5)`;
+    card.innerHTML = `<div style="font-size:36px;margin-bottom:10px;filter:drop-shadow(0 0 8px ${RC[item.rarity]}60)">${item.icon}</div>
+      <div style="color:${RC[item.rarity]};font-size:9px;margin-bottom:6px">${item.name}</div>
+      <div style="color:#a0a8b8;font-size:7px">+${item.bonus} • ${item.slot} • ${item.rarity}</div>`;
+  }, 800);
+  ov.onclick = () => { ov.classList.remove('active'); ov.onclick = null; renderGame(); };
+}
+
+// ─── INIT ───
+initClassSelect();
+</script>
+</body>
+</html>
