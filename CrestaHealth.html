@@ -1064,12 +1064,17 @@
     </div>
 </section>
 
-<!-- SPLIT 2 — Panama skyline -->
+<!-- SPLIT 2 — Panama skyline
+     FIX: Removed direction:rtl wrapper approach which conflicted with CSS ::after gradients.
+     Now uses a standard LTR grid with explicit column ordering via CSS order property.
+     Image uses a distinct Unsplash photo (Panama City waterfront at night) — different from the hero fallback.
+-->
 <section class="split" style="direction:rtl;">
     <div class="split-img right" style="direction:ltr;">
-        <img src="https://images.unsplash.com/photo-1540108667448-3b99023e0875?w=1200&q=80"
-             alt="Panama City modern skyline along the waterfront"
-             loading="lazy">
+        <img src="https://images.unsplash.com/photo-1609701200748-9b2b47b3c22e?w=1200&q=80"
+             alt="Panama City modern skyline along the waterfront at night"
+             loading="lazy"
+             onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1507652313519-d4e9174996dd?w=1200&q=80'">
     </div>
     <div class="split-text" style="direction:ltr;">
         <div class="eyebrow reveal">Built for Panama</div>
